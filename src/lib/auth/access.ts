@@ -24,8 +24,8 @@ export const adminSections = [
   {
     id: "readiness",
     href: "/admin/readiness",
-    label: "Readiness editorial",
-    description: "Lipsuri de conținut și pregătirea lansării",
+    label: "Calitatea catalogului",
+    description: "Cărți și pagini care trebuie completate",
     roles: ["admin", "editor"],
   },
   {

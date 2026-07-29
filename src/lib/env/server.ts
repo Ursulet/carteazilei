@@ -29,6 +29,8 @@ const serverEnvSchema = z
       .transform((value) => value === "true"),
     SEO_HUB_MINIMUM_BOOKS: z.coerce.number().int().min(5).max(50).default(5),
     PUBLIC_CONTACT_EMAIL: optionalEmail,
+    MEDIA_STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
+    MEDIA_LOCAL_ROOT: z.string().min(1).default(".local-storage/media"),
     S3_ENDPOINT: optionalUrl,
     S3_REGION: optionalString,
     S3_BUCKET: optionalString,
@@ -47,10 +49,10 @@ const serverEnvSchema = z
     ];
     const configuredValues = storageValues.filter(Boolean).length;
 
-    if (configuredValues > 0 && configuredValues < storageValues.length) {
+    if (env.MEDIA_STORAGE_DRIVER === "s3" && configuredValues < storageValues.length) {
       context.addIssue({
         code: "custom",
-        message: "Configurația S3 trebuie completată integral sau lăsată integral goală.",
+        message: "Configurația S3 trebuie completată integral când MEDIA_STORAGE_DRIVER=s3.",
         path: ["S3_ENDPOINT"],
       });
     }
@@ -69,6 +71,8 @@ export function getServerEnv(): ServerEnv {
     HEALTHCHECK_DATABASE: process.env.HEALTHCHECK_DATABASE,
     SEO_HUB_MINIMUM_BOOKS: process.env.SEO_HUB_MINIMUM_BOOKS,
     PUBLIC_CONTACT_EMAIL: process.env.PUBLIC_CONTACT_EMAIL,
+    MEDIA_STORAGE_DRIVER: process.env.MEDIA_STORAGE_DRIVER,
+    MEDIA_LOCAL_ROOT: process.env.MEDIA_LOCAL_ROOT,
     S3_ENDPOINT: process.env.S3_ENDPOINT,
     S3_REGION: process.env.S3_REGION,
     S3_BUCKET: process.env.S3_BUCKET,

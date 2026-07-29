@@ -71,7 +71,7 @@ atribuirea și situația drepturilor. Valorile pentru `rightsStatus` sunt:
 - `owned`.
 
 Nu declara `licensed` sau `owned` doar pentru că imaginea este public accesibilă.
-Importatorul va descărca și valida separat imaginea înainte de stocarea în S3.
+Importatorul va descărca și valida separat imaginea înainte de stocarea prin adaptorul media configurat.
 
 Sinopsisul scrape-uit se salvează în `sourceContent`, împreună cu sursa și drepturile.
 Nu se scrape-uiesc și nu se publică automat recenzii, verdicturi ori texte editoriale

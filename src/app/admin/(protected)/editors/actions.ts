@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import type { EditorialActionState } from "@/domain/editorial/action-state";
 import { toActionState } from "@/domain/editorial/action-state";
-import { parseEditorProfileFormData, saveEditorProfile } from "@/domain/editorial/editor-profile-service";
+import { createEditorProfileForUser, parseEditorProfileFormData, saveEditorProfile } from "@/domain/editorial/editor-profile-service";
 import { requireMutationAccess } from "@/lib/auth/principal";
 
 export async function updateEditorProfileAction(
@@ -25,4 +25,11 @@ export async function updateEditorProfileAction(
   revalidatePath(`/editor/${slugs.previousSlug}`);
   revalidatePath(`/editor/${slugs.slug}`);
   redirect(`/admin/editors/${id}`);
+}
+
+export async function createEditorProfileAction(userId: string) {
+  const principal = await requireMutationAccess("editors");
+  const editorId = await createEditorProfileForUser(userId, principal.id);
+  revalidatePath("/admin/editors");
+  redirect(`/admin/editors/${editorId}`);
 }

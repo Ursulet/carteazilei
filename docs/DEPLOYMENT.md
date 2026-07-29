@@ -13,11 +13,11 @@ Referințe operaționale Coolify:
 
 ## 1. Topologia de producție
 
-Folosește trei resurse independente în aceeași destinație/rețea privată Coolify:
+Folosește două resurse în aceeași destinație/rețea privată Coolify și un volum persistent:
 
 1. aplicația Next.js construită din Git cu `Dockerfile`, targetul final `runner`;
 2. PostgreSQL **18.4**, resursă separată, fără port public sau mapare host;
-3. storage S3-compatible extern ori serviciu separat, cu bucket privat.
+3. volum persistent atașat aplicației la `/app/storage/media`.
 
 Aplicația expune numai portul intern `3000`. Traefik/Coolify termină TLS și trimite
 traficul către acel port; nu configura o mapare de tip `3000:3000` pe host.
@@ -36,6 +36,8 @@ subdomeniile publice trebuie să rămână disponibile prin HTTPS.
 - build Next.js `standalone`;
 - target final minimal, fără surse și fără unelte de migrare;
 - utilizator non-root `nextjs`;
+- bibliotecile native Sharp necesare validării imaginilor în Alpine;
+- director media pregătit pentru volumul persistent `/app/storage/media`;
 - healthcheck pe `http://127.0.0.1:3000/api/health`;
 - target separat `migrator` pentru joburi one-off.
 
@@ -66,6 +68,8 @@ Credențialele și secretele sunt exclusiv runtime; nu le marca drept Build Vari
 | `HEALTHCHECK_DATABASE` | runtime | nu | `true` pentru readiness complet; `false` doar pentru liveness |
 | `SEO_HUB_MINIMUM_BOOKS` | runtime | nu | implicit `5`, nu coborî sub pragul editorial |
 | `PUBLIC_CONTACT_EMAIL` | runtime | nu | adresă reală, verificată înainte de lansare |
+| `MEDIA_STORAGE_DRIVER` | runtime | nu | `local` pentru volumul Coolify; `s3` doar pentru object storage |
+| `MEDIA_LOCAL_ROOT` | runtime | nu | `/app/storage/media` pentru volumul Coolify |
 | `S3_ENDPOINT` | runtime | nu | endpoint HTTPS al providerului |
 | `S3_REGION` | runtime | nu | regiunea providerului |
 | `S3_BUCKET` | runtime | nu | bucket privat dedicat |
@@ -74,10 +78,24 @@ Credențialele și secretele sunt exclusiv runtime; nu le marca drept Build Vari
 | `S3_FORCE_PATH_STYLE` | runtime | nu | `true` numai dacă providerul o cere |
 | `S3_PUBLIC_BASE_URL` | runtime | nu | opțional; nu este necesar pentru ruta `/media/[id]` |
 
-Toate cele cinci valori S3 principale trebuie configurate împreună. În producție,
-storage-ul este obligatoriu pentru uploadurile CMS, chiar dacă aplicația poate porni
-fără el. Nu există chei externe de analytics în V1: evenimentele de produs sunt
-stocate în PostgreSQL.
+Pentru configurația locală nu completa valorile `S3_*`. Dacă
+`MEDIA_STORAGE_DRIVER=s3`, toate cele cinci valori S3 principale devin obligatorii.
+Evenimentele de produs sunt stocate în PostgreSQL.
+
+### Volumul media în Coolify
+
+În resursa aplicației deschide `Persistent Storage` și adaugă un volum cu destinația
+exactă `/app/storage/media`. Folosește un nume stabil, de exemplu
+`carteazilei-media`, apoi setează:
+
+```env
+MEDIA_STORAGE_DRIVER=local
+MEDIA_LOCAL_ROOT=/app/storage/media
+```
+
+Nu monta volumul peste `/app` și nu schimba destinația între deployuri. Containerul
+rulează cu UID/GID `1001`; dacă alegi bind mount către un folder de pe host, acel
+folder trebuie să poată fi scris de `1001:1001`.
 
 ### Numai pentru joburi one-off
 
@@ -147,11 +165,12 @@ Dacă o migrare incompatibilă a ajuns în producție:
 
 1. Creează proiectul și mediul `production` în Coolify.
 2. Creează PostgreSQL 18.4 în rețeaua privată, fără port public.
-3. Creează/verifică bucketul media privat și credentialul cu privilegii minime.
+3. Adaugă volumul persistent `carteazilei-media` cu destinația `/app/storage/media`.
 4. Configurează backupul DB înainte de primul conținut real.
 5. Adaugă resursa aplicației din Git cu build pack `Dockerfile`, port expus `3000`,
    fără port mapping și target final `runner`.
-6. Configurează toate variabilele; numai `NEXT_PUBLIC_SITE_URL` este build + runtime.
+6. Configurează toate variabilele, inclusiv `MEDIA_STORAGE_DRIVER=local` și
+   `MEDIA_LOCAL_ROOT=/app/storage/media`; numai `NEXT_PUBLIC_SITE_URL` este build + runtime.
 7. Atașează domeniile apex și `www`, Force HTTPS și redirectul `www → apex`.
 8. Construiește imaginea fără a o pune încă în trafic.
 9. Rulează targetul `migrator`, apoi seed-ul și bootstrapul administratorului.
@@ -179,7 +198,7 @@ conexiuni DB și eșecuri de backup.
 Configurația minimă:
 
 - dump PostgreSQL complet zilnic, într-o fereastră cu trafic redus;
-- 7 copii locale și minimum 30 de zile în storage S3 off-server;
+- copie zilnică a volumului media într-o destinație off-server, cu minimum 30 de zile retenție;
 - criptare, acces separat de credentialele aplicației și alertă la eșec;
 - versioning/retention pentru bucketul media, dacă providerul permite;
 - test de restaurare lunar într-o bază izolată.

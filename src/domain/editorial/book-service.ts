@@ -260,3 +260,46 @@ export async function deleteBook(bookId: string, actorUserId: string) {
     await writeAuditLog({ actorUserId, action: "book.delete", entityType: "book", entityId: bookId, diff: { title: book.title, previousStatus: book.status } }, transaction);
   });
 }
+
+export async function assignBookCover(bookId: string, assetId: string, actorUserId: string) {
+  const db = getDb();
+  await db.transaction(async (transaction) => {
+    const [book] = await transaction
+      .select({ id: books.id, title: books.title })
+      .from(books)
+      .where(and(eq(books.id, bookId), isNull(books.deletedAt)))
+      .limit(1);
+    if (!book) throw new EditorialServiceError("Cartea nu mai există.");
+
+    const [asset] = await transaction
+      .select({ id: mediaAssets.id })
+      .from(mediaAssets)
+      .where(and(eq(mediaAssets.id, assetId), isNull(mediaAssets.deletedAt)))
+      .limit(1);
+    if (!asset) throw new EditorialServiceError("Imaginea încărcată nu mai este disponibilă.");
+
+    const [edition] = await transaction
+      .select({ id: bookEditions.id, previousCoverAssetId: bookEditions.coverAssetId })
+      .from(bookEditions)
+      .where(and(eq(bookEditions.bookId, bookId), isNull(bookEditions.deletedAt)))
+      .orderBy(desc(bookEditions.active), desc(bookEditions.updatedAt))
+      .limit(1);
+    if (!edition) throw new EditorialServiceError("Cartea nu are încă o ediție căreia să-i putem atașa coperta.");
+
+    await transaction
+      .update(bookEditions)
+      .set({ coverAssetId: assetId })
+      .where(eq(bookEditions.id, edition.id));
+    await writeAuditLog({
+      actorUserId,
+      action: "book.cover.edit",
+      entityType: "book",
+      entityId: bookId,
+      diff: {
+        title: book.title,
+        previousCoverAssetId: edition.previousCoverAssetId,
+        coverAssetId: assetId,
+      },
+    }, transaction);
+  });
+}

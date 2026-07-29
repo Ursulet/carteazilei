@@ -3,13 +3,13 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 
 import { and, desc, eq, isNull } from "drizzle-orm";
-import sharp, { type Metadata } from "sharp";
+import type { Metadata } from "sharp";
 import { z } from "zod";
 
 import { getDb } from "@/db";
 import { bookEditions, mediaAssets } from "@/db/schema";
 import { writeAuditLog } from "@/lib/audit/service";
-import { deleteMediaObject, putMediaObject } from "@/lib/storage/s3";
+import { deleteMediaObject, putMediaObject } from "@/lib/storage/media-storage";
 
 import { EditorialServiceError } from "./action-state";
 import { optionalStringValue, stringValue, zodFieldErrors } from "./form-data";
@@ -49,6 +49,7 @@ export async function uploadMedia(formData: FormData, actorUserId: string) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   let metadata: Metadata;
   try {
+    const { default: sharp } = await import("sharp");
     metadata = await sharp(bytes, { failOn: "warning", limitInputPixels: 40_000_000 }).metadata();
   } catch {
     throw new EditorialServiceError("Fișierul nu este o imagine validă sau este deteriorat.", { file: ["Încarcă JPEG, PNG, WebP sau AVIF."] });
@@ -64,7 +65,7 @@ export async function uploadMedia(formData: FormData, actorUserId: string) {
     await putMediaObject({ key, body: bytes, contentType: accepted.mime, checksumSha256Base64: hash.toString("base64") });
   } catch (error) {
     console.error(error);
-    throw new EditorialServiceError("Imaginea nu a putut fi trimisă în stocarea S3. Verifică configurarea serviciului.");
+    throw new EditorialServiceError("Imaginea nu a putut fi salvată. Verifică volumul persistent și configurarea stocării media.");
   }
 
   const db = getDb();
@@ -86,7 +87,7 @@ export async function uploadMedia(formData: FormData, actorUserId: string) {
       return asset.id;
     });
   } catch (error) {
-    await deleteMediaObject(key).catch((cleanupError) => console.error("S3 cleanup failed", cleanupError));
+    await deleteMediaObject(key).catch((cleanupError) => console.error("Media cleanup failed", cleanupError));
     throw error;
   }
 }
@@ -105,6 +106,6 @@ export async function deleteMedia(assetId: string, actorUserId: string) {
     await writeAuditLog({ actorUserId, action: "media.delete", entityType: "media_asset", entityId: assetId, metadata: { storageKey: asset.storageKey } }, transaction);
   });
   await deleteMediaObject(asset.storageKey).catch((error) =>
-    console.error("S3 object cleanup failed", error),
+    console.error("Media object cleanup failed", error),
   );
 }

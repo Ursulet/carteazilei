@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { getDb } from "@/db";
 import { mediaAssets } from "@/db/schema";
-import { getMediaObject } from "@/lib/storage/s3";
+import { readMediaObject } from "@/lib/storage/media-storage";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -29,9 +29,8 @@ export async function GET(
   if (!asset) return new NextResponse(null, { status: 404 });
 
   try {
-    const object = await getMediaObject(asset.storageKey);
-    if (!object.Body) return new NextResponse(null, { status: 404 });
-    return new NextResponse(object.Body.transformToWebStream(), {
+    const bytes = await readMediaObject(asset.storageKey);
+    return new NextResponse(Buffer.from(bytes), {
       headers: {
         "Cache-Control": "public, max-age=31536000, immutable",
         "Content-Length": String(asset.byteSize),

@@ -57,6 +57,81 @@ export async function getAdminEditorProfiles() {
     .orderBy(desc(editors.publicProfile), asc(editors.displayName));
 }
 
+export async function getAdminInternalUsers() {
+  return getDb()
+    .select({
+      userId: users.id,
+      name: users.name,
+      email: users.email,
+      active: users.active,
+      updatedAt: users.updatedAt,
+      editorId: editors.id,
+      displayName: editors.displayName,
+      slug: editors.slug,
+      publicProfile: editors.publicProfile,
+      roles: sql<string[]>`coalesce((
+        select array_agg(r.code order by r.code)
+        from user_roles ur join roles r on r.id = ur.role_id
+        where ur.user_id = ${users.id}
+      ), '{}'::text[])`,
+    })
+    .from(users)
+    .leftJoin(editors, and(eq(editors.userId, users.id), isNull(editors.deletedAt)))
+    .where(isNull(users.deletedAt))
+    .orderBy(desc(users.active), asc(users.name));
+}
+
+function editorSlug(value: string) {
+  const normalized = value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 70);
+  return normalized || "editor";
+}
+
+export async function createEditorProfileForUser(userId: string, actorUserId: string) {
+  const parsedUserId = z.uuid().safeParse(userId);
+  if (!parsedUserId.success) throw new EditorialServiceError("Utilizatorul nu este valid.");
+
+  const db = getDb();
+  return db.transaction(async (transaction) => {
+    const [account] = await transaction
+      .select({ id: users.id, name: users.name, active: users.active, editorId: editors.id })
+      .from(users)
+      .leftJoin(editors, and(eq(editors.userId, users.id), isNull(editors.deletedAt)))
+      .where(and(eq(users.id, parsedUserId.data), isNull(users.deletedAt)))
+      .limit(1);
+    if (!account) throw new EditorialServiceError("Utilizatorul nu mai există.");
+    if (!account.active) throw new EditorialServiceError("Profilul nu poate fi creat pentru un cont inactiv.");
+    if (account.editorId) return account.editorId;
+
+    const baseSlug = editorSlug(account.name);
+    const [slugCollision] = await transaction
+      .select({ id: editors.id })
+      .from(editors)
+      .where(eq(editors.slug, baseSlug))
+      .limit(1);
+    const slug = slugCollision ? `${baseSlug}-${account.id.slice(0, 6)}` : baseSlug;
+    const [profile] = await transaction
+      .insert(editors)
+      .values({ userId: account.id, displayName: account.name, slug, publicProfile: false })
+      .returning({ id: editors.id });
+    if (!profile) throw new EditorialServiceError("Profilul editorial nu a putut fi creat.");
+
+    await writeAuditLog({
+      actorUserId,
+      action: "editor.profile.create",
+      entityType: "editor",
+      entityId: profile.id,
+      diff: { displayName: account.name, slug, userId: account.id },
+    }, transaction);
+    return profile.id;
+  });
+}
+
 export async function getAdminEditorProfile(id: string) {
   const db = getDb();
   const [profile, media] = await Promise.all([

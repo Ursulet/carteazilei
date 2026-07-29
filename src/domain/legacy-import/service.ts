@@ -4,7 +4,6 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
 import { eq, isNull } from "drizzle-orm";
-import sharp from "sharp";
 
 import type { Database } from "@/db";
 import {
@@ -26,7 +25,7 @@ import {
   seoMetadata,
   themes,
 } from "@/db/schema";
-import { deleteMediaObject, putMediaObject } from "@/lib/storage/s3";
+import { deleteMediaObject, putMediaObject } from "@/lib/storage/media-storage";
 
 import type { LegacyImportConfig } from "./config";
 import type {
@@ -355,6 +354,7 @@ export async function runLegacyImport({
       return reject(context, "media", row.legacyId, error instanceof Error ? error.message : "Fișier media inaccesibil.");
     }
     if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) return reject(context, "media", row.legacyId, "Imaginea este goală sau depășește 5 MB.");
+    const { default: sharp } = await import("sharp");
     let metadata: Awaited<ReturnType<ReturnType<typeof sharp>["metadata"]>>;
     try {
       metadata = await sharp(bytes, { failOn: "warning", limitInputPixels: 40_000_000 }).metadata();

@@ -54,7 +54,7 @@ Dry-runul:
 - citește baza pentru duplicate și mapări existente;
 - validează fișierele media, formatul real, dimensiunile și limita de 5 MB;
 - simulează toate deciziile;
-- nu scrie în PostgreSQL și nu trimite fișiere în S3.
+- nu scrie în PostgreSQL și nu trimite fișiere în storage.
 
 ## Aplicare
 
@@ -64,7 +64,7 @@ După revizuirea raportului:
 pnpm legacy:import -- --input C:\migration\export.json --config C:\migration\mapping.json --apply
 ```
 
-Autorii, cărțile, recenziile și selecțiile sunt procesate în batch-uri tranzacționale. Media este excepția controlată: obiectul este încărcat prin adaptorul S3 înaintea tranzacției de metadata, iar la eșecul tranzacției se încearcă ștergerea obiectului. Cheia de stocare este deterministă după SHA-256 pentru deduplicare.
+Autorii, cărțile, recenziile și selecțiile sunt procesate în batch-uri tranzacționale. Media este excepția controlată: obiectul este încărcat prin adaptorul de storage înaintea tranzacției de metadata, iar la eșecul tranzacției se încearcă ștergerea obiectului. Cheia de stocare este deterministă după SHA-256 pentru deduplicare.
 
 ## Rapoarte
 

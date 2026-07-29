@@ -28,15 +28,16 @@ recomandare primesc `noindex` la nivel HTTP. Configurația completă este docume
 ## Origini externe și CSP
 
 Browserul poate încărca imagini HTTPS, însă conexiunile client rămân `self`.
-Fișierele S3 sunt servite public prin ruta same-origin `/media/[id]`; cheile S3
+Fișierele media sunt servite public prin ruta same-origin `/media/[id]`; cheile de storage
 rămân exclusiv pe server. Orice integrare browser nouă trebuie adăugată deliberat
 în CSP.
 
-## Stocare media locală
+## Stocare media
 
-CMS-ul media nu folosește discul local al aplicației. Pentru upload în dezvoltare
-configurează toate variabilele `S3_*` din `.env.example` către un serviciu
-S3-compatible. Activează `S3_FORCE_PATH_STYLE=true` numai dacă furnizorul cere
+Pentru dezvoltare, `MEDIA_STORAGE_DRIVER=local` și
+`MEDIA_LOCAL_ROOT=.local-storage/media` sunt suficiente. Pentru S3 setează
+`MEDIA_STORAGE_DRIVER=s3` și configurează toate variabilele `S3_*` din
+`.env.example`. Activează `S3_FORCE_PATH_STYLE=true` numai dacă furnizorul cere
 URL-uri de tip path-style.
 
 ## Validare

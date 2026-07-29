@@ -86,7 +86,7 @@ export default async function CommercialPartnersPage() {
           </dl>
         </article>
         <article className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
-          <div className="p-5"><h2 className="font-display text-2xl font-semibold">Performanță per ofertă</h2><p className="mt-1 text-xs leading-5 text-muted">Valori brute, fără filtrare de boți; pot fi rafinate în faza completă de analytics.</p></div>
+          <div className="p-5"><h2 className="font-display text-2xl font-semibold">Performanță per ofertă</h2><p className="mt-1 text-xs leading-5 text-muted">Clickuri, afișări și rata de accesare pentru fiecare ofertă.</p></div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[620px] text-left text-sm">
               <thead className="border-y border-border bg-paper text-xs uppercase tracking-wide text-muted"><tr><th className="px-5 py-3">Carte / partener</th><th className="px-5 py-3">Clickuri</th><th className="px-5 py-3">Afișări</th><th className="px-5 py-3">CTR</th></tr></thead>
@@ -97,7 +97,7 @@ export default async function CommercialPartnersPage() {
       </section>
 
       {rows.length === 0 ? (
-        <EmptyState>Nu există încă parteneri comerciali. Exemplele din brief nu au fost adăugate automat.</EmptyState>
+        <EmptyState>Nu există încă parteneri comerciali. Adaugă prima editură sau librărie pentru a putea crea oferte.</EmptyState>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
           <table className="w-full min-w-[900px] text-left text-sm">

@@ -55,8 +55,8 @@ de funcționare într-un mediu real.
 - Identificarea IP pentru rate limiting presupune că aplicația primește
   `CF-Connecting-IP`, `X-Real-IP` sau `X-Forwarded-For` numai de la proxy-ul de
   încredere. Coolify/proxy-ul trebuie configurat să suprascrie aceste headere.
-- Permisiunile bucketului S3, politica CORS, retenția și restaurarea backupurilor nu
-  pot fi demonstrate din repository.
+- Persistența volumului media, permisiunile de scriere pentru UID/GID `1001` și
+  restaurarea backupului acestui volum nu pot fi demonstrate din repository.
 - Dockerfile-ul și outputul standalone sunt prezente, dar imaginea nu a fost
   construită local deoarece daemonul/CLI-ul Docker nu este disponibil în acest mediu.
 - Nu există încă date de laborator sau de teren pentru LCP, INP și CLS.
@@ -80,8 +80,8 @@ notează rezultatul următoarelor verificări:
    orice regresie severă de LCP, INP sau CLS înainte de lansare.
 6. Confirmă pe domeniul final canonicalele, robots.txt, sitemap.xml, JSON-LD,
    Open Graph, paginile 404, redirecturile legacy și `noindex` pe admin/API.
-7. Confirmă HTTPS, headerele proxy, baza de date fără expunere publică, bucketul
-   privat, logurile fără secrete și rotația secretelor de bootstrap.
+7. Confirmă HTTPS, headerele proxy, baza de date fără expunere publică, volumul
+   media persistent, logurile fără secrete și rotația secretelor de bootstrap.
 8. Rulează importul legacy în mod dry-run, aprobă raportul de carantină și abia apoi
    execută importul real cu backup și plan de rollback.
 

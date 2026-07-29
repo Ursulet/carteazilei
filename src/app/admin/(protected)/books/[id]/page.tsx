@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { BookForm, type BookFormValues } from "@/components/admin/book-form";
+import { BookCoverUploadForm } from "@/components/admin/book-cover-upload-form";
 import { AdminPageHeader } from "@/components/admin/editorial-ui";
 import { getAdminBook, getBookFormOptions } from "@/db/queries/admin-editorial";
 import { canAccessSection } from "@/lib/auth/access";
 import { requireSectionAccess } from "@/lib/auth/principal";
 
-import { updateBookAction } from "../actions";
+import { updateBookAction, uploadBookCoverAction } from "../actions";
 
 export const metadata: Metadata = { title: "Editează cartea" };
 
@@ -48,5 +49,5 @@ export default async function EditBookPage({ params }: { params: Promise<{ id: s
     seoCanonical: record.seo?.canonicalOverride,
     seoIndexable: record.seo?.indexable,
   };
-  return <><AdminPageHeader eyebrow="Catalog" title={record.book.title} description="Editează fișa și verifică fiecare criteriu înainte să schimbi starea în «Publicată»." /><BookForm action={updateBookAction.bind(null, id)} values={values} options={options} gate={record.gate} bookId={id} canManageOffers={canAccessSection(principal.roles, "retailers")} /></>;
+  return <><AdminPageHeader eyebrow="Catalog" title={record.book.title} description="Editează fișa și verifică fiecare criteriu înainte să schimbi starea în «Publicată»." /><BookCoverUploadForm action={uploadBookCoverAction.bind(null, id)} bookTitle={record.book.title} currentCoverId={record.edition?.coverAssetId} /><BookForm action={updateBookAction.bind(null, id)} values={values} options={options} gate={record.gate} bookId={id} canManageOffers={canAccessSection(principal.roles, "retailers")} /></>;
 }

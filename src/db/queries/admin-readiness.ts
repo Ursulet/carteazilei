@@ -39,7 +39,7 @@ export const readinessIssueLabels: Record<ReadinessIssueKind, string> = {
   stale_offer: "Ofertă neverificată de peste 30 de zile",
   page_needs_review: "Pagină de carte care necesită revizie",
   daily_calendar_gap: "Gol în calendarul Cartea Zilei",
-  seo_hub_below_gate: "Hub SEO sub quality gate",
+  seo_hub_below_gate: "Pagină SEO incompletă",
 };
 
 type BookReadinessDbRow = {

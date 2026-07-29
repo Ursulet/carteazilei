@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1.7
+
+# One-off Coolify operations image. It intentionally has no Docker healthcheck:
+# Coolify scans the complete Dockerfile instead of only the selected build stage.
+FROM node:24-alpine AS migrator
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+ENV NEXT_TELEMETRY_DISABLED=1
+WORKDIR /app
+
+RUN apk add --no-cache libc6-compat \
+    && corepack enable \
+    && corepack prepare pnpm@11.6.0 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN --mount=type=cache,id=carteazilei-pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile
+
+COPY . .
+
+ENV NODE_ENV=production
+
+# Normal releases only migrate. The first deployment can additionally seed the
+# taxonomies and create the initial administrator with RUN_INITIAL_SETUP=true.
+# Keep the container alive after success so Coolify can retain and show its logs.
+CMD ["sh", "-c", "set -eu; pnpm db:migrate; if [ \"${RUN_INITIAL_SETUP:-false}\" = \"true\" ]; then pnpm db:seed; pnpm auth:create-admin; fi; echo '[carteazilei] Database operations completed successfully.'; tail -f /dev/null"]

@@ -24,4 +24,4 @@ ENV NODE_ENV=production
 # Normal releases only migrate. The first deployment can additionally seed the
 # taxonomies and create the initial administrator with RUN_INITIAL_SETUP=true.
 # Keep the container alive after success so Coolify can retain and show its logs.
-CMD ["sh", "-c", "set -eu; pnpm db:migrate; if [ \"${RUN_INITIAL_SETUP:-false}\" = \"true\" ]; then pnpm db:seed; pnpm auth:create-admin; fi; echo '[carteazilei] Database operations completed successfully.'; tail -f /dev/null"]
+CMD ["sh", "-c", "set -eu; pnpm db:migrate; if [ \"${RUN_INITIAL_SETUP:-false}\" = \"true\" ]; then echo '[carteazilei] Running initial seed and administrator bootstrap.'; pnpm db:seed; pnpm auth:create-admin; else echo '[carteazilei] Initial setup skipped: RUN_INITIAL_SETUP is not true.'; fi; echo '[carteazilei] Database operations completed successfully.'; tail -f /dev/null"]

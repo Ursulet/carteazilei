@@ -76,9 +76,7 @@ export const productEvents = pgTable(
         else false
       end`,
     ),
-    uniqueIndex("product_events_dedupe_key_unique")
-      .on(table.dedupeKey)
-      .where(sql`${table.dedupeKey} is not null`),
+    uniqueIndex("product_events_dedupe_key_unique").on(table.dedupeKey),
     index("product_events_name_occurred_idx").on(table.eventName, table.occurredAt),
     index("product_events_acquisition_occurred_idx").on(
       table.acquisitionChannel,

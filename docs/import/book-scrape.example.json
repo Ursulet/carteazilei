@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "1.0.0",
+  "sourceSystem": "libraria-exemplu",
+  "exportedAt": "2026-07-29T18:00:00.000Z",
+  "partners": [
+    {
+      "externalId": "partner:libraria-exemplu",
+      "name": "Librăria Exemplu",
+      "slug": "libraria-exemplu",
+      "type": "bookstore",
+      "website": "https://shop.example.com",
+      "defaultCta": "Vezi cartea la Librăria Exemplu",
+      "affiliate": false,
+      "commercialPartner": false
+    }
+  ],
+  "books": [
+    {
+      "externalId": "libraria-exemplu:produs-12345",
+      "sourceUrl": "https://shop.example.com/carti/dune",
+      "scrapedAt": "2026-07-29T17:55:00.000Z",
+      "title": "Dune",
+      "originalTitle": "Dune",
+      "authors": [
+        {
+          "externalId": "libraria-exemplu:autor-frank-herbert",
+          "name": "Frank Herbert",
+          "role": "author",
+          "primary": true,
+          "profileUrl": "https://shop.example.com/autori/frank-herbert"
+        },
+        {
+          "externalId": "libraria-exemplu:traducator-exemplu",
+          "name": "Traducător Exemplu",
+          "role": "translator",
+          "primary": false
+        }
+      ],
+      "edition": {
+        "externalId": "libraria-exemplu:editie-12345",
+        "isbn13": "9780000000002",
+        "publisher": "Editura Exemplu",
+        "publicationYear": 2025,
+        "language": "ro",
+        "pageCount": 640,
+        "editionLabel": "Ediție în limba română",
+        "formatLabel": "Paperback"
+      },
+      "cover": {
+        "externalId": "libraria-exemplu:coperta-12345",
+        "url": "https://cdn.example.com/covers/dune.jpg",
+        "altText": "Coperta ediției în limba română a cărții Dune",
+        "sourceUrl": "https://shop.example.com/carti/dune",
+        "rightsStatus": "unknown"
+      },
+      "sourceContent": {
+        "synopsis": "Textul descriptiv furnizat pe pagina sursă, păstrat pentru revizuire editorială.",
+        "sourceUrl": "https://shop.example.com/carti/dune",
+        "rightsStatus": "unknown"
+      },
+      "sourceCategories": [
+        "SF",
+        "Literatură universală"
+      ],
+      "classificationCandidates": {
+        "genres": ["science-fiction"],
+        "themes": ["putere"],
+        "moods": ["captivant"],
+        "audiences": ["adulti"]
+      },
+      "offers": [
+        {
+          "partnerExternalId": "partner:libraria-exemplu",
+          "sourceSku": "produs-12345",
+          "purchaseUrl": "https://shop.example.com/carti/dune",
+          "price": "59.90",
+          "listPrice": "69.90",
+          "currency": "RON",
+          "availability": "in_stock",
+          "stockText": "În stoc",
+          "affiliateMode": "inherit",
+          "commercialPlacement": "none",
+          "ctaLabel": "Vezi oferta",
+          "displayOrder": 100,
+          "checkedAt": "2026-07-29T17:55:00.000Z"
+        }
+      ]
+    }
+  ]
+}

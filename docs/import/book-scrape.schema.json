@@ -1,0 +1,403 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carteazilei.ro/schemas/book-scrape-import-v1.json",
+  "title": "CarteaZilei scraped book import",
+  "description": "Contract between a scraper and the reviewed CarteaZilei catalog import.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sourceSystem", "exportedAt", "partners", "books"],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "sourceSystem": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "partners": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/partner"
+      }
+    },
+    "books": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/book"
+      }
+    }
+  },
+  "$defs": {
+    "httpsUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "externalId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "partner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["externalId", "name", "slug", "type", "website"],
+      "properties": {
+        "externalId": {
+          "$ref": "#/$defs/externalId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 200
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "maxLength": 200
+        },
+        "type": {
+          "enum": ["publisher", "bookstore", "marketplace", "distributor"]
+        },
+        "website": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "defaultCta": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "affiliate": {
+          "type": "boolean",
+          "default": false
+        },
+        "commercialPartner": {
+          "type": "boolean",
+          "default": false
+        },
+        "affiliateDisclosure": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      }
+    },
+    "contributor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["externalId", "name", "role", "primary"],
+      "properties": {
+        "externalId": {
+          "$ref": "#/$defs/externalId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "role": {
+          "enum": ["author", "editor", "translator", "illustrator", "contributor"]
+        },
+        "primary": {
+          "type": "boolean"
+        },
+        "profileUrl": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "bioSourceText": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        },
+        "bioSourceUrl": {
+          "$ref": "#/$defs/httpsUrl"
+        }
+      }
+    },
+    "edition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["externalId", "language"],
+      "properties": {
+        "externalId": {
+          "$ref": "#/$defs/externalId"
+        },
+        "isbn10": {
+          "type": "string",
+          "pattern": "^[0-9X]{10}$"
+        },
+        "isbn13": {
+          "type": "string",
+          "pattern": "^[0-9]{13}$"
+        },
+        "publisher": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "publicationYear": {
+          "type": "integer",
+          "minimum": 1450,
+          "maximum": 3000
+        },
+        "publicationDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "language": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}(?:-[A-Z]{2})?$",
+          "maxLength": 12
+        },
+        "pageCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "editionLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "formatLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        }
+      }
+    },
+    "cover": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["externalId", "url", "altText", "sourceUrl", "rightsStatus"],
+      "properties": {
+        "externalId": {
+          "$ref": "#/$defs/externalId"
+        },
+        "url": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "altText": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 500
+        },
+        "sourceUrl": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "rightsStatus": {
+          "enum": ["unknown", "publisher_supplied", "licensed", "owned"]
+        },
+        "attribution": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    },
+    "sourceContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["synopsis", "sourceUrl", "rightsStatus"],
+      "properties": {
+        "synopsis": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        },
+        "sourceUrl": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "rightsStatus": {
+          "enum": ["unknown", "publisher_supplied", "licensed", "owned"]
+        }
+      }
+    },
+    "classificationCandidates": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "genres": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 20,
+          "items": {
+            "enum": ["fictiune", "fantasy", "science-fiction", "thriller", "crime", "romance", "istorie", "business", "psihologie", "dezvoltare-personala", "parenting", "memorii"]
+          }
+        },
+        "themes": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 30,
+          "items": {
+            "enum": ["sens", "identitate", "putere", "familie", "doliu", "leadership", "productivitate", "anxietate"]
+          }
+        },
+        "moods": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 20,
+          "items": {
+            "enum": ["captivant", "relaxant", "emotionant", "provocator", "optimist", "intunecat", "inspirational"]
+          }
+        },
+        "audiences": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 20,
+          "items": {
+            "enum": ["adulti", "young-adult", "copii-9-12", "copii-6-8", "lectura-impreuna"]
+          }
+        }
+      }
+    },
+    "offer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["partnerExternalId", "purchaseUrl", "availability", "affiliateMode", "commercialPlacement", "checkedAt"],
+      "dependentRequired": {
+        "price": ["currency"],
+        "listPrice": ["currency"]
+      },
+      "properties": {
+        "partnerExternalId": {
+          "$ref": "#/$defs/externalId"
+        },
+        "sourceSku": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "purchaseUrl": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "price": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)(?:\\.[0-9]{1,2})?$"
+        },
+        "listPrice": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)(?:\\.[0-9]{1,2})?$"
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "availability": {
+          "enum": ["in_stock", "out_of_stock", "preorder", "unknown"]
+        },
+        "stockText": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "affiliateMode": {
+          "enum": ["inherit", "yes", "no"]
+        },
+        "commercialPlacement": {
+          "enum": ["none", "promoted", "commercial_partnership"]
+        },
+        "ctaLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "displayOrder": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100000
+        },
+        "checkedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "book": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["externalId", "sourceUrl", "scrapedAt", "title", "authors", "edition", "offers"],
+      "properties": {
+        "externalId": {
+          "$ref": "#/$defs/externalId"
+        },
+        "sourceUrl": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "scrapedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "subtitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "originalTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "authors": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 30,
+          "items": {
+            "$ref": "#/$defs/contributor"
+          },
+          "contains": {
+            "type": "object",
+            "required": ["primary"],
+            "properties": {
+              "primary": {
+                "const": true
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        "edition": {
+          "$ref": "#/$defs/edition"
+        },
+        "cover": {
+          "$ref": "#/$defs/cover"
+        },
+        "sourceContent": {
+          "$ref": "#/$defs/sourceContent"
+        },
+        "sourceCategories": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "classificationCandidates": {
+          "$ref": "#/$defs/classificationCandidates"
+        },
+        "offers": {
+          "type": "array",
+          "maxItems": 30,
+          "items": {
+            "$ref": "#/$defs/offer"
+          }
+        }
+      }
+    }
+  }
+}

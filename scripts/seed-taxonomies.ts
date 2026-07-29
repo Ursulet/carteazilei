@@ -1,0 +1,158 @@
+import { sql } from "drizzle-orm";
+
+import { createCliDatabaseConnection } from "@/db/cli";
+import {
+  audiences,
+  genres,
+  moods,
+  readingTraits,
+  roles,
+  themes,
+} from "@/db/schema";
+
+const roleSeed = [
+  {
+    code: "admin" as const,
+    name: "Administrator",
+    description: "Acces complet la conținut, utilizatori și configurare.",
+  },
+  {
+    code: "editor" as const,
+    name: "Editor",
+    description: "Creare, revizuire și publicare de conținut editorial.",
+  },
+  {
+    code: "analyst" as const,
+    name: "Analist",
+    description: "Acces read-only la analytics și feedback-ul recomandărilor.",
+  },
+];
+
+const genreSeed = [
+  ["Ficțiune", "fictiune"],
+  ["Fantasy", "fantasy"],
+  ["Science-fiction", "science-fiction"],
+  ["Thriller", "thriller"],
+  ["Crime", "crime"],
+  ["Romance", "romance"],
+  ["Istorie", "istorie"],
+  ["Business", "business"],
+  ["Psihologie", "psihologie"],
+  ["Dezvoltare personală", "dezvoltare-personala"],
+  ["Parenting", "parenting"],
+  ["Memorii", "memorii"],
+] as const;
+
+const themeSeed = [
+  ["Sens", "sens"],
+  ["Identitate", "identitate"],
+  ["Putere", "putere"],
+  ["Familie", "familie"],
+  ["Doliu", "doliu"],
+  ["Leadership", "leadership"],
+  ["Productivitate", "productivitate"],
+  ["Anxietate", "anxietate"],
+] as const;
+
+const moodSeed = [
+  ["Captivant", "captivant"],
+  ["Relaxant", "relaxant"],
+  ["Emoționant", "emotionant"],
+  ["Provocator", "provocator"],
+  ["Optimist", "optimist"],
+  ["Întunecat", "intunecat"],
+  ["Inspirațional", "inspirational"],
+] as const;
+
+const audienceSeed = [
+  { name: "Adulți", slug: "adulti", minimumAge: 18, maximumAge: null },
+  { name: "Young adult", slug: "young-adult", minimumAge: 13, maximumAge: 18 },
+  { name: "Copii 9–12 ani", slug: "copii-9-12", minimumAge: 9, maximumAge: 12 },
+  { name: "Copii 6–8 ani", slug: "copii-6-8", minimumAge: 6, maximumAge: 8 },
+  { name: "Lectură împreună", slug: "lectura-impreuna", minimumAge: 0, maximumAge: 8 },
+] as const;
+
+const readingTraitSeed = [
+  ["pace", "Ritm"],
+  ["complexity", "Complexitate"],
+  ["emotional_intensity", "Intensitate emoțională"],
+  ["world_building", "World-building"],
+  ["romance", "Romance"],
+  ["violence", "Violență"],
+  ["philosophical_depth", "Profunzime filozofică"],
+  ["practical_density", "Densitate practică"],
+  ["ambiguity", "Ambiguitate"],
+  ["humor", "Umor"],
+] as const;
+
+async function seed() {
+  const { db, client } = createCliDatabaseConnection();
+
+  try {
+    await db.transaction(async (transaction) => {
+      await transaction
+        .insert(roles)
+        .values(roleSeed)
+        .onConflictDoUpdate({
+          target: roles.code,
+          set: {
+            name: sql`excluded.name`,
+            description: sql`excluded.description`,
+            updatedAt: new Date(),
+          },
+        });
+
+      await transaction
+        .insert(genres)
+        .values(genreSeed.map(([name, slug]) => ({ name, slug })))
+        .onConflictDoUpdate({
+          target: genres.slug,
+          set: { name: sql`excluded.name`, updatedAt: new Date() },
+        });
+
+      await transaction
+        .insert(themes)
+        .values(themeSeed.map(([name, slug]) => ({ name, slug })))
+        .onConflictDoUpdate({
+          target: themes.slug,
+          set: { name: sql`excluded.name`, updatedAt: new Date() },
+        });
+
+      await transaction
+        .insert(moods)
+        .values(moodSeed.map(([name, slug]) => ({ name, slug })))
+        .onConflictDoUpdate({
+          target: moods.slug,
+          set: { name: sql`excluded.name`, updatedAt: new Date() },
+        });
+
+      await transaction
+        .insert(audiences)
+        .values(audienceSeed.map((audience) => ({ ...audience })))
+        .onConflictDoUpdate({
+          target: audiences.slug,
+          set: {
+            name: sql`excluded.name`,
+            minimumAge: sql`excluded.minimum_age`,
+            maximumAge: sql`excluded.maximum_age`,
+            updatedAt: new Date(),
+          },
+        });
+
+      await transaction
+        .insert(readingTraits)
+        .values(readingTraitSeed.map(([code, name]) => ({ code, name })))
+        .onConflictDoUpdate({
+          target: readingTraits.code,
+          set: { name: sql`excluded.name`, updatedAt: new Date() },
+        });
+    });
+  } finally {
+    await client.end({ timeout: 5 });
+  }
+}
+
+seed().catch((error: unknown) => {
+  console.error("Seed-ul taxonomiilor a eșuat.", error);
+  process.exitCode = 1;
+});

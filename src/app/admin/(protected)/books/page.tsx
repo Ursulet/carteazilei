@@ -1,0 +1,29 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+import { ConfirmDeleteForm } from "@/components/admin/confirm-delete-form";
+import { AdminPageHeader, EmptyState, StatusBadge } from "@/components/admin/editorial-ui";
+import { getAdminBooks } from "@/db/queries/admin-editorial";
+import { requireSectionAccess } from "@/lib/auth/principal";
+
+import { deleteBookAction } from "./actions";
+
+export const metadata: Metadata = { title: "Cărți" };
+
+export default async function BooksPage() {
+  await requireSectionAccess("books");
+  const rows = await getAdminBooks();
+  return (
+    <>
+      <AdminPageHeader eyebrow="Catalog" title="Cărți" description="Opera editorială, edițiile și completitudinea necesară publicării." action={{ href: "/admin/books/new", label: "Carte nouă" }} />
+      {rows.length === 0 ? <EmptyState>Nu există încă nicio carte. Creează autorul, apoi prima înregistrare editorială.</EmptyState> : (
+        <div className="overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
+            <thead className="border-b border-border bg-paper text-xs uppercase tracking-wide text-muted"><tr><th className="px-5 py-4">Titlu / autor</th><th className="px-5 py-4">Stare</th><th className="px-5 py-4">Încredere</th><th className="px-5 py-4">Câmpuri lipsă</th><th className="px-5 py-4">Actualizată</th><th className="px-5 py-4"><span className="sr-only">Acțiuni</span></th></tr></thead>
+            <tbody>{rows.map((book) => <tr key={book.id} className="border-b border-border/70 align-top last:border-0"><td className="px-5 py-4"><Link href={`/admin/books/${book.id}`} className="font-bold text-foreground underline decoration-border underline-offset-4 hover:decoration-brand">{book.title}</Link><span className="mt-1 block text-xs text-muted">{book.author}</span></td><td className="px-5 py-4"><StatusBadge status={book.status} /></td><td className="px-5 py-4 font-semibold">{book.confidence}%</td><td className="max-w-md px-5 py-4">{book.missingFields.length ? <details><summary className="cursor-pointer font-semibold text-danger">{book.missingFields.length} de completat</summary><ul className="mt-2 list-disc space-y-1 ps-5 text-xs text-muted">{book.missingFields.map((field) => <li key={field}>{field}</li>)}</ul></details> : <span className="font-semibold text-brand">Completă</span>}</td><td className="px-5 py-4 text-muted">{new Intl.DateTimeFormat("ro-RO", { dateStyle: "medium", timeStyle: "short" }).format(book.updatedAt)}</td><td className="px-5 py-4"><ConfirmDeleteForm action={deleteBookAction.bind(null, book.id)} /></td></tr>)}</tbody>
+          </table>
+        </div>
+      )}
+    </>
+  );
+}

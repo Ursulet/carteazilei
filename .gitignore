@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Next.js output
+.next/
+out/
+
+# Production output
+build/
+dist/
+
+# Environment files (the example file remains versioned)
+.env
+.env.local
+.env.*.local
+
+# Tooling
+*.tsbuildinfo
+.eslintcache
+
+# Logs
+*.log
+pnpm-debug.log*
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local uploads and generated artifacts
+.local-storage/
+coverage/
+playwright-report/
+test-results/

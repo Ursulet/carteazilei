@@ -1,0 +1,49 @@
+{
+  "name": "carteazilei-ro",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Platformă editorială românească pentru descoperirea și recomandarea de cărți.",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "packageManager": "pnpm@11.6.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx scripts/seed-taxonomies.ts",
+    "db:studio": "drizzle-kit studio",
+    "auth:create-admin": "tsx scripts/create-admin.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1095.0",
+    "@radix-ui/react-dialog": "1.1.23",
+    "argon2": "0.45.1",
+    "drizzle-orm": "0.45.2",
+    "lucide-react": "1.27.0",
+    "next": "16.2.12",
+    "next-auth": "4.24.15",
+    "postgres": "3.4.9",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "0.0.1",
+    "sharp": "0.35.3",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "drizzle-kit": "0.31.10",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.2.12",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

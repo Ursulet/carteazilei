@@ -20,6 +20,8 @@ export type BookFormValues = {
   authorId?: string | null;
   summary?: string | null;
   verdict?: string | null;
+  whyRead?: string | null;
+  whyNot?: string | null;
   strengths?: string[];
   caveats?: string[];
   status?: string;
@@ -70,12 +72,13 @@ function ChoiceGroup({ legend, name, options, selected = [] }: { legend: string;
   );
 }
 
-export function BookForm({ action, values = {}, options, gate = [], bookId }: {
+export function BookForm({ action, values = {}, options, gate = [], bookId, canManageOffers = false }: {
   action: (state: EditorialActionState, formData: FormData) => Promise<EditorialActionState>;
   values?: BookFormValues;
   options: BookOptions;
   gate?: PublishingGateItem[];
   bookId?: string;
+  canManageOffers?: boolean;
 }) {
   const [state, formAction] = useActionState(action, initialEditorialActionState);
   const errors = state.fieldErrors ?? {};
@@ -98,6 +101,10 @@ export function BookForm({ action, values = {}, options, gate = [], bookId }: {
       <FormSection title="Conținut editorial" description="Text fără spoilere, argumente și limite explicite.">
         <div className="grid gap-5">
           <label className={labelClass}>Verdict scurt<textarea name="verdict" rows={3} defaultValue={values.verdict ?? ""} className={fieldClass} /></label>
+          <div className="grid gap-5 md:grid-cols-2">
+            <label className={labelClass}>Merită să o citești dacă…<textarea name="whyRead" rows={5} defaultValue={values.whyRead ?? ""} className={fieldClass} /></label>
+            <label className={labelClass}>Poate să nu fie pentru tine dacă…<textarea name="whyNot" rows={5} defaultValue={values.whyNot ?? ""} className={fieldClass} /></label>
+          </div>
           <label className={labelClass}>Rezumat fără spoilere<textarea name="summary" rows={7} defaultValue={values.summary ?? ""} className={fieldClass} /></label>
           <div className="grid gap-5 md:grid-cols-2">
             <label className={labelClass}>Puncte forte — unul pe linie<textarea name="strengths" rows={6} defaultValue={values.strengths?.join("\n") ?? ""} className={fieldClass} /></label>
@@ -150,6 +157,7 @@ export function BookForm({ action, values = {}, options, gate = [], bookId }: {
       {(state.gate ?? gate).length ? <PublishingChecklist items={state.gate ?? gate} /> : null}
       <div className="flex flex-wrap items-center gap-3">
         <SubmitButton>{bookId ? "Salvează modificările" : "Creează cartea"}</SubmitButton>
+        {bookId && canManageOffers ? <Link href={`/admin/books/${bookId}/offers`} className="inline-flex min-h-11 items-center rounded-full border border-brand px-5 text-sm font-bold text-brand hover:bg-accent-soft">Oferte & afiliere</Link> : null}
         {bookId ? <Link href={`/admin/preview/book/${bookId}`} target="_blank" className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">Previzualizare protejată</Link> : null}
         <Link href="/admin/books" className="text-sm font-semibold text-muted hover:text-foreground">Renunță</Link>
       </div>

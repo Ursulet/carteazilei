@@ -12,12 +12,23 @@ const optionalUrl = z.preprocess(
   z.url().optional(),
 );
 
+const optionalEmail = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.email().optional(),
+);
+
 const serverEnvSchema = z
   .object({
     DATABASE_URL: z.string().min(1, "DATABASE_URL lipsește."),
     AUTH_SECRET: z.string().min(32, "AUTH_SECRET trebuie să aibă minimum 32 de caractere."),
     NEXTAUTH_URL: z.url(),
     NEXT_PUBLIC_SITE_URL: z.url(),
+    HEALTHCHECK_DATABASE: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
+    SEO_HUB_MINIMUM_BOOKS: z.coerce.number().int().min(5).max(50).default(5),
+    PUBLIC_CONTACT_EMAIL: optionalEmail,
     S3_ENDPOINT: optionalUrl,
     S3_REGION: optionalString,
     S3_BUCKET: optionalString,
@@ -55,6 +66,9 @@ export function getServerEnv(): ServerEnv {
     AUTH_SECRET: process.env.AUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    HEALTHCHECK_DATABASE: process.env.HEALTHCHECK_DATABASE,
+    SEO_HUB_MINIMUM_BOOKS: process.env.SEO_HUB_MINIMUM_BOOKS,
+    PUBLIC_CONTACT_EMAIL: process.env.PUBLIC_CONTACT_EMAIL,
     S3_ENDPOINT: process.env.S3_ENDPOINT,
     S3_REGION: process.env.S3_REGION,
     S3_BUCKET: process.env.S3_BUCKET,

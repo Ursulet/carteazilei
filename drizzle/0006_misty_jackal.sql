@@ -1,0 +1,2 @@
+ALTER TABLE "recommendation_sessions" ADD COLUMN "result_token_hash" text;--> statement-breakpoint
+ALTER TABLE "recommendation_sessions" ADD CONSTRAINT "recommendation_sessions_result_token_hash_unique" UNIQUE("result_token_hash");

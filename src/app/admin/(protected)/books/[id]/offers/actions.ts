@@ -1,0 +1,64 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+import {
+  deleteBookOffer,
+  parseBookOfferFormData,
+  saveBookOffer,
+} from "@/domain/commercial/commercial-service";
+import type { EditorialActionState } from "@/domain/editorial/action-state";
+import { toActionState } from "@/domain/editorial/action-state";
+import { requireMutationAccess } from "@/lib/auth/principal";
+
+function revalidateCommercialBookPaths(bookId: string) {
+  revalidatePath(`/admin/books/${bookId}/offers`);
+  revalidatePath(`/admin/books/${bookId}`);
+  revalidatePath("/admin/daily-features");
+  revalidatePath("/carte", "layout");
+  revalidatePath("/cartea-zilei", "layout");
+}
+
+export async function createBookOfferAction(
+  bookId: string,
+  _state: EditorialActionState,
+  formData: FormData,
+): Promise<EditorialActionState> {
+  const principal = await requireMutationAccess("retailers");
+  try {
+    await saveBookOffer(bookId, parseBookOfferFormData(formData), principal.id);
+  } catch (error) {
+    return toActionState(error);
+  }
+  revalidateCommercialBookPaths(bookId);
+  redirect(`/admin/books/${bookId}/offers`);
+}
+
+export async function updateBookOfferAction(
+  bookId: string,
+  offerId: string,
+  _state: EditorialActionState,
+  formData: FormData,
+): Promise<EditorialActionState> {
+  const principal = await requireMutationAccess("retailers");
+  try {
+    await saveBookOffer(
+      bookId,
+      parseBookOfferFormData(formData),
+      principal.id,
+      offerId,
+    );
+  } catch (error) {
+    return toActionState(error);
+  }
+  revalidateCommercialBookPaths(bookId);
+  redirect(`/admin/books/${bookId}/offers`);
+}
+
+export async function deleteBookOfferAction(bookId: string, offerId: string) {
+  const principal = await requireMutationAccess("retailers");
+  await deleteBookOffer(bookId, offerId, principal.id);
+  revalidateCommercialBookPaths(bookId);
+  redirect(`/admin/books/${bookId}/offers`);
+}

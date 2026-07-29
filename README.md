@@ -41,7 +41,7 @@ Mesaje suport:
 Nu îi da toate prompturile simultan. Rulează-le pe rând.
 
 La finalul fiecărui prompt, agentul trebuie:
-1. să ruleze typecheck/lint/test/build;
+1. să ruleze typecheck/lint/build; testele și QA-ul sunt amânate la deployment prin decizia proprietarului;
 2. să listeze fișierele modificate;
 3. să raporteze deciziile și deviațiile;
 4. să nu înceapă etapa următoare până nu primește aprobarea.
@@ -60,3 +60,9 @@ La finalul fiecărui prompt, agentul trebuie:
 - checkout propriu.
 
 Primul obiectiv este să devenim **cei mai buni la alegerea următoarei cărți**.
+
+## Documentația implementării
+
+Deciziile tehnice livrate sunt documentate în `docs/`. Pentru canonicale, crawl control, sitemap, JSON-LD, social cards, redirecturile legacy și checklistul de lansare, vezi [`docs/TECHNICAL_SEO.md`](docs/TECHNICAL_SEO.md). Pentru pipeline-ul idempotent de migrare și carantina recenziilor, vezi [`docs/LEGACY_IMPORT_AND_QUARANTINE.md`](docs/LEGACY_IMPORT_AND_QUARANTINE.md).
+
+Verdictul curent și porțile care trebuie validate în mediul final sunt menținute în [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md). Configurația Coolify, migrațiile one-off, backupul, restaurarea și rollbackul sunt descrise în [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Țintele editoriale, dashboardul și ritmul operațional de după lansare sunt definite în [`docs/LAUNCH_CONTENT_30_DAY_PLAN.md`](docs/LAUNCH_CONTENT_30_DAY_PLAN.md).

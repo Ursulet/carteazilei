@@ -9,6 +9,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -16,6 +17,8 @@ import { books } from "./catalog";
 import {
   recommendationBranchValues,
   recommendationFeedbackActionValues,
+  recommendationQuizEventTypeValues,
+  recommendationQuizStepValues,
   recommendationSessionStatusValues,
   uuidPrimaryKey,
 } from "./common";
@@ -38,6 +41,7 @@ export const recommendationSessions = pgTable(
   {
     id: uuidPrimaryKey(),
     opaqueToken: text("opaque_token").notNull().unique(),
+    resultTokenHash: text("result_token_hash").unique(),
     anonymousSessionId: text("anonymous_session_id").notNull(),
     userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
     branch: text("branch", { enum: recommendationBranchValues }).notNull(),
@@ -65,6 +69,65 @@ export const recommendationSessions = pgTable(
     index("recommendation_sessions_anonymous_id_idx").on(table.anonymousSessionId),
     index("recommendation_sessions_expires_at_idx").on(table.expiresAt),
     index("recommendation_sessions_user_id_idx").on(table.userId),
+  ],
+);
+
+export const recommendationQuizEvents = pgTable(
+  "recommendation_quiz_events",
+  {
+    id: uuidPrimaryKey(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => recommendationSessions.id, { onDelete: "cascade" }),
+    eventType: text("event_type", { enum: recommendationQuizEventTypeValues })
+      .notNull(),
+    step: text("step", { enum: recommendationQuizStepValues }),
+    occurredAt: timestamp("occurred_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "recommendation_quiz_events_type_valid",
+      sql`${table.eventType} in ('started', 'step_completed', 'completed')`,
+    ),
+    check(
+      "recommendation_quiz_events_step_valid",
+      sql`(${table.eventType} = 'step_completed' and ${table.step} in ('need', 'genres', 'pace', 'length', 'liked_book', 'deal_breakers')) or (${table.eventType} <> 'step_completed' and ${table.step} is null)`,
+    ),
+    uniqueIndex("recommendation_quiz_events_session_step_unique")
+      .on(table.sessionId, table.step)
+      .where(sql`${table.eventType} = 'step_completed'`),
+    uniqueIndex("recommendation_quiz_events_session_started_unique")
+      .on(table.sessionId)
+      .where(sql`${table.eventType} = 'started'`),
+    uniqueIndex("recommendation_quiz_events_session_completed_unique")
+      .on(table.sessionId)
+      .where(sql`${table.eventType} = 'completed'`),
+    index("recommendation_quiz_events_type_occurred_idx").on(
+      table.eventType,
+      table.occurredAt,
+    ),
+    index("recommendation_quiz_events_session_id_idx").on(table.sessionId),
+  ],
+);
+
+export const recommendationRateLimits = pgTable(
+  "recommendation_rate_limits",
+  {
+    keyHash: text("key_hash").primaryKey(),
+    requests: integer("requests").default(0).notNull(),
+    windowStartedAt: timestamp("window_started_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    blockedUntil: timestamp("blocked_until", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check("recommendation_rate_limits_requests_positive", sql`${table.requests} >= 0`),
+    index("recommendation_rate_limits_updated_at_idx").on(table.updatedAt),
   ],
 );
 
@@ -126,4 +189,3 @@ export const recommendationFeedback = pgTable(
     index("recommendation_feedback_created_at_idx").on(table.createdAt),
   ],
 );
-

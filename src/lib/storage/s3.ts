@@ -1,6 +1,6 @@
 import "server-only";
 
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 import { getServerEnv } from "@/lib/env/server";
 
@@ -48,4 +48,9 @@ export async function putMediaObject(input: {
 export async function deleteMediaObject(key: string) {
   const env = storageConfiguration();
   await getClient().send(new DeleteObjectCommand({ Bucket: env.S3_BUCKET!, Key: key }));
+}
+
+export async function getMediaObject(key: string) {
+  const env = storageConfiguration();
+  return getClient().send(new GetObjectCommand({ Bucket: env.S3_BUCKET!, Key: key }));
 }

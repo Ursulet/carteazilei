@@ -28,7 +28,7 @@ export default async function AdminDashboardPage() {
           Bun venit, {principal.name}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted sm:text-base">
-          Shell-ul editorial este securizat. Modulele apar în meniu numai dacă rolurile active din baza de date permit accesul.
+          Modulele editoriale, comerciale și de analiză apar numai dacă rolurile active permit accesul. Datele publice și rapoartele folosesc aceleași surse validate.
         </p>
       </div>
 
@@ -60,9 +60,9 @@ export default async function AdminDashboardPage() {
           <p className="text-xs font-bold tracking-[0.14em] text-white/60 uppercase">
             Etapa curentă
           </p>
-          <p className="mt-3 text-lg font-semibold">Fundația administrării</p>
+          <p className="mt-3 text-lg font-semibold">Platformă editorială operațională</p>
           <p className="mt-2 text-sm leading-6 text-white/70">
-            CRUD-ul editorial începe în faza următoare, după acest boundary de securitate.
+            Catalogul, Cartea Zilei, recomandările, partenerii, hub-urile SEO și profilele editoriale sunt conectate la fluxurile operaționale.
           </p>
         </aside>
       </div>
@@ -100,4 +100,3 @@ export default async function AdminDashboardPage() {
     </div>
   );
 }
-

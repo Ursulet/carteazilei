@@ -10,6 +10,7 @@ import {
   bookEditions,
   bookGenres,
   bookMoods,
+  bookOffers,
   bookThemes,
   bookTraitScores,
   books,
@@ -23,6 +24,7 @@ import {
   seoMetadata,
   themes,
   users,
+  retailers,
 } from "@/db/schema";
 import { evaluateBookPublishingGate } from "@/domain/editorial/publishing-gate";
 
@@ -166,13 +168,34 @@ export async function getPublishedPreviewBook(bookId: string, db: Database = get
 }
 
 export async function getDailyFeatureOptions(db: Database = getDb()) {
-  const [bookRows, editorRows] = await Promise.all([
+  const [bookRows, editorRows, offerRows] = await Promise.all([
     db.select({ id: books.id, title: books.title, status: books.status }).from(books)
       .where(and(isNull(books.deletedAt), sql`${books.status} <> 'archived'`)).orderBy(asc(books.title)),
     db.select({ id: editors.id, displayName: editors.displayName }).from(editors)
       .where(isNull(editors.deletedAt)).orderBy(asc(editors.displayName)),
+    db.select({
+      id: bookOffers.id,
+      bookId: bookEditions.bookId,
+      bookTitle: books.title,
+      partnerName: retailers.name,
+      price: bookOffers.price,
+      currency: bookOffers.currency,
+      isPrimary: bookOffers.isPrimary,
+    }).from(bookOffers)
+      .innerJoin(bookEditions, eq(bookEditions.id, bookOffers.editionId))
+      .innerJoin(books, eq(books.id, bookEditions.bookId))
+      .innerJoin(retailers, eq(retailers.id, bookOffers.retailerId))
+      .where(and(
+        eq(bookOffers.active, true),
+        isNull(bookOffers.deletedAt),
+        eq(bookEditions.active, true),
+        isNull(bookEditions.deletedAt),
+        eq(retailers.active, true),
+        isNull(retailers.deletedAt),
+      ))
+      .orderBy(asc(books.title), desc(bookOffers.isPrimary), asc(bookOffers.displayOrder), asc(retailers.name)),
   ]);
-  return { books: bookRows, editors: editorRows };
+  return { books: bookRows, editors: editorRows, offers: offerRows };
 }
 
 export async function getAdminDailyFeatures(db: Database = getDb()) {

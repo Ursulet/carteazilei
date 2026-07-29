@@ -1,0 +1,13 @@
+{
+  "sourceSystem": "carteazilei-legacy",
+  "batchSize": 100,
+  "mediaRoot": "../legacy-media",
+  "legacyOrigins": [],
+  "taxonomyMappings": {
+    "genres": {},
+    "themes": {},
+    "moods": {}
+  },
+  "retailerHosts": {},
+  "verifiedDailyFeatures": {}
+}

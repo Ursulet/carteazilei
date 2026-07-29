@@ -36,6 +36,7 @@ export function FieldError({ errors }: { errors?: string[] }) {
 export const statusLabels: Record<string, string> = {
   draft: "Ciornă",
   needs_review: "Necesită revizie",
+  review: "În revizie",
   ready: "Pregătită",
   scheduled: "Programată",
   published: "Publicată",

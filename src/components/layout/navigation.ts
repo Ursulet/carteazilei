@@ -7,10 +7,10 @@ export const primaryNavigation = [
 ] as const;
 
 export const footerNavigation = [
+  { href: "/echipa", label: "Echipa" },
   { href: "/cum-recomandam", label: "Cum recomandăm" },
   { href: "/politica-editoriala", label: "Politica editorială" },
   { href: "/afiliere", label: "Afiliere" },
   { href: "/contact", label: "Contact" },
   { href: "/legal/confidentialitate", label: "Confidențialitate" },
 ] as const;
-

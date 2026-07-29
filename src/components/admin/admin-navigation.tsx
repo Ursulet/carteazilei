@@ -5,6 +5,7 @@ import {
   BarChart3,
   BookOpen,
   CalendarDays,
+  ClipboardCheck,
   FileSearch,
   ImageIcon,
   LayoutDashboard,
@@ -24,6 +25,7 @@ import type { AdminSection, AdminSectionId } from "@/lib/auth/access";
 
 const sectionIcons: Record<AdminSectionId, LucideIcon> = {
   dashboard: LayoutDashboard,
+  readiness: ClipboardCheck,
   books: BookOpen,
   authors: LibraryBig,
   "daily-features": CalendarDays,
@@ -77,4 +79,3 @@ export function AdminNavigation({
     </nav>
   );
 }
-

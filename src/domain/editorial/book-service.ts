@@ -135,6 +135,8 @@ export async function saveBook(input: BookInput, actorUserId: string, bookId?: s
         bookId: savedBook.id,
         editorId: editor.id,
         verdict: input.verdict ?? null,
+        whyRead: input.whyRead ?? null,
+        whyNot: input.whyNot ?? null,
         strengths: input.strengths,
         caveats: input.caveats,
         status: reviewStatus,
@@ -147,6 +149,47 @@ export async function saveBook(input: BookInput, actorUserId: string, bookId?: s
         await transaction.insert(editorialReviews).values(reviewValues);
       }
 
+      const [existingGenres, existingThemes, existingMoods, existingAudiences] =
+        await Promise.all([
+          transaction
+            .select({
+              taxonomyId: bookGenres.genreId,
+              hubPosition: bookGenres.hubPosition,
+              hubReason: bookGenres.hubReason,
+            })
+            .from(bookGenres)
+            .where(eq(bookGenres.bookId, savedBook.id)),
+          transaction
+            .select({
+              taxonomyId: bookThemes.themeId,
+              hubPosition: bookThemes.hubPosition,
+              hubReason: bookThemes.hubReason,
+            })
+            .from(bookThemes)
+            .where(eq(bookThemes.bookId, savedBook.id)),
+          transaction
+            .select({
+              taxonomyId: bookMoods.moodId,
+              strength: bookMoods.strength,
+              hubPosition: bookMoods.hubPosition,
+              hubReason: bookMoods.hubReason,
+            })
+            .from(bookMoods)
+            .where(eq(bookMoods.bookId, savedBook.id)),
+          transaction
+            .select({
+              taxonomyId: bookAudiences.audienceId,
+              hubPosition: bookAudiences.hubPosition,
+              hubReason: bookAudiences.hubReason,
+            })
+            .from(bookAudiences)
+            .where(eq(bookAudiences.bookId, savedBook.id)),
+        ]);
+      const genreMetadata = new Map(existingGenres.map((item) => [item.taxonomyId, item]));
+      const themeMetadata = new Map(existingThemes.map((item) => [item.taxonomyId, item]));
+      const moodMetadata = new Map(existingMoods.map((item) => [item.taxonomyId, item]));
+      const audienceMetadata = new Map(existingAudiences.map((item) => [item.taxonomyId, item]));
+
       await Promise.all([
         transaction.delete(bookGenres).where(eq(bookGenres.bookId, savedBook.id)),
         transaction.delete(bookThemes).where(eq(bookThemes.bookId, savedBook.id)),
@@ -155,10 +198,10 @@ export async function saveBook(input: BookInput, actorUserId: string, bookId?: s
         transaction.delete(bookTraitScores).where(eq(bookTraitScores.bookId, savedBook.id)),
       ]);
 
-      if (input.genreIds.length) await transaction.insert(bookGenres).values(input.genreIds.map((genreId, index) => ({ bookId: savedBook.id, genreId, isPrimary: index === 0 })));
-      if (input.themeIds.length) await transaction.insert(bookThemes).values(input.themeIds.map((themeId) => ({ bookId: savedBook.id, themeId })));
-      if (input.moodIds.length) await transaction.insert(bookMoods).values(input.moodIds.map((moodId) => ({ bookId: savedBook.id, moodId, strength: 50 })));
-      if (input.audienceIds.length) await transaction.insert(bookAudiences).values(input.audienceIds.map((audienceId) => ({ bookId: savedBook.id, audienceId })));
+      if (input.genreIds.length) await transaction.insert(bookGenres).values(input.genreIds.map((genreId, index) => ({ bookId: savedBook.id, genreId, isPrimary: index === 0, hubPosition: genreMetadata.get(genreId)?.hubPosition ?? null, hubReason: genreMetadata.get(genreId)?.hubReason ?? null })));
+      if (input.themeIds.length) await transaction.insert(bookThemes).values(input.themeIds.map((themeId) => ({ bookId: savedBook.id, themeId, hubPosition: themeMetadata.get(themeId)?.hubPosition ?? null, hubReason: themeMetadata.get(themeId)?.hubReason ?? null })));
+      if (input.moodIds.length) await transaction.insert(bookMoods).values(input.moodIds.map((moodId) => ({ bookId: savedBook.id, moodId, strength: moodMetadata.get(moodId)?.strength ?? 50, hubPosition: moodMetadata.get(moodId)?.hubPosition ?? null, hubReason: moodMetadata.get(moodId)?.hubReason ?? null })));
+      if (input.audienceIds.length) await transaction.insert(bookAudiences).values(input.audienceIds.map((audienceId) => ({ bookId: savedBook.id, audienceId, hubPosition: audienceMetadata.get(audienceId)?.hubPosition ?? null, hubReason: audienceMetadata.get(audienceId)?.hubReason ?? null })));
       if (input.traitScores.length) await transaction.insert(bookTraitScores).values(input.traitScores.map((trait) => ({ ...trait, bookId: savedBook.id, updatedBy: editor.id })));
 
       await transaction.insert(seoMetadata).values({

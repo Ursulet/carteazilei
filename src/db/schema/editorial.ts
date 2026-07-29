@@ -18,6 +18,7 @@ import {
   dailyFeatureStatusValues,
   editorialListStatusValues,
   editorialReviewStatusValues,
+  nextReadBasisValues,
   relationshipProvenanceValues,
   relationshipTypeValues,
   softDelete,
@@ -25,6 +26,7 @@ import {
   uuidPrimaryKey,
 } from "./common";
 import { editors } from "./identity";
+import { bookOffers } from "./retail";
 
 export const editorialReviews = pgTable(
   "editorial_reviews",
@@ -70,6 +72,9 @@ export const dailyFeatures = pgTable(
     editorId: uuid("editor_id")
       .notNull()
       .references(() => editors.id, { onDelete: "restrict" }),
+    primaryOfferId: uuid("primary_offer_id").references(() => bookOffers.id, {
+      onDelete: "set null",
+    }),
     headline: text("headline"),
     whyToday: text("why_today"),
     audienceNote: text("audience_note"),
@@ -88,6 +93,7 @@ export const dailyFeatures = pgTable(
     ),
     index("daily_features_status_date_idx").on(table.status, table.featureDate),
     index("daily_features_book_id_idx").on(table.bookId),
+    index("daily_features_primary_offer_id_idx").on(table.primaryOfferId),
   ],
 );
 
@@ -102,6 +108,7 @@ export const bookRelationships = pgTable(
       .notNull()
       .references(() => books.id, { onDelete: "cascade" }),
     type: text("type", { enum: relationshipTypeValues }).notNull(),
+    nextReadBasis: text("next_read_basis", { enum: nextReadBasisValues }),
     strength: integer("strength").notNull(),
     publicReason: text("public_reason"),
     provenance: text("provenance", { enum: relationshipProvenanceValues }).notNull(),
@@ -131,6 +138,10 @@ export const bookRelationships = pgTable(
       sql`${table.provenance} in ('editorial', 'algorithmic')`,
     ),
     check(
+      "book_relationships_next_read_basis_valid",
+      sql`${table.nextReadBasis} is null or (${table.type} = 'next_read' and ${table.nextReadBasis} in ('theme', 'pace', 'style', 'world', 'emotional_effect'))`,
+    ),
+    check(
       "book_relationships_strength_range",
       sql`${table.strength} between 0 and 100`,
     ),
@@ -155,6 +166,8 @@ export const editorialLists = pgTable(
       .notNull()
       .references(() => editors.id, { onDelete: "restrict" }),
     type: text("type").notNull(),
+    minimumPageCount: integer("minimum_page_count"),
+    maximumPageCount: integer("maximum_page_count"),
     indexable: boolean("indexable").default(false).notNull(),
     status: text("status", { enum: editorialListStatusValues }).default("draft").notNull(),
     publishedAt: timestamp("published_at", { withTimezone: true }),
@@ -164,7 +177,11 @@ export const editorialLists = pgTable(
   (table) => [
     check(
       "editorial_lists_type_valid",
-      sql`${table.type} in ('list', 'hub', 'guide', 'next_read', 'similar_books')`,
+      sql`${table.type} in ('list', 'hub', 'guide', 'length_hub', 'next_read', 'similar_books')`,
+    ),
+    check(
+      "editorial_lists_page_range_valid",
+      sql`(${table.type} = 'length_hub' and (${table.minimumPageCount} is not null or ${table.maximumPageCount} is not null) and coalesce(${table.minimumPageCount}, 0) >= 0 and (${table.maximumPageCount} is null or ${table.maximumPageCount} >= coalesce(${table.minimumPageCount}, 0))) or (${table.type} <> 'length_hub' and ${table.minimumPageCount} is null and ${table.maximumPageCount} is null)`,
     ),
     check(
       "editorial_lists_status_valid",

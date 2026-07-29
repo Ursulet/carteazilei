@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BookForm, type BookFormValues } from "@/components/admin/book-form";
 import { AdminPageHeader } from "@/components/admin/editorial-ui";
 import { getAdminBook, getBookFormOptions } from "@/db/queries/admin-editorial";
+import { canAccessSection } from "@/lib/auth/access";
 import { requireSectionAccess } from "@/lib/auth/principal";
 
 import { updateBookAction } from "../actions";
@@ -11,7 +12,7 @@ import { updateBookAction } from "../actions";
 export const metadata: Metadata = { title: "Editează cartea" };
 
 export default async function EditBookPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireSectionAccess("books");
+  const principal = await requireSectionAccess("books");
   const { id } = await params;
   const [record, options] = await Promise.all([getAdminBook(id), getBookFormOptions()]);
   if (!record) notFound();
@@ -22,6 +23,8 @@ export default async function EditBookPage({ params }: { params: Promise<{ id: s
     authorId: record.book.primaryAuthorId,
     summary: record.book.spoilerFreeSummary,
     verdict: record.review?.verdict ?? record.book.shortVerdict,
+    whyRead: record.review?.whyRead,
+    whyNot: record.review?.whyNot,
     strengths: record.review?.strengths ?? [],
     caveats: record.review?.caveats ?? [],
     status: record.book.status,
@@ -45,5 +48,5 @@ export default async function EditBookPage({ params }: { params: Promise<{ id: s
     seoCanonical: record.seo?.canonicalOverride,
     seoIndexable: record.seo?.indexable,
   };
-  return <><AdminPageHeader eyebrow="Catalog" title={record.book.title} description="Editează fișa și verifică fiecare criteriu înainte să schimbi starea în «Publicată»." /><BookForm action={updateBookAction.bind(null, id)} values={values} options={options} gate={record.gate} bookId={id} /></>;
+  return <><AdminPageHeader eyebrow="Catalog" title={record.book.title} description="Editează fișa și verifică fiecare criteriu înainte să schimbi starea în «Publicată»." /><BookForm action={updateBookAction.bind(null, id)} values={values} options={options} gate={record.gate} bookId={id} canManageOffers={canAccessSection(principal.roles, "retailers")} /></>;
 }

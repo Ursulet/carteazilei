@@ -1,9 +1,9 @@
-import { Search } from "lucide-react";
 import Link from "next/link";
 
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { primaryNavigation } from "@/components/layout/navigation";
 import { Wordmark } from "@/components/layout/wordmark";
+import { SearchCommand } from "@/components/search/search-command";
 import { ButtonLink } from "@/components/ui/button-link";
 
 export function SiteHeader() {
@@ -25,23 +25,17 @@ export function SiteHeader() {
         </nav>
 
         <div className="ms-auto hidden items-center gap-3 md:flex">
-          <Link
-            href="/cauta"
-            className="inline-flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-paper hover:text-foreground"
-            aria-label="Caută o carte, un autor sau o temă"
-          >
-            <Search aria-hidden="true" className="size-5" />
-          </Link>
+          <SearchCommand />
           <ButtonLink href="/recomanda-mi" className="px-5">
             Recomandă-mi o carte
           </ButtonLink>
         </div>
 
-        <div className="ms-auto md:hidden">
+        <div className="ms-auto flex items-center gap-1 md:hidden">
+          <SearchCommand />
           <MobileNavigation />
         </div>
       </div>
     </header>
   );
 }
-

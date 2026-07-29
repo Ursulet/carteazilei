@@ -22,6 +22,13 @@ export const adminSections = [
     roles: ["admin", "editor"],
   },
   {
+    id: "readiness",
+    href: "/admin/readiness",
+    label: "Readiness editorial",
+    description: "Lipsuri de conținut și pregătirea lansării",
+    roles: ["admin", "editor"],
+  },
+  {
     id: "authors",
     href: "/admin/authors",
     label: "Autori",
@@ -80,8 +87,8 @@ export const adminSections = [
   {
     id: "retailers",
     href: "/admin/retailers",
-    label: "Retaileri",
-    description: "Oferte și afiliere",
+    label: "Parteneri comerciali",
+    description: "Parteneri, oferte și afiliere",
     roles: ["admin"],
   },
   {

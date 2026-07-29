@@ -33,3 +33,11 @@ Thumbs.db
 coverage/
 playwright-report/
 test-results/
+
+# Legacy migration inputs and generated reports may contain private source data.
+legacy-media/
+legacy-export/
+config/legacy-import.local.json
+reports/legacy-import/*.json
+reports/legacy-import/*.jsonl
+reports/legacy-import/*.csv

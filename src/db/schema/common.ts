@@ -51,6 +51,14 @@ export const relationshipTypeValues = [
 
 export const relationshipProvenanceValues = ["editorial", "algorithmic"] as const;
 
+export const nextReadBasisValues = [
+  "theme",
+  "pace",
+  "style",
+  "world",
+  "emotional_effect",
+] as const;
+
 export const recommendationBranchValues = ["self", "gift", "child"] as const;
 
 export const recommendationSessionStatusValues = [
@@ -59,12 +67,69 @@ export const recommendationSessionStatusValues = [
   "expired",
 ] as const;
 
+export const recommendationQuizEventTypeValues = [
+  "started",
+  "step_completed",
+  "completed",
+] as const;
+
+export const recommendationQuizStepValues = [
+  "need",
+  "genres",
+  "pace",
+  "length",
+  "liked_book",
+  "deal_breakers",
+] as const;
+
 export const recommendationFeedbackActionValues = [
   "positive",
   "negative",
   "started",
   "finished",
   "rating",
+] as const;
+
+export const commercialPartnerTypeValues = [
+  "publisher",
+  "bookstore",
+  "marketplace",
+  "distributor",
+] as const;
+
+export const commercialPlacementValues = [
+  "none",
+  "promoted",
+  "commercial_partnership",
+] as const;
+
+export const commercialClickContextValues = [
+  "book_page",
+  "daily_feature",
+  "recommendation",
+  "other",
+] as const;
+
+export const productEventNameValues = [
+  "page_viewed",
+  "recommendation_quiz_started",
+  "recommendation_quiz_completed",
+  "recommendation_result_shown",
+  "recommendation_alternative_requested",
+  "book_viewed",
+  "daily_feature_viewed",
+  "retailer_click",
+  "recommendation_feedback_positive",
+  "recommendation_feedback_negative",
+  "book_started",
+  "book_finished",
+] as const;
+
+export const acquisitionChannelValues = [
+  "direct",
+  "organic",
+  "referral",
+  "internal",
 ] as const;
 
 export const entityTypeValues = [
@@ -93,4 +158,3 @@ export const softDelete = () => ({
 });
 
 export const uuidPrimaryKey = () => uuid("id").defaultRandom().primaryKey();
-

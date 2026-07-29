@@ -152,6 +152,7 @@ export const genres = pgTable(
     description: text("description"),
     searchIntent: text("search_intent"),
     editorialIntro: text("editorial_intro"),
+    methodology: text("methodology"),
     editorId: uuid("editor_id").references(() => editors.id, {
       onDelete: "set null",
     }),
@@ -180,6 +181,7 @@ export const themes = pgTable(
     description: text("description"),
     searchIntent: text("search_intent"),
     editorialIntro: text("editorial_intro"),
+    methodology: text("methodology"),
     editorId: uuid("editor_id").references(() => editors.id, {
       onDelete: "set null",
     }),
@@ -208,6 +210,7 @@ export const moods = pgTable(
     description: text("description"),
     searchIntent: text("search_intent"),
     editorialIntro: text("editorial_intro"),
+    methodology: text("methodology"),
     editorId: uuid("editor_id").references(() => editors.id, {
       onDelete: "set null",
     }),
@@ -236,6 +239,7 @@ export const audiences = pgTable(
     description: text("description"),
     searchIntent: text("search_intent"),
     editorialIntro: text("editorial_intro"),
+    methodology: text("methodology"),
     editorId: uuid("editor_id").references(() => editors.id, {
       onDelete: "set null",
     }),
@@ -284,9 +288,15 @@ export const bookGenres = pgTable(
       .notNull()
       .references(() => genres.id, { onDelete: "restrict" }),
     isPrimary: boolean("is_primary").default(false).notNull(),
+    hubPosition: integer("hub_position"),
+    hubReason: text("hub_reason"),
   },
   (table) => [
     primaryKey({ columns: [table.bookId, table.genreId] }),
+    check(
+      "book_genres_hub_position_positive",
+      sql`${table.hubPosition} is null or ${table.hubPosition} > 0`,
+    ),
     index("book_genres_genre_id_idx").on(table.genreId),
   ],
 );
@@ -300,9 +310,15 @@ export const bookThemes = pgTable(
     themeId: uuid("theme_id")
       .notNull()
       .references(() => themes.id, { onDelete: "restrict" }),
+    hubPosition: integer("hub_position"),
+    hubReason: text("hub_reason"),
   },
   (table) => [
     primaryKey({ columns: [table.bookId, table.themeId] }),
+    check(
+      "book_themes_hub_position_positive",
+      sql`${table.hubPosition} is null or ${table.hubPosition} > 0`,
+    ),
     index("book_themes_theme_id_idx").on(table.themeId),
   ],
 );
@@ -317,10 +333,16 @@ export const bookMoods = pgTable(
       .notNull()
       .references(() => moods.id, { onDelete: "restrict" }),
     strength: integer("strength").default(50).notNull(),
+    hubPosition: integer("hub_position"),
+    hubReason: text("hub_reason"),
   },
   (table) => [
     primaryKey({ columns: [table.bookId, table.moodId] }),
     check("book_moods_strength_range", sql`${table.strength} between 0 and 100`),
+    check(
+      "book_moods_hub_position_positive",
+      sql`${table.hubPosition} is null or ${table.hubPosition} > 0`,
+    ),
     index("book_moods_mood_id_idx").on(table.moodId),
   ],
 );
@@ -334,9 +356,15 @@ export const bookAudiences = pgTable(
     audienceId: uuid("audience_id")
       .notNull()
       .references(() => audiences.id, { onDelete: "restrict" }),
+    hubPosition: integer("hub_position"),
+    hubReason: text("hub_reason"),
   },
   (table) => [
     primaryKey({ columns: [table.bookId, table.audienceId] }),
+    check(
+      "book_audiences_hub_position_positive",
+      sql`${table.hubPosition} is null or ${table.hubPosition} > 0`,
+    ),
     index("book_audiences_audience_id_idx").on(table.audienceId),
   ],
 );

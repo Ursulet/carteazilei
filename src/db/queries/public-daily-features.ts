@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, isNull, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db";
 import {
@@ -21,15 +21,32 @@ export type DailyArchiveFilters = {
   editorId?: string;
 };
 
-const publicDailyConditions = [
-  eq(dailyFeatures.status, "published"),
-  isNull(dailyFeatures.deletedAt),
-  eq(books.status, "published"),
-  isNull(books.deletedAt),
-  eq(authors.status, "published"),
-  isNull(authors.deletedAt),
-  isNull(editors.deletedAt),
-] as const;
+function publicDailyConditions(asOfDate = getEditorialDate()) {
+  return [
+    or(
+      eq(dailyFeatures.status, "published"),
+      eq(dailyFeatures.status, "scheduled"),
+    )!,
+    lte(dailyFeatures.featureDate, asOfDate),
+    isNull(dailyFeatures.deletedAt),
+    eq(books.status, "published"),
+    isNull(books.deletedAt),
+    eq(authors.status, "published"),
+    isNull(authors.deletedAt),
+    isNull(editors.deletedAt),
+  ];
+}
+
+function publiclyReleasedDailyStatus(asOfDate = getEditorialDate()) {
+  return and(
+    or(
+      eq(dailyFeatures.status, "published"),
+      eq(dailyFeatures.status, "scheduled"),
+    ),
+    lte(dailyFeatures.featureDate, asOfDate),
+    isNull(dailyFeatures.deletedAt),
+  );
+}
 
 function dailyFeatureSelection() {
   const outerBookId = sql.raw('"books"."id"');
@@ -107,7 +124,7 @@ async function selectFeatureRows(
     .innerJoin(books, eq(books.id, dailyFeatures.bookId))
     .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
     .innerJoin(editors, eq(editors.id, dailyFeatures.editorId))
-    .where(and(...publicDailyConditions, ...conditions))
+    .where(and(...publicDailyConditions(), ...conditions))
     .orderBy(desc(dailyFeatures.featureDate))
     .limit(limit);
 }
@@ -180,12 +197,12 @@ export async function getDailyArchiveFilterOptions(db: Database = getDb()) {
   const [yearRows, editorRows, genreRows] = await Promise.all([
     db.selectDistinct({ year: sql<number>`extract(year from ${dailyFeatures.featureDate})::int` })
       .from(dailyFeatures)
-      .where(and(eq(dailyFeatures.status, "published"), isNull(dailyFeatures.deletedAt)))
+      .where(publiclyReleasedDailyStatus())
       .orderBy(desc(sql`extract(year from ${dailyFeatures.featureDate})::int`)),
     db.selectDistinct({ id: editors.id, name: editors.displayName })
       .from(dailyFeatures)
       .innerJoin(editors, eq(editors.id, dailyFeatures.editorId))
-      .where(and(eq(dailyFeatures.status, "published"), isNull(dailyFeatures.deletedAt), isNull(editors.deletedAt)))
+      .where(and(publiclyReleasedDailyStatus(), isNull(editors.deletedAt)))
       .orderBy(editors.displayName),
     db.selectDistinct({ slug: genres.slug, name: genres.name })
       .from(dailyFeatures)
@@ -193,8 +210,7 @@ export async function getDailyArchiveFilterOptions(db: Database = getDb()) {
       .innerJoin(bookGenres, eq(bookGenres.bookId, books.id))
       .innerJoin(genres, eq(genres.id, bookGenres.genreId))
       .where(and(
-        eq(dailyFeatures.status, "published"),
-        isNull(dailyFeatures.deletedAt),
+        publiclyReleasedDailyStatus(),
         eq(genres.status, "published"),
         isNull(genres.deletedAt),
       ))

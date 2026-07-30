@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHmac, randomBytes } from "node:crypto";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, lte, or } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db";
 import {
@@ -14,6 +14,7 @@ import {
   recommendationSessions,
 } from "@/db/schema";
 import { publicBookPageEligibility, publishedBookConditions } from "@/db/queries/public-book-pages";
+import { getEditorialDate } from "@/domain/editorial/bucharest-date";
 import { getServerEnv } from "@/lib/env/server";
 
 import type { PublicProductEventInput } from "./event-contract";
@@ -185,7 +186,11 @@ export async function recordPublicProductEvent(
     .where(and(
       eq(dailyFeatures.id, input.dailyFeatureId),
       eq(dailyFeatures.bookId, input.bookId),
-      eq(dailyFeatures.status, "published"),
+      or(
+        eq(dailyFeatures.status, "published"),
+        eq(dailyFeatures.status, "scheduled"),
+      ),
+      lte(dailyFeatures.featureDate, getEditorialDate()),
       isNull(dailyFeatures.deletedAt),
       eq(books.status, "published"),
       isNull(books.deletedAt),

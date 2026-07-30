@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ArrowRight, BookHeart, Compass, Search, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 
-import { DailyFeatureSection } from "@/components/editorial/daily-feature-section";
+import { DailyFeatureHeroCard, DailyFeatureSection } from "@/components/editorial/daily-feature-section";
 import { ButtonLink } from "@/components/ui/button-link";
 import { getCurrentPublicDailyFeature } from "@/db/queries/public-daily-features";
 import { getPublicHomepageDiscovery } from "@/db/queries/public-home";
@@ -43,15 +43,9 @@ export default async function HomePage() {
             </form>
             <p className="mt-5 text-xs font-semibold text-muted">O alegere clară · motive ușor de înțeles · fără liste interminabile</p>
           </div>
-          <div className="relative lg:col-span-5" aria-hidden="true">
+          <div className="relative lg:col-span-5">
             <div className="absolute -inset-12 rounded-full bg-accent-soft/70 blur-3xl" />
-            <div className="relative mx-auto aspect-[4/5] max-w-sm rounded-[2rem] border border-border bg-surface p-7 shadow-[0_30px_80px_rgba(23,21,18,0.12)] sm:p-9">
-              <div className="flex h-full flex-col justify-between rounded-[1.35rem] border border-accent/30 bg-paper p-7">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent-dark">Cum arată o recomandare bună</p>
-                <div className="space-y-5 font-display text-3xl leading-tight"><p>O alegere.</p><p>Motive clare.</p><p>O limită spusă sincer.</p></div>
-                <div><div className="h-px bg-border" /><p className="mt-5 text-sm leading-6 text-muted">Potrivirea contează mai mult decât popularitatea.</p></div>
-              </div>
-            </div>
+            <DailyFeatureHeroCard feature={feature} date={date} />
           </div>
         </div>
       </section>

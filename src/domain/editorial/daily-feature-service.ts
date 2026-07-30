@@ -76,16 +76,17 @@ export async function saveDailyFeature(input: DailyFeatureInput, actorUserId: st
       );
     }
   }
+  const willBePublic = input.status === "scheduled" || input.status === "published";
   if (
-    input.status === "published" &&
+    willBePublic &&
     (!input.headline || !input.whyToday || !input.audienceNote || !input.caveat || input.fitPoints.length < 3)
   ) {
     throw new EditorialServiceError(
-      "Selecția nu poate fi publicată încă. Completează titlul editorial, motivul zilei, audiența, rezerva și minimum trei puncte de potrivire.",
+      "Selecția nu poate fi programată sau publicată încă. Completează titlul editorial, motivul zilei, audiența, rezerva și minimum trei puncte de potrivire.",
     );
   }
-  if (input.status === "published" && book.status !== "published") {
-    throw new EditorialServiceError("Cartea trebuie publicată înaintea selecției zilnice.");
+  if (willBePublic && book.status !== "published") {
+    throw new EditorialServiceError("Cartea trebuie publicată înainte ca selecția zilnică să poată fi programată sau publicată.");
   }
 
   try {

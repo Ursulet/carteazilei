@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, lte, or } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db";
 import {
@@ -15,6 +15,7 @@ import {
   retailers,
 } from "@/db/schema";
 import type { commercialClickContextValues } from "@/db/schema/common";
+import { getEditorialDate } from "@/domain/editorial/bucharest-date";
 
 export type CommercialSourceContext = (typeof commercialClickContextValues)[number];
 
@@ -46,7 +47,11 @@ async function validateContextBook(
         and(
           eq(dailyFeatures.id, context.dailyFeatureId),
           eq(dailyFeatures.bookId, bookId),
-          eq(dailyFeatures.status, "published"),
+          or(
+            eq(dailyFeatures.status, "published"),
+            eq(dailyFeatures.status, "scheduled"),
+          ),
+          lte(dailyFeatures.featureDate, getEditorialDate()),
           isNull(dailyFeatures.deletedAt),
         ),
       )

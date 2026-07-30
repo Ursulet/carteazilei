@@ -7,6 +7,34 @@ import { formatEditorialDate } from "@/domain/editorial/bucharest-date";
 import { BookCover } from "./book-cover";
 import { RetailerOffers } from "./retailer-offers";
 
+export function DailyFeatureHeroCard({ feature, date }: { feature: PublicDailyFeature | null; date: string }) {
+  if (!feature) {
+    return (
+      <Link href="/cartea-zilei" className="relative mx-auto flex aspect-[4/5] max-w-sm flex-col justify-between rounded-[2rem] border border-border bg-surface p-7 shadow-[0_30px_80px_rgba(23,21,18,0.12)] transition hover:-translate-y-0.5 hover:border-accent sm:p-9">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent-dark">Cartea Zilei</p>
+        <div>
+          <p className="font-display text-4xl font-semibold leading-tight">Descoperă alegerea editorială a zilei.</p>
+          <p className="mt-5 text-sm leading-6 text-muted">O carte aleasă și explicată, nu un titlu afișat întâmplător.</p>
+        </div>
+        <span className="inline-flex items-center text-sm font-bold text-brand">Vezi Cartea Zilei<ArrowRight aria-hidden="true" className="ms-2 size-4" /></span>
+      </Link>
+    );
+  }
+
+  return (
+    <article className="relative mx-auto max-w-sm rounded-[2rem] border border-border bg-surface p-6 shadow-[0_30px_80px_rgba(23,21,18,0.12)] sm:p-7">
+      <Link href={`/cartea-zilei/${feature.featureDate}`} className="group block rounded-[1.35rem] border border-accent/30 bg-paper p-5 transition hover:border-accent sm:p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent-dark">Cartea Zilei · {formatEditorialDate(date)}</p>
+        <BookCover cover={feature.cover} title={feature.book.title} priority className="mx-auto mt-5 w-36 transition group-hover:-translate-y-0.5 sm:w-40" />
+        <h2 className="mt-5 font-display text-3xl font-semibold leading-tight">{feature.book.title}</h2>
+        <p className="mt-1 text-sm text-muted">de {feature.author.name}</p>
+        <p className="mt-4 line-clamp-2 text-sm leading-6 text-muted">{feature.headline || feature.book.verdict}</p>
+        <span className="mt-5 inline-flex items-center text-sm font-bold text-brand">Vezi recomandarea<ArrowRight aria-hidden="true" className="ms-2 size-4 transition-transform group-hover:translate-x-0.5" /></span>
+      </Link>
+    </article>
+  );
+}
+
 export function DailyFeatureSection({ feature }: { feature: PublicDailyFeature | null; date: string }) {
   if (!feature) {
     return (

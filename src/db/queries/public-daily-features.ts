@@ -180,7 +180,7 @@ export async function getDailyArchiveFilterOptions(db: Database = getDb()) {
     db.selectDistinct({ year: sql<number>`extract(year from ${dailyFeatures.featureDate})::int` })
       .from(dailyFeatures)
       .where(and(eq(dailyFeatures.status, "published"), isNull(dailyFeatures.deletedAt)))
-      .orderBy(desc(sql`extract(year from ${dailyFeatures.featureDate})`)),
+      .orderBy(desc(sql`extract(year from ${dailyFeatures.featureDate})::int`)),
     db.selectDistinct({ id: editors.id, name: editors.displayName })
       .from(dailyFeatures)
       .innerJoin(editors, eq(editors.id, dailyFeatures.editorId))

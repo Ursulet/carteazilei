@@ -275,8 +275,8 @@ WHERE r.code = 'super_admin'
 ON CONFLICT DO NOTHING;--> statement-breakpoint
 INSERT INTO "user_roles" ("user_id", "role_id", "assigned_by")
 SELECT ur.user_id, super_role.id, COALESCE(ur.assigned_by, ur.user_id)
-FROM "user_roles" ur
-JOIN "roles" current_role ON current_role.id = ur.role_id AND current_role.code = 'admin'
-CROSS JOIN "roles" super_role
+FROM "user_roles" AS ur
+JOIN "roles" AS source_role ON source_role.id = ur.role_id AND source_role.code = 'admin'
+CROSS JOIN "roles" AS super_role
 WHERE super_role.code = 'super_admin'
 ON CONFLICT DO NOTHING;

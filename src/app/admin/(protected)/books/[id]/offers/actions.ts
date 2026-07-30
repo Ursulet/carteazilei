@@ -10,6 +10,7 @@ import {
 } from "@/domain/commercial/commercial-service";
 import type { EditorialActionState } from "@/domain/editorial/action-state";
 import { toActionState } from "@/domain/editorial/action-state";
+import { withAdminNotice } from "@/lib/admin/notice";
 import { requirePermission } from "@/lib/auth/principal";
 
 function revalidateCommercialBookPaths(bookId: string) {
@@ -32,7 +33,7 @@ export async function createBookOfferAction(
     return toActionState(error);
   }
   revalidateCommercialBookPaths(bookId);
-  redirect(`/admin/books/${bookId}/offers`);
+  redirect(withAdminNotice(`/admin/books/${bookId}/offers`, "Oferta a fost creată."));
 }
 
 export async function updateBookOfferAction(
@@ -53,12 +54,12 @@ export async function updateBookOfferAction(
     return toActionState(error);
   }
   revalidateCommercialBookPaths(bookId);
-  redirect(`/admin/books/${bookId}/offers`);
+  redirect(withAdminNotice(`/admin/books/${bookId}/offers`, "Oferta a fost salvată."));
 }
 
 export async function deleteBookOfferAction(bookId: string, offerId: string) {
   const principal = await requirePermission("offers.manage");
   await deleteBookOffer(bookId, offerId, principal.id);
   revalidateCommercialBookPaths(bookId);
-  redirect(`/admin/books/${bookId}/offers`);
+  redirect(withAdminNotice(`/admin/books/${bookId}/offers`, "Oferta a fost arhivată."));
 }

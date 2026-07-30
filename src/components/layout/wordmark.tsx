@@ -1,3 +1,4 @@
+import { BookOpen } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -12,19 +13,40 @@ export function Wordmark({
   siteName?: string;
   logoAssetId?: string | null;
 }) {
-  const words = siteName.trim().split(/\s+/);
-  const accent = words.length > 1 ? words.pop() : null;
-  const base = words.join(" ") || siteName;
+  const normalizedName = siteName.trim();
+  const words = normalizedName.split(/\s+/);
+  const compactAccent = words.length === 1 && normalizedName.toLocaleLowerCase("ro").endsWith("zilei")
+    ? normalizedName.slice(-5)
+    : null;
+  const accent = words.length > 1 ? words.pop() : compactAccent;
+  const base = words.length > 1
+    ? words.join(" ")
+    : compactAccent
+      ? normalizedName.slice(0, -5)
+      : normalizedName;
+
   return (
     <Link
       href="/"
-      className={`inline-flex items-baseline gap-1 font-display text-2xl font-semibold tracking-[-0.025em] ${
-        onDark ? "text-white" : "text-foreground"
-      }`}
+      className={`inline-flex items-center gap-2 font-display text-2xl font-semibold tracking-[-0.025em] sm:text-[1.7rem] ${onDark ? "text-white" : "text-foreground"}`}
       aria-label={`${siteName} — pagina principală`}
       onClick={onClick}
     >
-      {logoAssetId ? <Image src={`/media/${logoAssetId}`} alt={siteName} width={190} height={52} className="h-10 w-auto max-w-[12rem] object-contain" priority /> : <>{base}{accent ? <span className={onDark ? "text-[#d5ad68]" : "text-accent-dark"}>{accent}</span> : null}</>}
+      {logoAssetId ? (
+        <Image
+          src={`/media/${logoAssetId}`}
+          alt={siteName}
+          width={190}
+          height={52}
+          className="h-10 w-auto max-w-[12rem] object-contain"
+          priority
+        />
+      ) : (
+        <>
+          <BookOpen aria-hidden="true" className={`size-7 shrink-0 stroke-[1.7] ${onDark ? "text-[#e0a36f]" : "text-rust"}`} />
+          <span>{base}{accent ? <span className={onDark ? "text-[#e0a36f]" : "text-rust"}>{accent}</span> : null}</span>
+        </>
+      )}
     </Link>
   );
 }

@@ -13,11 +13,11 @@ const argonOptions = {
 
 export const bootstrapPasswordSchema = z
   .string()
-  .min(14, "Parola trebuie să aibă minimum 14 caractere.")
+  .min(8, "Parola trebuie să aibă minimum 8 caractere.")
   .max(128, "Parola poate avea maximum 128 de caractere.")
   .regex(/[a-z]/, "Parola trebuie să conțină o literă mică.")
   .regex(/[A-Z]/, "Parola trebuie să conțină o literă mare.")
-  .regex(/[0-9]/, "Parola trebuie să conțină o cifră.");
+  .regex(/[^A-Za-z0-9]/, "Parola trebuie să conțină un simbol.");
 
 export function hashPassword(password: string) {
   return hash(password, argonOptions);
@@ -31,4 +31,3 @@ export async function verifyPassword(passwordHash: string | null, password: stri
     return false;
   }
 }
-

@@ -9,6 +9,7 @@ import { deleteInternalUser, getAdminInternalUser, parseInternalUserFormData, re
 import { sendBrandedEmail } from "@/domain/communication/mail-service";
 import { createEditorProfileForUser, parseEditorProfileFormData, saveEditorProfile } from "@/domain/editorial/editor-profile-service";
 import { getPublicSiteSettings } from "@/domain/settings/public-settings-service";
+import { withAdminNotice } from "@/lib/admin/notice";
 import { requireMutationAccess, requirePermission } from "@/lib/auth/principal";
 
 async function sendInvitationEmail(email: string, name: string, token: string) {
@@ -44,14 +45,14 @@ export async function updateEditorProfileAction(
   revalidatePath("/echipa");
   revalidatePath(`/editor/${slugs.previousSlug}`);
   revalidatePath(`/editor/${slugs.slug}`);
-  redirect(`/admin/editors/${id}`);
+  redirect(withAdminNotice(`/admin/editors/${id}`, "Profilul editorial a fost salvat."));
 }
 
 export async function createEditorProfileAction(userId: string) {
   const principal = await requireMutationAccess("editors");
   const editorId = await createEditorProfileForUser(userId, principal.id);
   revalidatePath("/admin/editors");
-  redirect(`/admin/editors/${editorId}`);
+  redirect(withAdminNotice(`/admin/editors/${editorId}`, "Profilul editorial a fost creat."));
 }
 
 export async function createInternalUserAction(
@@ -68,7 +69,10 @@ export async function createInternalUserAction(
     return toActionState(error);
   }
   revalidatePath("/admin/editors");
-  redirect(`/admin/editors/cont/${result.id}${result.invitationToken ? `?invitation=${encodeURIComponent(result.invitationToken)}` : ""}`);
+  redirect(withAdminNotice(
+    `/admin/editors/cont/${result.id}${result.invitationToken ? `?invitation=${encodeURIComponent(result.invitationToken)}` : ""}`,
+    result.invitationToken ? "Utilizatorul a fost creat și invitația a fost generată." : "Utilizatorul a fost creat.",
+  ));
 }
 
 export async function updateInternalUserAction(
@@ -83,7 +87,7 @@ export async function updateInternalUserAction(
     return toActionState(error);
   }
   revalidatePath("/admin/editors");
-  redirect(`/admin/editors/cont/${id}`);
+  redirect(withAdminNotice(`/admin/editors/cont/${id}`, "Utilizatorul a fost salvat."));
 }
 
 export async function deleteInternalUserAction(
@@ -100,9 +104,9 @@ export async function deleteInternalUserAction(
     return toActionState(error);
   }
   revalidatePath("/admin/editors");
-  redirect("/admin/editors");
+  redirect(withAdminNotice("/admin/editors", "Utilizatorul a fost arhivat."));
 }
 
-export async function revokeUserSessionsAction(id: string, _formData: FormData) { void _formData; const principal = await requirePermission("users.suspend"); await revokeUserSessions(id, principal.id); revalidatePath(`/admin/editors/cont/${id}`); redirect(`/admin/editors/cont/${id}?sessions=revoked`); }
-export async function forcePasswordResetAction(id: string, _formData: FormData) { void _formData; const principal = await requirePermission("users.suspend"); await revokeUserSessions(id, principal.id, true); revalidatePath(`/admin/editors/cont/${id}`); redirect(`/admin/editors/cont/${id}?reset=required`); }
-export async function resendInvitationAction(id: string, _formData: FormData) { void _formData; const principal = await requirePermission("users.create"); const user = await getAdminInternalUser(id); const token = await resendUserInvitation(id, principal.id); if (user) await sendInvitationEmail(user.email, user.name, token); revalidatePath(`/admin/editors/cont/${id}`); redirect(`/admin/editors/cont/${id}?invitation=${encodeURIComponent(token)}`); }
+export async function revokeUserSessionsAction(id: string, _formData: FormData) { void _formData; const principal = await requirePermission("users.suspend"); await revokeUserSessions(id, principal.id); revalidatePath(`/admin/editors/cont/${id}`); redirect(withAdminNotice(`/admin/editors/cont/${id}`, "Sesiunile utilizatorului au fost revocate.")); }
+export async function forcePasswordResetAction(id: string, _formData: FormData) { void _formData; const principal = await requirePermission("users.suspend"); await revokeUserSessions(id, principal.id, true); revalidatePath(`/admin/editors/cont/${id}`); redirect(withAdminNotice(`/admin/editors/cont/${id}`, "Schimbarea parolei a devenit obligatorie.")); }
+export async function resendInvitationAction(id: string, _formData: FormData) { void _formData; const principal = await requirePermission("users.create"); const user = await getAdminInternalUser(id); const token = await resendUserInvitation(id, principal.id); if (user) await sendInvitationEmail(user.email, user.name, token); revalidatePath(`/admin/editors/cont/${id}`); redirect(withAdminNotice(`/admin/editors/cont/${id}?invitation=${encodeURIComponent(token)}`, "Invitația a fost regenerată.")); }

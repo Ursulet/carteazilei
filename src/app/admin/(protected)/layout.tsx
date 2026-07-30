@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { AdminMobileMenu } from "@/components/admin/admin-mobile-menu";
 import { AdminNavigation } from "@/components/admin/admin-navigation";
+import { AdminNotice } from "@/components/admin/admin-notice";
 import { AdminSignOutButton } from "@/components/admin/admin-sign-out";
 import { SkipLink } from "@/components/layout/skip-link";
 import { Wordmark } from "@/components/layout/wordmark";
 import {
-  adminSections,
+  adminNavigationSections,
   canAccessSection,
 } from "@/lib/auth/access";
 import { requireInternalPrincipal } from "@/lib/auth/principal";
@@ -30,7 +31,7 @@ export default async function ProtectedAdminLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   const [principal, settings] = await Promise.all([requireInternalPrincipal(), getPublicSiteSettings()]);
-  const sections = adminSections.filter((section) =>
+  const sections = adminNavigationSections.filter((section) =>
     canAccessSection(principal.permissions, section.id, principal.isSuperAdmin),
   );
   const roleLabel = principal.roleNames.join(", ") || "Fără rol";
@@ -39,6 +40,7 @@ export default async function ProtectedAdminLayout({
   return (
     <div className="min-h-screen bg-paper font-sans text-foreground">
       <SkipLink />
+      <Suspense fallback={null}><AdminNotice /></Suspense>
 
       <aside className="fixed inset-y-0 start-0 z-40 hidden w-72 border-e border-border bg-surface lg:flex lg:flex-col">
         <div className="border-b border-border px-6 py-5">

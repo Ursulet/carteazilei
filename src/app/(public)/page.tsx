@@ -1,8 +1,21 @@
 import type { Metadata } from "next";
-import { ArrowRight, BookHeart, Compass, Search, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  BookHeart,
+  BookOpen,
+  Brain,
+  Compass,
+  Feather,
+  LibraryBig,
+  Lightbulb,
+  Shapes,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
-import { DailyFeatureHeroCard, DailyFeatureSection } from "@/components/editorial/daily-feature-section";
+import { DailyFeatureSection } from "@/components/editorial/daily-feature-section";
 import { ButtonLink } from "@/components/ui/button-link";
 import { getCurrentPublicDailyFeature } from "@/db/queries/public-daily-features";
 import { getPublicHomepageDiscovery } from "@/db/queries/public-home";
@@ -11,67 +24,185 @@ import { buildPublicMetadata } from "@/lib/seo/metadata";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = buildPublicMetadata({
-  title: "Ce carte merită timpul tău?",
+  title: "Descoperă cartea potrivită",
   description: "Recomandări editoriale explicate, Cartea Zilei și o alegere personalizată pentru următoarea ta lectură.",
   canonical: "/",
 });
 
-function SectionHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description?: string }) {
-  return <div className="max-w-3xl"><p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">{eyebrow}</p><h2 className="mt-3 font-display text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">{title}</h2>{description ? <p className="mt-5 text-lg leading-8 text-muted">{description}</p> : null}</div>;
-}
+const categoryIcons = [BookOpen, Lightbulb, Brain, Feather, LibraryBig];
 
 export default async function HomePage() {
   const [{ date, feature }, discovery] = await Promise.all([
     getCurrentPublicDailyFeature(),
     getPublicHomepageDiscovery(),
   ]);
-  if (!feature) console.warn(`[editorial] Nu există o selecție publică și completă pentru ${date} (Europe/Bucharest).`);
 
-  const hasTaxonomyDiscovery = discovery.genres.length > 0 || discovery.audiences.length > 0;
+  const quickGenres = discovery.genres.slice(0, 4);
+  const editorialCards = discovery.lists.slice(0, 4);
+
   return (
     <>
-      <section className="overflow-hidden py-16 md:py-24 lg:py-28">
-        <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-5 sm:px-6 lg:grid-cols-12 lg:gap-16 lg:px-8">
-          <div className="lg:col-span-7">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Recomandări de carte, nu liste interminabile</p>
-            <h1 className="mt-5 max-w-4xl font-display text-5xl font-semibold tracking-[-0.03em] text-balance sm:text-6xl lg:text-7xl">Ce carte merită timpul tău?</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-muted sm:text-xl">Spune-ne ce cauți, ce stare ai și ce ți-a plăcut până acum. Cartea Zilei îți recomandă o singură alegere principală și îți explică de ce.</p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row"><ButtonLink href="/recomanda-mi">Recomandă-mi o carte<ArrowRight aria-hidden="true" className="ms-2 size-4" /></ButtonLink><ButtonLink href="/cartea-zilei" variant="secondary">Vezi Cartea Zilei</ButtonLink></div>
-            <form action="/cauta" method="get" role="search" className="mt-8 max-w-2xl">
-              <label htmlFor="home-search" className="text-sm font-bold">Caută o carte, un autor sau o temă</label>
-              <div className="mt-2 flex rounded-full border border-border bg-surface p-1.5 shadow-sm focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15"><Search aria-hidden="true" className="ms-3 mt-2.5 size-5 shrink-0 text-muted" /><input id="home-search" name="q" type="search" className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none" placeholder="Titlu, autor sau temă" /><button type="submit" className="min-h-11 rounded-full bg-brand px-5 text-sm font-bold text-white hover:bg-brand-hover">Caută</button></div>
-            </form>
-            <p className="mt-5 text-xs font-semibold text-muted">O alegere clară · motive ușor de înțeles · fără liste interminabile</p>
+      <section className="relative isolate min-h-[34rem] overflow-hidden text-white sm:min-h-[36rem] lg:min-h-[31rem]">
+        <Image
+          src="/images/home-reading-hero.png"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="-z-20 object-cover object-[61%_center] lg:object-center"
+        />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(26,20,15,0.87)_0%,rgba(27,21,16,0.72)_35%,rgba(27,21,16,0.2)_68%,rgba(27,21,16,0.1)_100%)] lg:bg-[linear-gradient(90deg,rgba(26,20,15,0.82)_0%,rgba(27,21,16,0.58)_37%,rgba(27,21,16,0.12)_68%)]" />
+
+        <div className="mx-auto grid w-full max-w-[1440px] gap-12 px-5 pb-24 pt-16 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,1fr)_27rem] lg:items-center lg:px-8 lg:pb-28 lg:pt-16">
+          <div className="max-w-2xl">
+            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#f2b483]">Recomandări editoriale, pe înțelesul tău</p>
+            <h1 className="mt-5 font-display text-5xl font-semibold leading-[0.98] tracking-[-0.04em] text-balance sm:text-6xl lg:text-[4.4rem]">
+              Cărțile bune încep cu o recomandare bună.
+            </h1>
+            <p className="mt-6 max-w-xl text-base leading-7 text-white/82 sm:text-lg">
+              Descoperă recomandări personalizate, selecții editoriale zilnice și explicații clare pentru fiecare titlu.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <ButtonLink href="/recomanda-mi" className="min-h-12 bg-brand px-7 shadow-lg hover:bg-brand-hover">
+                Primește recomandarea ta <Sparkles aria-hidden="true" className="ms-2 size-4" />
+              </ButtonLink>
+              <ButtonLink href="#cartea-zilei" variant="secondary" className="min-h-12 border-white/70 bg-white/10 px-7 text-white backdrop-blur-sm hover:bg-white hover:text-foreground">
+                Vezi Cartea Zilei <ArrowRight aria-hidden="true" className="ms-2 size-4" />
+              </ButtonLink>
+            </div>
           </div>
-          <div className="relative lg:col-span-5">
-            <div className="absolute -inset-12 rounded-full bg-accent-soft/70 blur-3xl" />
-            <DailyFeatureHeroCard feature={feature} date={date} />
-          </div>
+
+          <aside className="hidden rounded-2xl border border-white/55 bg-surface/95 p-7 text-foreground shadow-[0_20px_60px_rgba(31,22,15,0.25)] backdrop-blur lg:block">
+            <p className="font-display text-2xl font-semibold">Găsește următoarea ta carte</p>
+            <p className="mt-2 text-sm leading-6 text-muted">Spune-ne ce îți place și îți recomandăm o singură alegere, cu motive clare.</p>
+            {quickGenres.length ? (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {quickGenres.map((genre) => (
+                  <Link key={genre.slug} href={`/carti/gen/${genre.slug}`} className="rounded-xl border border-border bg-paper px-3 py-2 text-xs font-semibold transition hover:border-rust hover:text-rust-dark">
+                    {genre.name}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+            <ButtonLink href="/recomanda-mi" className="mt-5 min-h-12 w-full rounded-xl bg-rust hover:bg-rust-dark">
+              Începe recomandarea <ArrowRight aria-hidden="true" className="ms-2 size-4" />
+            </ButtonLink>
+            <p className="mt-3 text-center text-[0.68rem] text-muted">Durează doar câteva minute.</p>
+          </aside>
         </div>
       </section>
 
       <DailyFeatureSection feature={feature} date={date} />
 
-      <section className="py-16 md:py-24 lg:py-28">
-        <div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8">
-          <div className="rounded-[2rem] border border-border bg-surface p-7 shadow-sm sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-12 lg:p-14">
-            <div className="max-w-2xl"><p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Recomandare personalizată</p><h2 className="mt-3 font-display text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">Nu știi ce să citești?</h2><p className="mt-5 text-lg leading-8 text-muted">Spune-ne ce îți place și ce ai vrea să eviți. Îți propunem o carte și îți explicăm alegerea.</p></div>
-            <ButtonLink href="/recomanda-mi" className="mt-8 shrink-0 lg:mt-0">Găsește-mi cartea<ArrowRight aria-hidden="true" className="ms-2 size-4" /></ButtonLink>
+      <div className="pb-16 lg:pb-24">
+        {editorialCards.length || discovery.nextReads.length ? (
+          <section className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-6 lg:px-8 lg:py-10">
+            <SectionHeader
+              eyebrow="Selecții editoriale"
+              title="Recomandări pentru următoarea lectură"
+              href="/liste"
+              action="Vezi toate"
+            />
+            <div className="mt-6 grid grid-flow-col auto-cols-[minmax(16rem,78vw)] gap-4 overflow-x-auto pb-3 sm:auto-cols-[20rem] lg:grid-flow-row lg:grid-cols-4 lg:overflow-visible lg:pb-0">
+              {editorialCards.length
+                ? editorialCards.map((list, index) => (
+                    <EditorialCard key={list.slug} href={`/liste/${list.slug}`} title={list.title} description={list.intro} index={index} />
+                  ))
+                : discovery.nextReads.map((item, index) => (
+                    <EditorialCard key={item.slug} href={`/ce-sa-citesc-dupa/${item.slug}`} title={`După „${item.title}”`} description={`Recomandări pornind de la cartea lui ${item.author}.`} index={index} />
+                  ))}
+            </div>
+          </section>
+        ) : null}
+
+        {discovery.genres.length ? (
+          <section className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-6 lg:px-8 lg:py-10">
+            <SectionHeader eyebrow="Explorează" title="Descoperă cărți după gen" href="/carti" action="Toate cărțile" />
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              {discovery.genres.slice(0, 5).map((genre, index) => {
+                const Icon = categoryIcons[index] ?? BookOpen;
+                return (
+                  <Link key={genre.slug} href={`/carti/gen/${genre.slug}`} className="group flex min-h-32 flex-col items-center justify-center rounded-2xl border border-border bg-surface p-4 text-center transition hover:-translate-y-0.5 hover:border-rust hover:shadow-sm">
+                    <span className="inline-flex size-12 items-center justify-center rounded-full bg-rust-soft text-rust-dark transition group-hover:bg-rust group-hover:text-white"><Icon aria-hidden="true" className="size-6 stroke-[1.6]" /></span>
+                    <span className="mt-3 text-sm font-semibold">{genre.name}</span>
+                  </Link>
+                );
+              })}
+              <Link href="/carti" className="group flex min-h-32 flex-col items-center justify-center rounded-2xl border border-border bg-paper p-4 text-center transition hover:-translate-y-0.5 hover:border-brand hover:shadow-sm">
+                <span className="inline-flex size-12 items-center justify-center rounded-full border border-border bg-surface text-brand"><Shapes aria-hidden="true" className="size-6 stroke-[1.6]" /></span>
+                <span className="mt-3 text-sm font-semibold">Toate categoriile</span>
+              </Link>
+            </div>
+          </section>
+        ) : null}
+
+        {discovery.moods.length || discovery.audiences.length ? (
+          <section className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-6 lg:px-8 lg:py-10">
+            <div className="grid overflow-hidden rounded-[1.75rem] border border-border bg-brand text-white lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="p-7 sm:p-10 lg:p-12">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#efb687]">Pornește de la starea ta</p>
+                <h2 className="mt-4 font-display text-4xl font-semibold tracking-[-0.035em]">Ce ai nevoie de la următoarea carte?</h2>
+                <p className="mt-4 max-w-lg text-sm leading-7 text-white/70">Alege atmosfera sau cititorul pentru care cauți. Vei vedea doar selecții editoriale deja publicate.</p>
+                <ButtonLink href="/recomanda-mi" className="mt-7 bg-white text-brand hover:bg-paper">Primește o recomandare</ButtonLink>
+              </div>
+              <div className="grid content-center gap-3 bg-white/5 p-7 sm:grid-cols-2 sm:p-10">
+                {discovery.moods.slice(0, 4).map((mood) => (
+                  <Link key={mood.slug} href={`/carti/stare/${mood.slug}`} className="flex min-h-16 items-center justify-between rounded-xl border border-white/15 bg-white/8 px-4 text-sm font-semibold transition hover:border-white/45 hover:bg-white/12">
+                    <span className="flex items-center gap-3"><Sparkles aria-hidden="true" className="size-4 text-[#efb687]" />{mood.name}</span><ArrowRight aria-hidden="true" className="size-4 text-white/50" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-6 lg:px-8 lg:py-10">
+          <div className="rounded-[1.75rem] border border-border bg-surface p-7 sm:p-10">
+            <SectionHeader eyebrow="Încredere editorială" title="O recomandare explicată, nu un simplu titlu" href="/cum-recomandam" action="Cum recomandăm" />
+            <div className="mt-7 grid gap-4 md:grid-cols-3">
+              <TrustItem icon={Compass} title="Evaluare editorială" text="Fiecare alegere are argumente clare și o limită spusă sincer." />
+              <TrustItem icon={ShieldCheck} title="Potrivire, nu popularitate" text="Preferințele cititorului contează mai mult decât un clasament." />
+              <TrustItem icon={BookHeart} title="Context înainte de alegere" text="Îți spunem cui i se potrivește cartea și ce experiență oferă." />
+            </div>
           </div>
-        </div>
-      </section>
-
-      {discovery.moods.length ? <section className="border-y border-border bg-surface py-16 md:py-24 lg:py-28"><div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8"><SectionHeading eyebrow="Descoperă după stare" title="Ce ai nevoie de la următoarea carte?" description="Pornește de la efectul pe care îl cauți, nu de la un raft aglomerat." /><div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{discovery.moods.map((mood) => <Link key={mood.slug} href={`/carti/stare/${mood.slug}`} className="group rounded-2xl border border-border bg-paper p-6 transition duration-200 hover:-translate-y-0.5 hover:border-accent hover:shadow-sm"><Sparkles aria-hidden="true" className="size-5 text-accent-dark" /><h3 className="mt-5 font-display text-2xl font-semibold">{mood.name}</h3>{mood.description ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">{mood.description}</p> : null}<span className="mt-5 inline-flex items-center text-sm font-bold text-brand">Vezi selecția<ArrowRight aria-hidden="true" className="ms-2 size-4 transition-transform group-hover:translate-x-0.5" /></span></Link>)}</div></div></section> : null}
-
-      {hasTaxonomyDiscovery ? <section className="py-16 md:py-24 lg:py-28"><div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8"><SectionHeading eyebrow="Colecții" title="Explorează după ce cauți" description="Alege un gen sau pornește de la persoana pentru care cauți cartea." /><div className="mt-10 grid gap-8 lg:grid-cols-2">{discovery.genres.length ? <div><h3 className="text-sm font-bold uppercase tracking-wide text-muted">Gen</h3><div className="mt-4 flex flex-wrap gap-3">{discovery.genres.map((genre) => <Link key={genre.slug} href={`/carti/gen/${genre.slug}`} className="rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-bold transition hover:border-brand hover:bg-accent-soft">{genre.name}</Link>)}</div></div> : null}{discovery.audiences.length ? <div><h3 className="text-sm font-bold uppercase tracking-wide text-muted">Pentru cine</h3><div className="mt-4 flex flex-wrap gap-3">{discovery.audiences.map((audience) => <Link key={audience.slug} href={`/carti/pentru/${audience.slug}`} className="rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-bold transition hover:border-brand hover:bg-accent-soft">{audience.name}</Link>)}</div></div> : null}</div></div></section> : null}
-
-      {discovery.nextReads.length ? <section className="border-y border-border bg-surface py-16 md:py-24 lg:py-28"><div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8"><SectionHeading eyebrow="Continuă lectura" title="Ce să citești după…" description="Dacă ți-a plăcut o carte, găsește următoarea lectură care păstrează tema, ritmul sau atmosfera." /><div className="mt-10 grid gap-4 md:grid-cols-2">{discovery.nextReads.map((item) => <Link key={item.slug} href={`/ce-sa-citesc-dupa/${item.slug}`} className="group rounded-2xl border border-border bg-paper p-6 transition hover:-translate-y-0.5 hover:border-accent hover:shadow-sm"><p className="text-xs font-bold uppercase tracking-wide text-accent-dark">După {item.author}</p><h3 className="mt-3 font-display text-2xl font-semibold">Ce să citești după {item.title}</h3><span className="mt-5 inline-flex items-center text-sm font-bold text-brand">Vezi recomandările<ArrowRight aria-hidden="true" className="ms-2 size-4" /></span></Link>)}</div></div></section> : null}
-
-      {discovery.lists.length ? <section className="py-16 md:py-24 lg:py-28"><div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8"><SectionHeading eyebrow="Liste editoriale" title="Selecții cu un criteriu clar" description="Mai puține titluri, fiecare cu un motiv explicit pentru care a intrat în listă." /><div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{discovery.lists.map((list) => <Link key={list.slug} href={`/liste/${list.slug}`} className="group rounded-2xl border border-border bg-surface p-6 transition hover:-translate-y-0.5 hover:border-accent hover:shadow-sm"><BookHeart aria-hidden="true" className="size-5 text-accent-dark" /><h3 className="mt-5 font-display text-2xl font-semibold">{list.title}</h3>{list.intro ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">{list.intro}</p> : null}<span className="mt-5 inline-flex items-center text-sm font-bold text-brand">Deschide lista<ArrowRight aria-hidden="true" className="ms-2 size-4" /></span></Link>)}</div></div></section> : null}
-
-      <section className="border-t border-border bg-paper py-16 md:py-24 lg:py-28">
-        <div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8"><SectionHeading eyebrow="Încredere editorială" title="Cum alegem cărțile" description="O recomandare bună spune și de ce funcționează, și unde s-ar putea să nu fie potrivită." /><div className="mt-10 grid gap-5 md:grid-cols-3">{[{ icon: Compass, title: "Evaluare editorială", text: "Fiecare selecție are un editor, argumente clare și o rezervă sinceră." }, { icon: ShieldCheck, title: "Potrivire, nu popularitate", text: "Ce cauți tu contează mai mult decât topurile sau numărul de titluri." }, { icon: BookHeart, title: "Context înainte de alegere", text: "Îți spunem cui i se potrivește cartea, ce oferă și ce ar putea să nu funcționeze pentru tine." }].map((item) => { const Icon = item.icon; return <article key={item.title} className="rounded-2xl border border-border bg-surface p-6"><Icon aria-hidden="true" className="size-5 text-accent-dark" /><h3 className="mt-5 font-display text-2xl font-semibold">{item.title}</h3><p className="mt-3 text-sm leading-6 text-muted">{item.text}</p></article>; })}</div><div className="mt-8"><ButtonLink href="/cum-recomandam" variant="secondary">Vezi cum recomandăm</ButtonLink></div></div>
-      </section>
+        </section>
+      </div>
     </>
+  );
+}
+
+function SectionHeader({ eyebrow, title, href, action }: { eyebrow: string; title: string; href: string; action: string }) {
+  return (
+    <div className="flex items-end justify-between gap-5">
+      <div>
+        <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-rust-dark">{eyebrow}</p>
+        <h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{title}</h2>
+      </div>
+      <Link href={href} className="hidden shrink-0 items-center text-sm font-bold text-rust-dark hover:text-rust sm:inline-flex">{action}<ArrowRight aria-hidden="true" className="ms-2 size-4" /></Link>
+    </div>
+  );
+}
+
+function EditorialCard({ href, title, description, index }: { href: string; title: string; description: string | null; index: number }) {
+  const palettes = ["from-[#25473e] to-[#739080]", "from-[#8f4b2c] to-[#d59865]", "from-[#394d67] to-[#91a5b9]", "from-[#65513c] to-[#b39b7e]"];
+  return (
+    <Link href={href} className="group overflow-hidden rounded-2xl border border-border bg-surface transition hover:-translate-y-0.5 hover:border-rust hover:shadow-md">
+      <div className={`h-24 bg-gradient-to-br ${palettes[index % palettes.length]} p-5 text-white`}><BookOpen aria-hidden="true" className="size-7 stroke-[1.4] opacity-85" /></div>
+      <div className="p-5">
+        <h3 className="line-clamp-2 font-display text-2xl font-semibold leading-tight">{title}</h3>
+        {description ? <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted">{description}</p> : null}
+        <span className="mt-4 inline-flex items-center text-xs font-bold text-rust-dark">Vezi selecția <ArrowRight aria-hidden="true" className="ms-1 size-3.5 transition-transform group-hover:translate-x-0.5" /></span>
+      </div>
+    </Link>
+  );
+}
+
+function TrustItem({ icon: Icon, title, text }: { icon: typeof Compass; title: string; text: string }) {
+  return (
+    <article className="rounded-2xl bg-paper p-5">
+      <Icon aria-hidden="true" className="size-5 text-rust" />
+      <h3 className="mt-4 font-display text-xl font-semibold">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
+    </article>
   );
 }

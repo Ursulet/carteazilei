@@ -22,10 +22,10 @@ export function OwnAccountForm({ action, name, email }: { action: (state: Editor
     </FormSection>
     <FormSection title="Schimbă parola" description="Lasă ambele câmpuri goale dacă vrei să modifici numai numele sau emailul.">
       <div className="grid gap-5 md:grid-cols-2">
-        <label className={labelClass}>Parolă nouă<input name="newPassword" type="password" minLength={14} maxLength={128} autoComplete="new-password" className={fieldClass} /><FieldError errors={errors.newPassword} /></label>
-        <label className={labelClass}>Confirmă parola nouă<input name="confirmPassword" type="password" minLength={14} maxLength={128} autoComplete="new-password" className={fieldClass} /><FieldError errors={errors.confirmPassword} /></label>
+        <label className={labelClass}>Parolă nouă<input name="newPassword" type="password" minLength={8} maxLength={128} autoComplete="new-password" className={fieldClass} /><FieldError errors={errors.newPassword} /></label>
+        <label className={labelClass}>Confirmă parola nouă<input name="confirmPassword" type="password" minLength={8} maxLength={128} autoComplete="new-password" className={fieldClass} /><FieldError errors={errors.confirmPassword} /></label>
       </div>
-      <p className="mt-3 text-xs leading-5 text-muted">Minimum 14 caractere, cu literă mare, literă mică și cifră. După schimbarea emailului sau parolei vei fi autentificat din nou.</p>
+      <p className="mt-3 text-xs leading-5 text-muted">Minimum 8 caractere, cu literă mare, literă mică și simbol. După schimbarea emailului sau parolei vei fi autentificat din nou.</p>
     </FormSection>
     <div><SubmitButton>Salvează contul</SubmitButton></div>
   </form>;

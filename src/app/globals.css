@@ -15,6 +15,9 @@
   --color-accent: var(--accent);
   --color-accent-dark: var(--accent-dark);
   --color-accent-soft: var(--accent-soft);
+  --color-rust: var(--rust);
+  --color-rust-dark: var(--rust-dark);
+  --color-rust-soft: var(--rust-soft);
   --color-danger: var(--danger);
 }
 
@@ -30,6 +33,9 @@
   --accent: #b78a3e;
   --accent-dark: #8d672c;
   --accent-soft: #dde7e1;
+  --rust: #c8541a;
+  --rust-dark: #963b13;
+  --rust-soft: #f3e3d5;
   --danger: #9b3a32;
 }
 

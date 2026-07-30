@@ -10,6 +10,7 @@ import {
   parseCommercialPartnerFormData,
   saveCommercialPartner,
 } from "@/domain/commercial/commercial-service";
+import { withAdminNotice } from "@/lib/admin/notice";
 import { requireMutationAccess } from "@/lib/auth/principal";
 
 export async function createCommercialPartnerAction(
@@ -27,7 +28,7 @@ export async function createCommercialPartnerAction(
     return toActionState(error);
   }
   revalidatePath("/admin/retailers");
-  redirect(`/admin/retailers/${id}`);
+  redirect(withAdminNotice(`/admin/retailers/${id}`, "Partenerul comercial a fost creat."));
 }
 
 export async function updateCommercialPartnerAction(
@@ -47,12 +48,12 @@ export async function updateCommercialPartnerAction(
   }
   revalidatePath("/admin/retailers");
   revalidatePath(`/admin/retailers/${id}`);
-  redirect(`/admin/retailers/${id}`);
+  redirect(withAdminNotice(`/admin/retailers/${id}`, "Partenerul comercial a fost salvat."));
 }
 
 export async function deleteCommercialPartnerAction(id: string) {
   const principal = await requireMutationAccess("retailers");
   await deleteCommercialPartner(id, principal.id);
   revalidatePath("/admin/retailers");
-  redirect("/admin/retailers");
+  redirect(withAdminNotice("/admin/retailers", "Partenerul comercial a fost arhivat."));
 }

@@ -1,7 +1,8 @@
 export const primaryNavigation = [
-  { href: "/carti", label: "Cărți" },
+  { href: "/", label: "Acasă" },
+  { href: "/cartea-zilei", label: "Cartea Zilei" },
   { href: "/recomanda-mi", label: "Recomandări" },
-  { href: "/autori", label: "Autori" },
+  { href: "/carti", label: "Cărți" },
   { href: "/liste", label: "Liste" },
   { href: "/despre", label: "Despre" },
 ] as const;

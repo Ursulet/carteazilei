@@ -51,7 +51,7 @@ const emptyResults: SearchPayload = {
   guides: [],
 };
 
-export function SearchCommand() {
+export function SearchCommand({ variant = "icon" }: { variant?: "icon" | "field" }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -162,10 +162,13 @@ export function SearchCommand() {
       <Dialog.Trigger asChild>
         <button
           type="button"
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-paper hover:text-foreground"
+          className={variant === "field"
+            ? "inline-flex min-h-11 w-64 shrink-0 items-center gap-3 rounded-xl border border-border bg-paper/70 px-4 text-left text-sm text-muted transition-colors hover:border-rust hover:bg-surface hover:text-foreground"
+            : "inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-paper hover:text-foreground"}
           aria-label="Caută o carte, un autor sau o temă"
         >
           <Search aria-hidden="true" className="size-5" />
+          {variant === "field" ? <span className="truncate">Caută o carte, autor, gen...</span> : null}
         </button>
       </Dialog.Trigger>
 

@@ -11,13 +11,14 @@ import {
   Shapes,
   ShieldCheck,
   Sparkles,
+  type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { DailyFeatureSection } from "@/components/editorial/daily-feature-section";
+import { DailyFeatureSection, RecentDailyFeaturesSection } from "@/components/editorial/daily-feature-section";
 import { ButtonLink } from "@/components/ui/button-link";
-import { getCurrentPublicDailyFeature } from "@/db/queries/public-daily-features";
+import { getCurrentPublicDailyFeature, listRecentPublicDailyFeatures } from "@/db/queries/public-daily-features";
 import { getPublicHomepageDiscovery } from "@/db/queries/public-home";
 import { buildPublicMetadata } from "@/lib/seo/metadata";
 
@@ -32,9 +33,10 @@ export const metadata: Metadata = buildPublicMetadata({
 const categoryIcons = [BookOpen, Lightbulb, Brain, Feather, LibraryBig];
 
 export default async function HomePage() {
-  const [{ date, feature }, discovery] = await Promise.all([
+  const [{ date, feature }, discovery, recentDailyFeatures] = await Promise.all([
     getCurrentPublicDailyFeature(),
     getPublicHomepageDiscovery(),
+    listRecentPublicDailyFeatures(),
   ]);
 
   const quickGenres = discovery.genres.slice(0, 4);
@@ -73,13 +75,13 @@ export default async function HomePage() {
           </div>
 
           <aside className="hidden rounded-2xl border border-white/55 bg-surface/95 p-7 text-foreground shadow-[0_20px_60px_rgba(31,22,15,0.25)] backdrop-blur lg:block">
-            <p className="font-display text-2xl font-semibold">Găsește următoarea ta carte</p>
+            <p className="flex items-center gap-3 font-display text-2xl font-semibold"><span className="inline-flex size-9 items-center justify-center rounded-full bg-rust-soft text-rust"><BookHeart aria-hidden="true" className="size-4" /></span>Găsește următoarea ta carte</p>
             <p className="mt-2 text-sm leading-6 text-muted">Spune-ne ce îți place și îți recomandăm o singură alegere, cu motive clare.</p>
             {quickGenres.length ? (
               <div className="mt-5 flex flex-wrap gap-2">
                 {quickGenres.map((genre) => (
-                  <Link key={genre.slug} href={`/carti/gen/${genre.slug}`} className="rounded-xl border border-border bg-paper px-3 py-2 text-xs font-semibold transition hover:border-rust hover:text-rust-dark">
-                    {genre.name}
+                  <Link key={genre.slug} href={`/carti/gen/${genre.slug}`} className="inline-flex items-center gap-2 rounded-xl border border-border bg-paper px-3 py-2 text-xs font-semibold transition hover:border-rust hover:text-rust-dark">
+                    <BookOpen aria-hidden="true" className="size-3.5" />{genre.name}
                   </Link>
                 ))}
               </div>
@@ -102,6 +104,7 @@ export default async function HomePage() {
               title="Recomandări pentru următoarea lectură"
               href="/liste"
               action="Vezi toate"
+              icon={LibraryBig}
             />
             <div className="mt-6 grid grid-flow-col auto-cols-[minmax(16rem,78vw)] gap-4 overflow-x-auto pb-3 sm:auto-cols-[20rem] lg:grid-flow-row lg:grid-cols-4 lg:overflow-visible lg:pb-0">
               {editorialCards.length
@@ -117,7 +120,7 @@ export default async function HomePage() {
 
         {discovery.genres.length ? (
           <section className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-6 lg:px-8 lg:py-10">
-            <SectionHeader eyebrow="Explorează" title="Descoperă cărți după gen" href="/carti" action="Toate cărțile" />
+            <SectionHeader eyebrow="Explorează" title="Descoperă cărți după gen" href="/carti" action="Toate cărțile" icon={Shapes} />
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {discovery.genres.slice(0, 5).map((genre, index) => {
                 const Icon = categoryIcons[index] ?? BookOpen;
@@ -143,7 +146,7 @@ export default async function HomePage() {
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#efb687]">Pornește de la starea ta</p>
                 <h2 className="mt-4 font-display text-4xl font-semibold tracking-[-0.035em]">Ce ai nevoie de la următoarea carte?</h2>
                 <p className="mt-4 max-w-lg text-sm leading-7 text-white/70">Alege atmosfera sau cititorul pentru care cauți. Vei vedea doar selecții editoriale deja publicate.</p>
-                <ButtonLink href="/recomanda-mi" className="mt-7 bg-white text-brand hover:bg-paper">Primește o recomandare</ButtonLink>
+                <ButtonLink href="/recomanda-mi" className="mt-7 bg-white text-brand hover:bg-paper">Primește o recomandare <Sparkles aria-hidden="true" className="ms-2 size-4" /></ButtonLink>
               </div>
               <div className="grid content-center gap-3 bg-white/5 p-7 sm:grid-cols-2 sm:p-10">
                 {discovery.moods.slice(0, 4).map((mood) => (
@@ -158,7 +161,7 @@ export default async function HomePage() {
 
         <section className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-6 lg:px-8 lg:py-10">
           <div className="rounded-[1.75rem] border border-border bg-surface p-7 sm:p-10">
-            <SectionHeader eyebrow="Încredere editorială" title="O recomandare explicată, nu un simplu titlu" href="/cum-recomandam" action="Cum recomandăm" />
+            <SectionHeader eyebrow="Încredere editorială" title="O recomandare explicată, nu un simplu titlu" href="/cum-recomandam" action="Cum recomandăm" icon={ShieldCheck} />
             <div className="mt-7 grid gap-4 md:grid-cols-3">
               <TrustItem icon={Compass} title="Evaluare editorială" text="Fiecare alegere are argumente clare și o limită spusă sincer." />
               <TrustItem icon={ShieldCheck} title="Potrivire, nu popularitate" text="Preferințele cititorului contează mai mult decât un clasament." />
@@ -166,17 +169,22 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+        <RecentDailyFeaturesSection features={recentDailyFeatures} />
       </div>
     </>
   );
 }
 
-function SectionHeader({ eyebrow, title, href, action }: { eyebrow: string; title: string; href: string; action: string }) {
+function SectionHeader({ eyebrow, title, href, action, icon: Icon }: { eyebrow: string; title: string; href: string; action: string; icon: LucideIcon }) {
   return (
     <div className="flex items-end justify-between gap-5">
-      <div>
-        <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-rust-dark">{eyebrow}</p>
-        <h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{title}</h2>
+      <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] items-start gap-3">
+        <span className="mt-0.5 inline-flex size-11 items-center justify-center rounded-full bg-rust-soft text-rust-dark"><Icon aria-hidden="true" className="size-5 stroke-[1.7]" /></span>
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-rust-dark">{eyebrow}</p>
+          <h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{title}</h2>
+        </div>
       </div>
       <Link href={href} className="hidden shrink-0 items-center text-sm font-bold text-rust-dark hover:text-rust sm:inline-flex">{action}<ArrowRight aria-hidden="true" className="ms-2 size-4" /></Link>
     </div>

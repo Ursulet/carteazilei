@@ -6,7 +6,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb } from "@/db";
-import { bookEditions, editors, mediaAssets, retailers, siteSettings, staticPages } from "@/db/schema";
+import { authors, bookEditions, editors, mediaAssets, retailers, siteSettings, staticPages } from "@/db/schema";
 import { writeAuditLog } from "@/lib/audit/service";
 import { deleteMediaObject, putMediaObject } from "@/lib/storage/media-storage";
 
@@ -98,7 +98,26 @@ const mediaMetadataSchema = z.object({ title: z.string().trim().min(2).max(200),
 export function parseMediaMetadataFormData(formData: FormData) { const parsed = mediaMetadataSchema.safeParse({ title: stringValue(formData, "title"), altText: stringValue(formData, "altText"), attribution: optionalStringValue(formData, "attribution"), source: optionalStringValue(formData, "source"), sourceUrl: optionalStringValue(formData, "sourceUrl"), status: stringValue(formData, "status") }); if (!parsed.success) throw new EditorialServiceError("Corectează metadatele imaginii.", zodFieldErrors(parsed.error)); return parsed.data; }
 export async function updateMediaMetadata(assetId: string, input: z.infer<typeof mediaMetadataSchema>, actorUserId: string) { const db = getDb(); const [asset] = await db.update(mediaAssets).set({ ...input, attribution: input.attribution ?? null, source: input.source ?? null, sourceUrl: input.sourceUrl ?? null, updatedAt: new Date() }).where(and(eq(mediaAssets.id, assetId), isNull(mediaAssets.deletedAt))).returning({ id: mediaAssets.id }); if (!asset) throw new EditorialServiceError("Imaginea nu mai există."); await writeAuditLog({ actorUserId, action: "media.edit", entityType: "media_asset", entityId: assetId, diff: input }); }
 
-export async function getMediaUsage(assetId: string) { const db = getDb(); const [covers, profiles, partners, settings, pages] = await Promise.all([db.select({ id: bookEditions.id }).from(bookEditions).where(and(eq(bookEditions.coverAssetId, assetId), isNull(bookEditions.deletedAt))).limit(20), db.select({ id: editors.id }).from(editors).where(and(eq(editors.avatarAssetId, assetId), isNull(editors.deletedAt))).limit(20), db.select({ id: retailers.id }).from(retailers).where(and(eq(retailers.logoAssetId, assetId), isNull(retailers.deletedAt))).limit(20), db.select({ key: siteSettings.key }).from(siteSettings).where(sql`${assetId} in (${siteSettings.logoAssetId}, ${siteSettings.darkLogoAssetId}, ${siteSettings.compactLogoAssetId}, ${siteSettings.faviconAssetId}, ${siteSettings.appleTouchIconAssetId}, ${siteSettings.defaultOgAssetId}, ${siteSettings.bookPlaceholderAssetId})`).limit(20), db.select({ id: staticPages.id }).from(staticPages).where(and(eq(staticPages.ogImageAssetId, assetId), isNull(staticPages.deletedAt))).limit(20)]); return { covers: covers.length, profiles: profiles.length, partners: partners.length, settings: settings.length, pages: pages.length, total: covers.length + profiles.length + partners.length + settings.length + pages.length }; }
+export async function getMediaUsage(assetId: string) {
+  const db = getDb();
+  const [covers, profiles, authorPortraits, partners, settings, pages] = await Promise.all([
+    db.select({ id: bookEditions.id }).from(bookEditions).where(and(eq(bookEditions.coverAssetId, assetId), isNull(bookEditions.deletedAt))).limit(20),
+    db.select({ id: editors.id }).from(editors).where(and(eq(editors.avatarAssetId, assetId), isNull(editors.deletedAt))).limit(20),
+    db.select({ id: authors.id }).from(authors).where(and(eq(authors.portraitAssetId, assetId), isNull(authors.deletedAt))).limit(20),
+    db.select({ id: retailers.id }).from(retailers).where(and(eq(retailers.logoAssetId, assetId), isNull(retailers.deletedAt))).limit(20),
+    db.select({ key: siteSettings.key }).from(siteSettings).where(sql`${assetId} in (${siteSettings.logoAssetId}, ${siteSettings.darkLogoAssetId}, ${siteSettings.compactLogoAssetId}, ${siteSettings.faviconAssetId}, ${siteSettings.appleTouchIconAssetId}, ${siteSettings.defaultOgAssetId}, ${siteSettings.bookPlaceholderAssetId})`).limit(20),
+    db.select({ id: staticPages.id }).from(staticPages).where(and(eq(staticPages.ogImageAssetId, assetId), isNull(staticPages.deletedAt))).limit(20),
+  ]);
+  return {
+    covers: covers.length,
+    profiles: profiles.length,
+    authorPortraits: authorPortraits.length,
+    partners: partners.length,
+    settings: settings.length,
+    pages: pages.length,
+    total: covers.length + profiles.length + authorPortraits.length + partners.length + settings.length + pages.length,
+  };
+}
 
 export async function deleteMedia(assetId: string, actorUserId: string) {
   const db = getDb();

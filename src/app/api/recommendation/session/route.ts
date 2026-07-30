@@ -12,13 +12,14 @@ import {
   recommendationSessionMaxAgeSeconds,
   saveRecommendationStep,
 } from "@/domain/recommendation/session-service";
+import { recommendationBranchValues } from "@/domain/recommendation/types";
 import { readBoundedJson } from "@/lib/http/bounded-json";
 import { isTrustedSameOriginMutation } from "@/lib/http/same-origin";
 
 export const dynamic = "force-dynamic";
 
 const startSchema = z.object({
-  branch: z.literal("self"),
+  branch: z.enum(recommendationBranchValues),
   forceNew: z.boolean().optional(),
 });
 
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await createOrResumeRecommendationSession({
+      branch: parsed.data.branch,
       rawSessionToken: request.cookies.get(recommendationSessionCookie)?.value,
       rawAnonymousToken: anonymousToken,
       forceNew: parsed.data.forceNew,

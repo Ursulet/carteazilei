@@ -1,0 +1,2 @@
+ALTER TABLE "authors" ADD COLUMN "portrait_asset_id" uuid;--> statement-breakpoint
+ALTER TABLE "authors" ADD CONSTRAINT "authors_portrait_asset_id_media_assets_id_fk" FOREIGN KEY ("portrait_asset_id") REFERENCES "public"."media_assets"("id") ON DELETE restrict ON UPDATE no action;

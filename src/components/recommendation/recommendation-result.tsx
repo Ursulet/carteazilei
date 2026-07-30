@@ -22,9 +22,11 @@ type FeedbackAction = "positive" | "negative" | "started" | "finished" | "rating
 function ResultFeedback({
   resultId,
   resultToken,
+  branch,
 }: {
   resultId: string;
   resultToken: string;
+  branch: PublicRecommendationResult["branch"];
 }) {
   const [reaction, setReaction] = useState<"positive" | "negative" | null>(null);
   const [readingState, setReadingState] = useState<"started" | "finished" | null>(null);
@@ -72,7 +74,7 @@ function ResultFeedback({
     <section className="border-t border-border pt-10" aria-labelledby="recommendation-feedback-title">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Ajută-ne să calibrăm motorul</p>
       <h2 id="recommendation-feedback-title" className="mt-3 font-display text-3xl font-semibold">
-        Cum ți se pare recomandarea?
+        {branch === "gift" ? "Cum ți se pare alegerea pentru cadou?" : branch === "child" ? "Cum ți se pare alegerea pentru copil?" : "Cum ți se pare recomandarea?"}
       </h2>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
         Feedbackul este păstrat pentru evaluarea versiunilor viitoare și nu schimbă pe loc rezultatul sau ordinea ofertelor.
@@ -80,17 +82,12 @@ function ResultFeedback({
 
       <div className="mt-6 flex flex-wrap gap-3">
         <button type="button" disabled={busy} aria-pressed={reaction === "positive"} onClick={() => void send("positive")} className={`${compactButton} ${reaction === "positive" ? "border-brand bg-brand text-white" : "border-border hover:border-brand"}`}>
-          <ThumbsUp aria-hidden="true" className="me-2 size-4" />Da, pare potrivită
+          <ThumbsUp aria-hidden="true" className="me-2 size-4" />{branch === "gift" ? "Da, pare un cadou potrivit" : branch === "child" ? "Da, pare potrivită" : "Da, pare potrivită"}
         </button>
         <button type="button" disabled={busy} aria-pressed={reaction === "negative"} onClick={() => void send("negative")} className={`${compactButton} ${reaction === "negative" ? "border-brand bg-brand text-white" : "border-border hover:border-brand"}`}>
           <ThumbsDown aria-hidden="true" className="me-2 size-4" />Nu prea
         </button>
-        <button type="button" disabled={busy} aria-pressed={readingState === "started"} onClick={() => void send("started")} className={`${compactButton} ${readingState === "started" ? "border-accent bg-accent-soft" : "border-border hover:border-brand"}`}>
-          Am început-o
-        </button>
-        <button type="button" disabled={busy} aria-pressed={readingState === "finished"} onClick={() => void send("finished")} className={`${compactButton} ${readingState === "finished" ? "border-accent bg-accent-soft" : "border-border hover:border-brand"}`}>
-          Am terminat-o
-        </button>
+        {branch === "self" ? <><button type="button" disabled={busy} aria-pressed={readingState === "started"} onClick={() => void send("started")} className={`${compactButton} ${readingState === "started" ? "border-accent bg-accent-soft" : "border-border hover:border-brand"}`}>Am început-o</button><button type="button" disabled={busy} aria-pressed={readingState === "finished"} onClick={() => void send("finished")} className={`${compactButton} ${readingState === "finished" ? "border-accent bg-accent-soft" : "border-border hover:border-brand"}`}>Am terminat-o</button></> : null}
       </div>
 
       <div className="mt-6">
@@ -117,6 +114,11 @@ export function RecommendationResult({
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const result = data.results[currentIndex];
+  const branchCopy = data.branch === "gift"
+    ? { emptyEyebrow: "Recomandarea pentru cadou", emptyAction: "Reia alegerea cadoului", first: "ALEGEREA NOASTRĂ PENTRU CADOU", reasons: "De ce este potrivită pentru cadou" }
+    : data.branch === "child"
+      ? { emptyEyebrow: "Recomandarea pentru copil", emptyAction: "Reia profilul copilului", first: "ALEGEREA NOASTRĂ PENTRU COPIL", reasons: "De ce o recomandăm pentru copil" }
+      : { emptyEyebrow: "Recomandarea ta", emptyAction: "Reia profilul de lectură", first: "ALEGEREA NOASTRĂ PENTRU TINE", reasons: "De ce ți-o recomandăm" };
 
   if (!result) {
     return (
@@ -124,10 +126,10 @@ export function RecommendationResult({
         <div className="mx-auto w-full max-w-3xl px-5 sm:px-6">
           <div className="rounded-[2rem] border border-border bg-surface p-8 sm:p-12">
             <Info aria-hidden="true" className="size-10 text-accent-dark" />
-            <p className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Recomandarea ta</p>
+            <p className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">{branchCopy.emptyEyebrow}</p>
             <h1 className="mt-4 font-display text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">Nu am găsit încă o carte suficient de apropiată.</h1>
             <p className="mt-6 text-lg leading-8 text-muted">Poți ajusta preferințele sau poți explora catalogul pentru a alege direct.</p>
-            <Link href="/recomanda-mi" className="mt-8 inline-flex min-h-11 items-center rounded-full bg-brand px-6 text-sm font-bold text-white hover:bg-brand-hover">Reia profilul de lectură</Link>
+            <Link href="/recomanda-mi" className="mt-8 inline-flex min-h-11 items-center rounded-full bg-brand px-6 text-sm font-bold text-white hover:bg-brand-hover">{branchCopy.emptyAction}</Link>
           </div>
         </div>
       </div>
@@ -137,7 +139,7 @@ export function RecommendationResult({
   const nextRank = data.results[currentIndex + 1]?.rank;
   const nextResult = data.results[currentIndex + 1];
   const eyebrow = result.rank === 1
-    ? "ALEGEREA NOASTRĂ PENTRU TINE"
+    ? branchCopy.first
     : `ALTERNATIVA #${result.rank}`;
 
   return (
@@ -171,7 +173,7 @@ export function RecommendationResult({
 
       <div className="mx-auto grid w-full max-w-5xl gap-12 px-5 py-16 sm:px-6 md:py-24 lg:px-8">
         <section aria-labelledby="recommendation-reasons-title">
-          <h2 id="recommendation-reasons-title" className="font-display text-4xl font-semibold tracking-[-0.03em]">De ce ți-o recomandăm</h2>
+          <h2 id="recommendation-reasons-title" className="font-display text-4xl font-semibold tracking-[-0.03em]">{branchCopy.reasons}</h2>
           <ul className="mt-7 grid gap-4">
             {result.explanation.reasons.map((reason) => (
               <li key={reason} className="flex gap-4 rounded-2xl border border-border bg-surface p-5 leading-7">
@@ -219,7 +221,7 @@ export function RecommendationResult({
           />
         </section>
 
-        <ResultFeedback key={result.id} resultId={result.id} resultToken={resultToken} />
+        <ResultFeedback key={result.id} resultId={result.id} resultToken={resultToken} branch={data.branch} />
       </div>
     </div>
   );

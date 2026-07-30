@@ -2,7 +2,7 @@
 
 ## Domeniul fazei 07
 
-Ruta `/recomanda-mi` înlocuiește placeholderul cu un flux decizional anonim. Este implementată complet ramura „Pentru mine”. Ramurile „Cadou” și „Pentru un copil” sunt vizibile ca direcții distincte, dar rămân inactive până când catalogul are taxonomiile și regulile editoriale necesare. Nu reutilizăm forțat întrebările pentru cititorul adult în aceste contexte.
+Ruta `/recomanda-mi` oferă trei fluxuri decizionale anonime și funcționale: „Pentru mine”, „Cadou” și „Pentru un copil”. Fiecare ramură are întrebări, validare și adaptare de scoring proprii. Toate folosesc același catalog editorial și același motor determinist, fără ca prețul, ofertele sau parteneriatele comerciale să participe la alegerea cărții.
 
 Capturarea și validarea sesiunii aparțin fazei 07. Faza 08 conectează finalizarea la motorul determinist și redirecționează către snapshotul explicat; dacă nu există un candidat suficient de sigur, interfața afișează o stare onestă în locul unei cărți inventate.
 
@@ -14,6 +14,26 @@ Capturarea și validarea sesiunii aparțin fazei 07. Faza 08 conectează finaliz
 4. lungimea / timpul disponibil;
 5. o carte publicată din catalog, opțională, prin autocomplete;
 6. unul sau mai multe deal-breakere ori opțiunea exclusivă „Niciunul”.
+
+## Pașii „Cadou”
+
+1. relația cu persoana care primește cartea;
+2. categoria aproximativă de vârstă;
+3. ocazia;
+4. maximum trei interese/genuri sau „Nu știu”;
+5. obiceiul de lectură;
+6. alegere sigură, echilibrată sau surprinzătoare.
+
+## Pașii „Pentru un copil”
+
+1. categoria de vârstă;
+2. nivelul de lectură;
+3. citit singur, împreună sau mixt;
+4. maximum trei interese/genuri sau „Nu știu”;
+5. scopul lecturii;
+6. sensibilitățile care trebuie evitate.
+
+Pentru ramura copil, compatibilitatea cu taxonomia de audiență este un filtru obligatoriu. Sunt aplicate suplimentar praguri conservative de violență și atmosferă întunecată pentru grupele mici de vârstă. O carte etichetată numai „Lectură împreună” nu este eligibilă când răspunsul cere citire independentă.
 
 Interfața folosește un reducer tipat și o ordine fixă de stări. Răspunsurile sunt păstrate când utilizatorul navighează înainte și înapoi. Progresul este afișat printr-un singur indicator „Pasul X din 6” și o bară. Alegerile sunt butoane semantice cu `aria-pressed`, marcaj vizual și text, iar autocomplete-ul rămâne utilizabil cu tastatura.
 

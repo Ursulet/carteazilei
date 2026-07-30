@@ -1,4 +1,5 @@
 import type {
+  RecommendationEngineInput,
   RecommendationExplanationSnapshot,
   ScoredRecommendationCandidate,
 } from "./engine-types";
@@ -30,11 +31,31 @@ function contributionReason(
   answers: Required<Omit<SelfRecommendationAnswers, "likedBookId">> & {
     likedBookId?: string | null;
   },
+  context: RecommendationEngineInput["context"],
   component: ScoredRecommendationCandidate["contributions"][number]["component"],
 ) {
   const candidate = scored.candidate;
   switch (component) {
     case "need":
+      if (context.branch === "gift") {
+        const occasionLabels = {
+          birthday: "o zi de naștere",
+          holidays: "sărbători",
+          thank_you: "un gest de mulțumire",
+          celebration: "un moment important",
+          no_occasion: "un cadou fără o ocazie anume",
+        } as const;
+        return `Cauți o carte pentru ${occasionLabels[context.occasion]}, iar profilul editorial al titlului se potrivește intenției cadoului.`;
+      }
+      if (context.branch === "child") {
+        const goalLabels = {
+          joy: "plăcerea lecturii",
+          confidence: "mai multă încredere în citit",
+          learning: "învățare",
+          emotional: "o experiență cu miză emoțională",
+        } as const;
+        return `Ai căutat pentru copil o carte orientată spre ${goalLabels[context.goal]}, iar profilul editorial susține această direcție.`;
+      }
       return needReason(answers.need);
     case "genre": {
       const matches = candidate.genres.filter((genre) => answers.genres.includes(genre.id));
@@ -66,6 +87,26 @@ function contributionReason(
     case "freshness":
       return `Analiza editorială o descrie astfel: ${candidate.shortVerdict}`;
     case "audience":
+      return context.branch === "self"
+        ? null
+        : `Cartea este etichetată editorial pentru o categorie de vârstă compatibilă cu vârsta indicată.`;
+    case "context":
+      if (context.branch === "gift") {
+        const styleLabels = {
+          safe: "o alegere sigură și ușor de oferit",
+          balanced: "un echilibru între familiar și surprinzător",
+          surprise: "o alegere mai curajoasă, care poate surprinde",
+        } as const;
+        return `Ai preferat ${styleLabels[context.style]}, iar semnalele de lectură ale cărții sunt apropiate de acest nivel de risc.`;
+      }
+      if (context.branch === "child") {
+        const levelLabels = {
+          beginner: "la început de drum",
+          independent: "care citește independent",
+          advanced: "cu experiență de lectură",
+        } as const;
+        return `Nivelul de complexitate este potrivit pentru un copil ${levelLabels[context.readingLevel]}.`;
+      }
       return null;
   }
 }
@@ -76,13 +117,14 @@ export function buildRecommendationExplanation(
   answers: Required<Omit<SelfRecommendationAnswers, "likedBookId">> & {
     likedBookId?: string | null;
   },
+  context: RecommendationEngineInput["context"],
 ): RecommendationExplanationSnapshot {
   const orderedComponents = [...scored.contributions]
     .filter((contribution) => Boolean(contribution.reasonCode))
     .sort((left, right) => right.points - left.points)
     .map((contribution) => contribution.component);
   const reasonCandidates = [
-    ...orderedComponents.map((component) => contributionReason(scored, answers, component)),
+    ...orderedComponents.map((component) => contributionReason(scored, answers, context, component)),
     `Analiza editorială o descrie astfel: ${scored.candidate.shortVerdict}`,
     "Cartea trece pragul intern de completitudine și încredere editorială pentru recomandări personalizate.",
   ];

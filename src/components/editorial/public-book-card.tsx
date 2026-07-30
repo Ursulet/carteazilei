@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Feather, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import type { PublicBookCard } from "@/db/queries/public-book-pages";
@@ -11,8 +11,8 @@ export function PublicBookCard({ book, reason }: { book: PublicBookCard; reason?
       <Link href={`/carte/${book.slug}`} className="group block">
         <BookCover cover={book.cover} title={book.title} className="mx-auto max-w-[12rem]" />
         <h3 className="mt-5 font-display text-2xl font-semibold leading-tight">{book.title}</h3>
-        <p className="mt-1 text-sm text-muted">de {book.author}</p>
-        {reason ?? book.verdict ? <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted">{reason ?? book.verdict}</p> : null}
+        <p className="mt-2 flex items-center gap-2 text-sm text-muted"><Feather aria-hidden="true" className="size-4 text-rust" />de {book.author}</p>
+        {reason ?? book.verdict ? <p className="mt-4 grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-2 text-sm leading-6 text-muted"><Sparkles aria-hidden="true" className="mt-1 size-4 text-rust" /><span className="line-clamp-3">{reason ?? book.verdict}</span></p> : null}
         <span className="mt-5 inline-flex items-center text-sm font-bold text-brand">Vezi analiza<ArrowRight aria-hidden="true" className="ms-2 size-4 transition-transform group-hover:translate-x-0.5" /></span>
       </Link>
     </article>

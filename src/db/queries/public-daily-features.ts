@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, isNull, lte, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, lte, or, sql, type SQL } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db";
 import {
@@ -84,6 +84,28 @@ function dailyFeatureSelection() {
       where e.book_id = ${outerBookId} and e.active and e.deleted_at is null
       order by e.updated_at desc limit 1
     )`,
+    edition: {
+      publisher: sql<string | null>`(
+        select e.publisher from book_editions e
+        where e.book_id = ${outerBookId} and e.active and e.deleted_at is null
+        order by e.updated_at desc limit 1
+      )`,
+      publicationYear: sql<number | null>`(
+        select e.publication_year from book_editions e
+        where e.book_id = ${outerBookId} and e.active and e.deleted_at is null
+        order by e.updated_at desc limit 1
+      )`,
+      publicationDate: sql<string | null>`(
+        select e.publication_date from book_editions e
+        where e.book_id = ${outerBookId} and e.active and e.deleted_at is null
+        order by e.updated_at desc limit 1
+      )`,
+      pageCount: sql<number | null>`(
+        select e.page_count from book_editions e
+        where e.book_id = ${outerBookId} and e.active and e.deleted_at is null
+        order by e.updated_at desc limit 1
+      )`,
+    },
     cover: {
       id: sql<string | null>`(
         select m.id from book_editions e
@@ -164,6 +186,22 @@ export async function getPublicDailyFeatureByDate(
 export async function getCurrentPublicDailyFeature(db: Database = getDb()) {
   const date = getEditorialDate();
   return { date, feature: await getPublicDailyFeatureByDate(date, db) };
+}
+
+export async function listRecentPublicDailyFeatures(
+  beforeDate = getEditorialDate(),
+  db: Database = getDb(),
+  limit = 4,
+) {
+  const rows = await selectFeatureRows(
+    db,
+    [lt(dailyFeatures.featureDate, beforeDate)],
+    Math.min(Math.max(limit * 3, limit, 1), 36),
+  );
+  return rows.filter(hasCompletePublicFeature).slice(0, limit).map((row) => ({
+    ...row,
+    fitPoints: row.fitPoints.slice(0, 3),
+  }));
 }
 
 export async function listPublicDailyFeatures(

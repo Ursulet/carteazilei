@@ -1,4 +1,13 @@
-import type { SelfRecommendationAnswers } from "./types";
+import type {
+  ChildGoal,
+  ChildReadingLevel,
+  ChildReadingMode,
+  GiftOccasion,
+  GiftReadingHabit,
+  GiftRelationship,
+  GiftStyle,
+  SelfRecommendationAnswers,
+} from "./types";
 
 export type CandidateGenre = {
   id: string;
@@ -62,6 +71,7 @@ export type ScoreContribution = {
     | "length"
     | "reference"
     | "audience"
+    | "context"
     | "editorial_confidence"
     | "freshness";
   points: number;
@@ -80,6 +90,23 @@ export type RecommendationEngineInput = {
   answers: Required<Omit<SelfRecommendationAnswers, "likedBookId">> & {
     likedBookId?: string | null;
   };
+  context:
+    | { branch: "self" }
+    | {
+        branch: "gift";
+        targetAge: number;
+        relationship: GiftRelationship;
+        occasion: GiftOccasion;
+        readingHabit: GiftReadingHabit;
+        style: GiftStyle;
+      }
+    | {
+        branch: "child";
+        targetAge: number;
+        readingLevel: ChildReadingLevel;
+        readingMode: ChildReadingMode;
+        goal: ChildGoal;
+      };
   candidates: RecommendationCandidate[];
 };
 

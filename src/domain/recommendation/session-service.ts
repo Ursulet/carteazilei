@@ -18,14 +18,17 @@ import {
 import { getServerEnv } from "@/lib/env/server";
 
 import {
-  completeSelfRecommendationAnswersSchema,
+  parseCompleteRecommendationAnswers,
+  parsePartialRecommendationAnswers,
   recommendationSnapshotSchema,
   type RecommendationStepPayload,
 } from "./input";
 import type {
+  RecommendationAnswers,
+  RecommendationBranch,
   RecommendationSessionView,
-  SelfRecommendationAnswers,
 } from "./types";
+import { recommendationStepsForBranch } from "./types";
 
 export const recommendationSessionCookie = "cz_rec_session";
 export const recommendationAnonymousCookie = "cz_rec_anon";
@@ -62,19 +65,23 @@ function emptySnapshot(): RecommendationAnswersSnapshot {
   return { schemaVersion: 1, steps: {} };
 }
 
-function snapshotFromAnswers(answers: SelfRecommendationAnswers): RecommendationAnswersSnapshot {
+function snapshotFromAnswers(answers: RecommendationAnswers): RecommendationAnswersSnapshot {
   return {
     schemaVersion: 1,
     steps: answers as Record<string, RecommendationAnswerValue>,
   };
 }
 
-function parseAnswers(snapshot: unknown) {
+function parseAnswers(snapshot: unknown, branch: RecommendationBranch) {
   const parsed = recommendationSnapshotSchema.safeParse(snapshot);
   if (!parsed.success) {
     throw new RecommendationSessionError("Sesiunea are un format incompatibil.", 409);
   }
-  return parsed.data.steps;
+  const answers = parsePartialRecommendationAnswers(branch, parsed.data.steps);
+  if (!answers) {
+    throw new RecommendationSessionError("Răspunsurile sesiunii nu corespund contextului ales.", 409);
+  }
+  return answers;
 }
 
 async function likedBookSummary(
@@ -100,14 +107,15 @@ async function likedBookSummary(
 }
 
 async function toSessionView(
-  row: { status: "started" | "completed" | "expired"; answersJson: unknown },
+  row: { branch: RecommendationBranch; status: "started" | "completed" | "expired"; answersJson: unknown },
   db: Database,
 ): Promise<RecommendationSessionView> {
   if (row.status === "expired") {
     throw new RecommendationSessionError("Sesiunea a expirat.", 410);
   }
-  const answers = parseAnswers(row.answersJson);
+  const answers = parseAnswers(row.answersJson, row.branch);
   return {
+    branch: row.branch,
     status: row.status,
     answers,
     likedBook: await likedBookSummary(answers.likedBookId, db),
@@ -122,6 +130,7 @@ export async function getRecommendationSessionByRawToken(
   if (!token) return null;
   const [row] = await db
     .select({
+      branch: recommendationSessions.branch,
       status: recommendationSessions.status,
       answersJson: recommendationSessions.answersJson,
       expiresAt: recommendationSessions.expiresAt,
@@ -139,10 +148,12 @@ export async function getRecommendationSessionByRawToken(
 }
 
 export async function createOrResumeRecommendationSession({
+  branch,
   rawSessionToken,
   rawAnonymousToken,
   forceNew = false,
 }: {
+  branch: RecommendationBranch;
   rawSessionToken?: string | null;
   rawAnonymousToken?: string | null;
   forceNew?: boolean;
@@ -151,7 +162,7 @@ export async function createOrResumeRecommendationSession({
   const existingToken = validRawToken(rawSessionToken);
   if (existingToken && !forceNew) {
     const session = await getRecommendationSessionByRawToken(existingToken, db);
-    if (session) {
+    if (session?.branch === branch) {
       return {
         rawSessionToken: existingToken,
         rawAnonymousToken: validRawToken(rawAnonymousToken) ?? randomToken(24),
@@ -170,13 +181,14 @@ export async function createOrResumeRecommendationSession({
       .values({
         opaqueToken: tokenHash("session", newSessionToken),
         anonymousSessionId,
-        branch: "self",
+        branch,
         status: "started",
         answersJson: emptySnapshot(),
         expiresAt,
       })
       .returning({
         id: recommendationSessions.id,
+        branch: recommendationSessions.branch,
         status: recommendationSessions.status,
         answersJson: recommendationSessions.answersJson,
       });
@@ -203,8 +215,9 @@ export async function createOrResumeRecommendationSession({
 }
 
 async function assertStepReferences(payload: RecommendationStepPayload, db: Database) {
-  if (payload.step === "genres") {
-    const selectedIds = payload.value.filter((value) => value !== "any");
+  if (["genres", "gift_interests", "child_interests"].includes(payload.step)) {
+    const genrePayload = payload as Extract<RecommendationStepPayload, { step: "genres" | "gift_interests" | "child_interests" }>;
+    const selectedIds = genrePayload.value.filter((value) => value !== "any");
     if (!selectedIds.length) return;
     const rows = await Promise.all(
       selectedIds.map(async (id) => {
@@ -230,9 +243,9 @@ async function assertStepReferences(payload: RecommendationStepPayload, db: Data
 }
 
 function applyStep(
-  answers: SelfRecommendationAnswers,
+  answers: RecommendationAnswers,
   payload: RecommendationStepPayload,
-): SelfRecommendationAnswers {
+): RecommendationAnswers {
   switch (payload.step) {
     case "need": return { ...answers, need: payload.value };
     case "genres": return { ...answers, genres: payload.value };
@@ -240,6 +253,18 @@ function applyStep(
     case "length": return { ...answers, length: payload.value };
     case "liked_book": return { ...answers, likedBookId: payload.value };
     case "deal_breakers": return { ...answers, dealBreakers: payload.value };
+    case "gift_relationship": return { ...answers, giftRelationship: payload.value };
+    case "gift_age": return { ...answers, giftAge: payload.value };
+    case "gift_occasion": return { ...answers, giftOccasion: payload.value };
+    case "gift_interests": return { ...answers, giftInterests: payload.value };
+    case "gift_reading_habit": return { ...answers, giftReadingHabit: payload.value };
+    case "gift_style": return { ...answers, giftStyle: payload.value };
+    case "child_age": return { ...answers, childAge: payload.value };
+    case "child_reading_level": return { ...answers, childReadingLevel: payload.value };
+    case "child_reading_mode": return { ...answers, childReadingMode: payload.value };
+    case "child_interests": return { ...answers, childInterests: payload.value };
+    case "child_goal": return { ...answers, childGoal: payload.value };
+    case "child_sensitivities": return { ...answers, childSensitivities: payload.value };
   }
 }
 
@@ -255,6 +280,7 @@ export async function saveRecommendationStep(
     const [current] = await transaction
       .select({
         id: recommendationSessions.id,
+        branch: recommendationSessions.branch,
         anonymousSessionId: recommendationSessions.anonymousSessionId,
         status: recommendationSessions.status,
         answersJson: recommendationSessions.answersJson,
@@ -275,12 +301,16 @@ export async function saveRecommendationStep(
     if (current.status !== "started") {
       throw new RecommendationSessionError("Sesiunea a fost deja finalizată.", 409);
     }
-    const nextAnswers = applyStep(parseAnswers(current.answersJson), payload);
+    if (!recommendationStepsForBranch(current.branch).includes(payload.step)) {
+      throw new RecommendationSessionError("Întrebarea nu aparține contextului de recomandare ales.");
+    }
+    const nextAnswers = applyStep(parseAnswers(current.answersJson, current.branch), payload);
     const [updated] = await transaction
       .update(recommendationSessions)
       .set({ answersJson: snapshotFromAnswers(nextAnswers) })
       .where(eq(recommendationSessions.id, current.id))
       .returning({
+        branch: recommendationSessions.branch,
         status: recommendationSessions.status,
         answersJson: recommendationSessions.answersJson,
       });
@@ -302,6 +332,7 @@ export async function completeRecommendationSession(rawToken: string | null | un
     const [current] = await transaction
       .select({
         id: recommendationSessions.id,
+        branch: recommendationSessions.branch,
         anonymousSessionId: recommendationSessions.anonymousSessionId,
         status: recommendationSessions.status,
         answersJson: recommendationSessions.answersJson,
@@ -329,9 +360,9 @@ export async function completeRecommendationSession(rawToken: string | null | un
       }).onConflictDoNothing({ target: productEvents.dedupeKey });
       return current;
     }
-    const answers = parseAnswers(current.answersJson);
-    const complete = completeSelfRecommendationAnswersSchema.safeParse(answers);
-    if (!complete.success) {
+    const answers = parseAnswers(current.answersJson, current.branch);
+    const complete = parseCompleteRecommendationAnswers(current.branch, answers);
+    if (!complete) {
       throw new RecommendationSessionError("Completează toate cele șase etape înainte de finalizare.");
     }
     const [updated] = await transaction
@@ -339,6 +370,7 @@ export async function completeRecommendationSession(rawToken: string | null | un
       .set({ status: "completed", completedAt: new Date() })
       .where(eq(recommendationSessions.id, current.id))
       .returning({
+        branch: recommendationSessions.branch,
         status: recommendationSessions.status,
         answersJson: recommendationSessions.answersJson,
       });

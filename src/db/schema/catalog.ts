@@ -38,6 +38,9 @@ export const authors = pgTable(
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
     bio: text("bio"),
+    portraitAssetId: uuid("portrait_asset_id").references(() => mediaAssets.id, {
+      onDelete: "restrict",
+    }),
     verifiedFacts: text("verified_facts"),
     sourceNotes: text("source_notes"),
     status: text("status", { enum: authorStatusValues }).default("draft").notNull(),

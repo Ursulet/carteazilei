@@ -34,13 +34,15 @@ function traitFit(candidate: RecommendationCandidate, code: string) {
   const trait = candidate.traits.find((item) => item.code === code);
   if (!trait) return null;
   const confidenceFactor = 0.5 + (trait.confidence / 100) * 0.5;
-  return clamp((trait.score / 100) * confidenceFactor);
+  const normalized = trait.score <= 10 ? trait.score / 10 : trait.score / 100;
+  return clamp(normalized * confidenceFactor);
 }
 
 /** Returnează traitul brut numai când evaluarea editorială are încredere suficientă. */
 function reliableTrait(candidate: RecommendationCandidate, code: string) {
   const trait = candidate.traits.find((item) => item.code === code);
-  return trait && trait.confidence >= 50 ? trait.score : null;
+  if (!trait || trait.confidence < 50) return null;
+  return trait.score <= 10 ? trait.score * 10 : trait.score;
 }
 
 /** Transformă intensitatea unei stări editoriale publicate într-o valoare 0–1. */
@@ -132,6 +134,63 @@ function lengthFit(candidate: RecommendationCandidate, length: Exclude<ReadingLe
     case "350_500": return pages >= 350 && pages <= 500 ? 1 : pages >= 275 && pages <= 600 ? 0.5 : 0;
     case "over_500": return pages > 500 ? 1 : pages >= 425 ? 0.5 : 0;
   }
+}
+
+function matchesTargetAudience(candidate: RecommendationCandidate, input: RecommendationEngineInput) {
+  const context = input.context;
+  if (context.branch === "self") return true;
+  const matching = candidate.audiences.filter((audience) =>
+    (audience.minimumAge === null || audience.minimumAge <= context.targetAge) &&
+    (audience.maximumAge === null || audience.maximumAge >= context.targetAge),
+  );
+  if (context.branch === "child" && context.readingMode === "alone") {
+    return matching.some((audience) => audience.slug !== "lectura-impreuna");
+  }
+  return matching.length > 0;
+}
+
+function childSafetyConflict(candidate: RecommendationCandidate, targetAge: number) {
+  const violence = reliableTrait(candidate, "violence");
+  const darkMood = candidate.moods.find((mood) => mood.slug === "intunecat")?.strength ?? null;
+  if (targetAge <= 8) return (violence ?? 0) > 35 || (darkMood ?? 0) > 40;
+  if (targetAge <= 12) return (violence ?? 0) > 55 || (darkMood ?? 0) > 65;
+  return false;
+}
+
+function contextFit(candidate: RecommendationCandidate, input: RecommendationEngineInput) {
+  if (input.context.branch === "self") return null;
+  if (input.context.branch === "gift") {
+    if (input.context.style === "safe") {
+      const ambiguity = traitFit(candidate, "ambiguity");
+      return averageAvailable([
+        candidate.editorialConfidence / 100,
+        ambiguity === null ? null : 1 - ambiguity,
+      ], 0.65);
+    }
+    if (input.context.style === "surprise") {
+      return averageAvailable([
+        traitFit(candidate, "world_building"),
+        traitFit(candidate, "complexity"),
+        moodFit(candidate, "provocator"),
+      ], 0.55);
+    }
+    return 0.75;
+  }
+
+  const complexity = traitFit(candidate, "complexity");
+  const target = input.context.readingLevel === "beginner"
+    ? 0.2
+    : input.context.readingLevel === "independent"
+      ? 0.45
+      : 0.75;
+  const complexityFit = complexity === null ? 0.5 : clamp(1 - Math.abs(complexity - target) / 0.75);
+  const togetherBonus = input.context.readingMode !== "alone" && candidate.audiences.some((audience) => audience.slug === "lectura-impreuna") ? 1 : null;
+  return averageAvailable([complexityFit, togetherBonus], complexityFit);
+}
+
+function averageAvailable(values: Array<number | null>, fallback: number) {
+  const available = values.filter((value): value is number => value !== null);
+  return available.length ? available.reduce((sum, value) => sum + value, 0) / available.length : fallback;
 }
 
 /** Selectează cea mai puternică relație editorială aprobată cu referința. */
@@ -229,6 +288,8 @@ function scoreCandidate(
   configuration: RecommendationConfiguration,
 ): ScoredRecommendationCandidate | null {
   if (hardConflictCodes(candidate, input.answers.dealBreakers).length) return null;
+  if (!matchesTargetAudience(candidate, input)) return null;
+  if (input.context.branch === "child" && childSafetyConflict(candidate, input.context.targetAge)) return null;
 
   const contributions: ScoreContribution[] = [];
   const activeWeights: number[] = [
@@ -245,6 +306,23 @@ function scoreCandidate(
         ? `MATCH_PRIMARY_NEED_${codeFragment(input.answers.need)}`
         : undefined,
   });
+
+  if (input.context.branch !== "self") {
+    const audienceWeight = 12;
+    const branchContextWeight = 10;
+    activeWeights.push(audienceWeight, branchContextWeight);
+    contributions.push({
+      component: "audience",
+      points: audienceWeight,
+      reasonCode: `MATCH_AUDIENCE_AGE_${input.context.targetAge}`,
+    });
+    const fit = contextFit(candidate, input) ?? 0;
+    contributions.push({
+      component: "context",
+      points: fit * branchContextWeight,
+      reasonCode: fit >= 0.5 ? `MATCH_${input.context.branch.toUpperCase()}_CONTEXT` : undefined,
+    });
+  }
 
   if (!input.answers.genres.includes("any")) {
     activeWeights.push(configuration.genreWeight);
@@ -352,6 +430,6 @@ export function runRecommendationEngineV1(
   return selectDiverseTopThree(scored, configuration.minimumScore).map((candidate, index) => ({
     ...candidate,
     rank: index + 1,
-    explanation: buildRecommendationExplanation(candidate, input.answers),
+    explanation: buildRecommendationExplanation(candidate, input.answers, input.context),
   }));
 }

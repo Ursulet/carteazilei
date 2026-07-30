@@ -80,6 +80,18 @@ export const recommendationQuizStepValues = [
   "length",
   "liked_book",
   "deal_breakers",
+  "gift_relationship",
+  "gift_age",
+  "gift_occasion",
+  "gift_interests",
+  "gift_reading_habit",
+  "gift_style",
+  "child_age",
+  "child_reading_level",
+  "child_reading_mode",
+  "child_interests",
+  "child_goal",
+  "child_sensitivities",
 ] as const;
 
 export const recommendationFeedbackActionValues = [

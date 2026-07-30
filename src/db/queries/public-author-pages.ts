@@ -8,6 +8,7 @@ import {
   books,
   editorialListBooks,
   editorialLists,
+  mediaAssets,
   seoMetadata,
 } from "@/db/schema";
 import {
@@ -23,10 +24,17 @@ export async function listPublicAuthors(db: Database = getDb()) {
       name: authors.name,
       slug: authors.slug,
       bio: authors.bio,
+      portrait: {
+        id: mediaAssets.id,
+        altText: mediaAssets.altText,
+        width: mediaAssets.width,
+        height: mediaAssets.height,
+      },
       bookCount: sql<number>`count("books"."id")::int`,
     })
     .from(authors)
     .innerJoin(books, eq(books.primaryAuthorId, authors.id))
+    .leftJoin(mediaAssets, and(eq(mediaAssets.id, authors.portraitAssetId), isNull(mediaAssets.deletedAt)))
     .where(and(
       eq(authors.status, "published"),
       isNull(authors.deletedAt),
@@ -34,7 +42,7 @@ export async function listPublicAuthors(db: Database = getDb()) {
       isNull(books.deletedAt),
       publicBookPageEligibility,
     ))
-    .groupBy(authors.id, authors.name, authors.slug, authors.bio)
+    .groupBy(authors.id, authors.name, authors.slug, authors.bio, mediaAssets.id, mediaAssets.altText, mediaAssets.width, mediaAssets.height)
     .orderBy(asc(authors.name));
 }
 
@@ -45,8 +53,12 @@ export async function getPublicAuthorPage(slug: string, db: Database = getDb()) 
       name: authors.name,
       slug: authors.slug,
       bio: authors.bio,
-      verifiedFacts: authors.verifiedFacts,
-      sourceNotes: authors.sourceNotes,
+      portrait: {
+        id: mediaAssets.id,
+        altText: mediaAssets.altText,
+        width: mediaAssets.width,
+        height: mediaAssets.height,
+      },
       publishedAt: authors.publishedAt,
       updatedAt: authors.updatedAt,
       seo: {
@@ -57,6 +69,7 @@ export async function getPublicAuthorPage(slug: string, db: Database = getDb()) 
       },
     })
     .from(authors)
+    .leftJoin(mediaAssets, and(eq(mediaAssets.id, authors.portraitAssetId), isNull(mediaAssets.deletedAt)))
     .leftJoin(seoMetadata, and(eq(seoMetadata.entityType, "author"), eq(seoMetadata.entityId, authors.id)))
     .where(and(eq(authors.slug, slug), eq(authors.status, "published"), isNull(authors.deletedAt)))
     .limit(1);

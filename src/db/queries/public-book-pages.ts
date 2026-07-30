@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db";
 import {
@@ -9,6 +9,7 @@ import {
   bookAudiences,
   bookEditions,
   bookGenres,
+  bookMoods,
   bookRelationships,
   books,
   bookThemes,
@@ -19,20 +20,12 @@ import {
   editors,
   genres,
   mediaAssets,
+  moods,
   readingTraits,
   seoMetadata,
   themes,
 } from "@/db/schema";
 import { listPublicCommercialOffersForBook } from "@/db/queries/public-commercial-offers";
-
-const readingProfileCodes = [
-  "pace",
-  "complexity",
-  "emotional_intensity",
-  "world_building",
-  "romance",
-  "philosophical_depth",
-] as const;
 
 export const publishedBookConditions = and(
   eq(books.status, "published"),
@@ -146,7 +139,10 @@ export async function getPublicBookPage(slug: string, db: Database = getDb()) {
         name: authors.name,
         slug: authors.slug,
         bio: authors.bio,
-        verifiedFacts: authors.verifiedFacts,
+        portraitId: sql<string | null>`(select m.id from media_assets m where m.id = ${authors.portraitAssetId} and m.deleted_at is null limit 1)`,
+        portraitAltText: sql<string | null>`(select m.alt_text from media_assets m where m.id = ${authors.portraitAssetId} and m.deleted_at is null limit 1)`,
+        portraitWidth: sql<number | null>`(select m.width from media_assets m where m.id = ${authors.portraitAssetId} and m.deleted_at is null limit 1)`,
+        portraitHeight: sql<number | null>`(select m.height from media_assets m where m.id = ${authors.portraitAssetId} and m.deleted_at is null limit 1)`,
       },
       seo: {
         title: seoMetadata.titleOverride,
@@ -162,7 +158,7 @@ export async function getPublicBookPage(slug: string, db: Database = getDb()) {
     .limit(1);
   if (!base) return null;
 
-  const [editionRows, reviewRows, genreRows, themeRows, audienceRows, traitRows, listRows, relations] = await Promise.all([
+  const [editionRows, reviewRows, genreRows, themeRows, moodRows, audienceRows, traitRows, listRows, relations] = await Promise.all([
     db.select({
       id: bookEditions.id,
       isbn10: bookEditions.isbn10,
@@ -197,13 +193,17 @@ export async function getPublicBookPage(slug: string, db: Database = getDb()) {
       .innerJoin(themes, eq(themes.id, bookThemes.themeId))
       .where(and(eq(bookThemes.bookId, base.book.id), eq(themes.status, "published"), isNull(themes.deletedAt)))
       .orderBy(asc(themes.name)),
+    db.select({ id: moods.id, name: moods.name, slug: moods.slug, strength: bookMoods.strength }).from(bookMoods)
+      .innerJoin(moods, eq(moods.id, bookMoods.moodId))
+      .where(and(eq(bookMoods.bookId, base.book.id), eq(moods.status, "published"), isNull(moods.deletedAt)))
+      .orderBy(desc(bookMoods.strength), asc(moods.name)),
     db.select({ id: audiences.id, name: audiences.name, slug: audiences.slug, description: audiences.description }).from(bookAudiences)
       .innerJoin(audiences, eq(audiences.id, bookAudiences.audienceId))
       .where(and(eq(bookAudiences.bookId, base.book.id), eq(audiences.status, "published"), isNull(audiences.deletedAt)))
       .orderBy(asc(audiences.name)),
     db.select({ code: readingTraits.code, name: readingTraits.name, score: bookTraitScores.score, confidence: bookTraitScores.confidence }).from(bookTraitScores)
       .innerJoin(readingTraits, eq(readingTraits.id, bookTraitScores.traitId))
-      .where(and(eq(bookTraitScores.bookId, base.book.id), inArray(readingTraits.code, readingProfileCodes), eq(readingTraits.active, true)))
+      .where(and(eq(bookTraitScores.bookId, base.book.id), eq(readingTraits.active, true)))
       .orderBy(asc(readingTraits.name)),
     db.select({ title: editorialLists.title, slug: editorialLists.slug, reason: editorialListBooks.reason }).from(editorialListBooks)
       .innerJoin(editorialLists, eq(editorialLists.id, editorialListBooks.listId))
@@ -217,10 +217,23 @@ export async function getPublicBookPage(slug: string, db: Database = getDb()) {
   const offers = await listPublicCommercialOffersForBook(base.book.id, {}, db);
   return {
     ...base,
+    author: {
+      id: base.author.id,
+      name: base.author.name,
+      slug: base.author.slug,
+      bio: base.author.bio,
+      portrait: {
+        id: base.author.portraitId,
+        altText: base.author.portraitAltText,
+        width: base.author.portraitWidth,
+        height: base.author.portraitHeight,
+      },
+    },
     edition,
     review,
     genres: genreRows,
     themes: themeRows,
+    moods: moodRows,
     audiences: audienceRows,
     traits: traitRows,
     lists: listRows,

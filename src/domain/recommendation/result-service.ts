@@ -18,11 +18,12 @@ import {
 } from "@/db/schema";
 import { getServerEnv } from "@/lib/env/server";
 
+import { recommendationEngineInputForBranch } from "./branch-adapter";
 import type { RecommendationExplanationSnapshot } from "./engine-types";
 import { RECOMMENDATION_ALGORITHM_VERSION, runRecommendationEngineV1 } from "./engine-v1";
 import { getRecommendationConfiguration } from "./configuration-service";
 import {
-  completeSelfRecommendationAnswersSchema,
+  parseCompleteRecommendationAnswers,
   recommendationSnapshotSchema,
 } from "./input";
 import { RecommendationSessionError } from "./session-service";
@@ -98,7 +99,7 @@ export async function generateRecommendationResults(
     .where(eq(recommendationSessions.opaqueToken, sessionTokenHash(token)))
     .limit(1);
   if (!session) throw new RecommendationSessionError("Sesiunea nu mai există.", 401);
-  if (session.status !== "completed" || session.branch !== "self") {
+  if (session.status !== "completed") {
     throw new RecommendationSessionError("Profilul trebuie finalizat înainte de recomandare.", 409);
   }
 
@@ -110,23 +111,20 @@ export async function generateRecommendationResults(
 
   const snapshot = recommendationSnapshotSchema.safeParse(session.answersJson);
   const answers = snapshot.success
-    ? completeSelfRecommendationAnswersSchema.safeParse(snapshot.data.steps)
+    ? parseCompleteRecommendationAnswers(session.branch, snapshot.data.steps)
     : null;
-  if (!answers?.success) {
+  if (!answers) {
     throw new RecommendationSessionError("Răspunsurile complete nu mai pot fi validate.", 409);
   }
 
   const [candidates, configuration] = await Promise.all([
-    getRecommendationCandidates(answers.data.likedBookId, db),
+    getRecommendationCandidates(session.branch === "self" ? answers.likedBookId : null, db),
     getRecommendationConfiguration(db),
   ]);
-  const engineResults = runRecommendationEngineV1({
-    answers: {
-      ...answers.data,
-      likedBookId: answers.data.likedBookId ?? null,
-    },
-    candidates,
-  }, configuration);
+  const engineResults = runRecommendationEngineV1(
+    recommendationEngineInputForBranch(session.branch, answers, candidates),
+    configuration,
+  );
 
   await db.transaction(async (transaction) => {
     const [locked] = await transaction
@@ -150,7 +148,7 @@ export async function generateRecommendationResults(
           score: result.score.toFixed(2),
           reasonCodes: result.reasonCodes,
           explanationSnapshot: JSON.stringify(result.explanation),
-          algorithmVersion: `${RECOMMENDATION_ALGORITHM_VERSION}:r${configuration.revision}`,
+          algorithmVersion: `${RECOMMENDATION_ALGORITHM_VERSION}:${session.branch}:r${configuration.revision}`,
         })),
       );
     }
@@ -173,7 +171,7 @@ export async function getPublicRecommendationResult(
   const token = validOpaqueToken(rawResultToken);
   if (!token) return null;
   const [session] = await db
-    .select({ id: recommendationSessions.id })
+    .select({ id: recommendationSessions.id, branch: recommendationSessions.branch })
     .from(recommendationSessions)
     .where(
       and(
@@ -260,7 +258,7 @@ export async function getPublicRecommendationResult(
       ];
     }),
   );
-  return { sessionId: session.id, results };
+  return { sessionId: session.id, branch: session.branch, results };
 }
 
 export type PublicRecommendationResult = NonNullable<

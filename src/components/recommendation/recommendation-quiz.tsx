@@ -2,9 +2,11 @@
 
 import {
   ArrowRight,
+  Baby,
   BookOpen,
   Check,
   ChevronLeft,
+  Gift,
   RotateCcw,
   Search,
   ShieldCheck,
@@ -13,6 +15,7 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useReducer, useState } from "react";
 
+import { BranchRecommendationQuiz } from "@/components/recommendation/branch-recommendation-quiz";
 import type { RecommendationStepPayload } from "@/domain/recommendation/input";
 import {
   dealBreakerValues,
@@ -26,6 +29,7 @@ import {
   type ReadingNeed,
   type ReadingPace,
   type RecommendationSessionView,
+  type RecommendationBranch,
   type SelfRecommendationAnswers,
 } from "@/domain/recommendation/types";
 
@@ -272,6 +276,80 @@ export function RecommendationQuiz({
   genres: GenreOption[];
   initialSession: RecommendationSessionView | null;
 }) {
+  const [session, setSession] = useState(initialSession);
+  const [choosingBranch, setChoosingBranch] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function chooseBranch(branch: RecommendationBranch) {
+    setBusy(true);
+    setError(null);
+    try {
+      const nextSession = await requestSession({
+        method: "POST",
+        body: JSON.stringify({ branch, forceNew: true }),
+      });
+      setSession(nextSession);
+      setChoosingBranch(false);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : "Sesiunea nu a putut fi pornită.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function changeBranch() {
+    setChoosingBranch(true);
+    setError(null);
+  }
+
+  if (choosingBranch || !session) {
+    return (
+      <section className="py-16 md:py-24 lg:py-28">
+        <div className="mx-auto w-full max-w-5xl px-5 sm:px-6">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Recomandare personalizată</p>
+          <h1 className="mt-5 max-w-3xl font-display text-4xl font-semibold tracking-[-0.03em] text-balance sm:text-5xl">Pentru cine cauți următoarea carte?</h1>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">Alege contextul, iar întrebările și regulile de potrivire se adaptează persoanei care va citi cartea.</p>
+          {session ? <button type="button" onClick={() => setChoosingBranch(false)} disabled={busy} className="mt-8 inline-flex min-h-11 items-center rounded-full border border-brand bg-accent-soft px-5 text-sm font-bold text-brand hover:bg-surface disabled:opacity-55">Continuă recomandarea existentă · {session.branch === "gift" ? "Cadou" : session.branch === "child" ? "Pentru un copil" : "Pentru mine"}<ArrowRight aria-hidden="true" className="ms-2 size-4" /></button> : null}
+          <div className="mt-10 grid gap-4 lg:grid-cols-3">
+            <BranchCard icon={BookOpen} title="Pentru mine" text="Nevoia de acum, genurile, ritmul, timpul disponibil și limitele tale." disabled={busy} onClick={() => void chooseBranch("self")} />
+            <BranchCard icon={Gift} title="Cadou" text="Relația, vârsta, ocazia, interesele și cât de sigură sau surprinzătoare să fie alegerea." disabled={busy} onClick={() => void chooseBranch("gift")} />
+            <BranchCard icon={Baby} title="Pentru un copil" text="Vârsta, nivelul de lectură, modul de citire, interesele și sensibilitățile." disabled={busy} onClick={() => void chooseBranch("child")} />
+          </div>
+          {error ? <p role="alert" className="mt-5 rounded-xl border border-danger/30 bg-red-50 px-4 py-3 text-sm font-semibold text-danger">{error}</p> : null}
+          <p className="mt-8 flex items-start gap-2 text-xs leading-5 text-muted"><ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />Nu ai nevoie de cont. Răspunsurile sunt folosite numai pentru recomandarea cerută.</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (session.branch === "gift" || session.branch === "child") {
+    return <BranchRecommendationQuiz key={session.branch} genres={genres} initialSession={session} onChangeBranch={changeBranch} />;
+  }
+
+  return <SelfRecommendationQuiz genres={genres} initialSession={session} onChangeBranch={changeBranch} />;
+}
+
+function BranchCard({ icon: Icon, title, text, disabled, onClick }: { icon: typeof BookOpen; title: string; text: string; disabled: boolean; onClick: () => void }) {
+  return (
+    <button type="button" disabled={disabled} onClick={onClick} className="group flex min-h-56 flex-col items-start rounded-2xl border border-border bg-surface p-6 text-left transition hover:-translate-y-0.5 hover:border-brand hover:shadow-sm disabled:cursor-wait disabled:opacity-55">
+      <span className="flex size-12 items-center justify-center rounded-full bg-rust-soft text-rust-dark transition group-hover:bg-brand group-hover:text-white"><Icon aria-hidden="true" className="size-6" /></span>
+      <strong className="mt-6 font-display text-2xl font-semibold">{title}</strong>
+      <span className="mt-3 block text-sm leading-6 text-muted">{text}</span>
+      <span className="mt-auto inline-flex items-center pt-5 text-sm font-bold text-brand">Începe <ArrowRight aria-hidden="true" className="ms-2 size-4 transition-transform group-hover:translate-x-0.5" /></span>
+    </button>
+  );
+}
+
+function SelfRecommendationQuiz({
+  genres,
+  initialSession,
+  onChangeBranch,
+}: {
+  genres: GenreOption[];
+  initialSession: RecommendationSessionView | null;
+  onChangeBranch: () => void;
+}) {
   const [state, dispatch] = useReducer(quizReducer, initialSession, initialQuizState);
   const [bookQuery, setBookQuery] = useState(
     initialSession?.likedBook
@@ -426,6 +504,7 @@ export function RecommendationQuiz({
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button type="button" onClick={() => void openResult()} disabled={state.busy} className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-6 text-sm font-bold text-white hover:bg-brand-hover disabled:cursor-wait disabled:opacity-60"><ArrowRight aria-hidden="true" className="me-2 size-4" />{state.busy ? "Pregătim recomandarea…" : "Vezi recomandarea"}</button>
               <button type="button" onClick={() => void start(true)} disabled={state.busy} className="inline-flex min-h-11 items-center justify-center rounded-full border border-border px-6 text-sm font-bold hover:border-brand disabled:cursor-wait disabled:opacity-60"><RotateCcw aria-hidden="true" className="me-2 size-4" />Începe un profil nou</button>
+              <button type="button" onClick={onChangeBranch} disabled={state.busy} className="inline-flex min-h-11 items-center justify-center rounded-full border border-border px-6 text-sm font-bold hover:border-brand disabled:opacity-60">Schimbă contextul</button>
               <Link href="/cum-recomandam" className="inline-flex min-h-11 items-center justify-center rounded-full border border-border px-6 text-sm font-bold hover:border-brand">Cum funcționează recomandarea</Link>
             </div>
             {state.error ? <p role="alert" className="mt-5 text-sm font-semibold text-danger">{state.error}</p> : null}
@@ -440,7 +519,7 @@ export function RecommendationQuiz({
     <section className="py-12 md:py-20">
       <div className="mx-auto w-full max-w-3xl px-5 sm:px-6">
         <div aria-label={`Pasul ${state.stepIndex + 1} din ${recommendationStepOrder.length}`}>
-          <div className="flex items-center justify-between gap-4 text-sm font-bold"><span>Pasul {state.stepIndex + 1} din {recommendationStepOrder.length}</span><span className="text-muted">Pentru mine</span></div>
+          <div className="flex items-center justify-between gap-4 text-sm font-bold"><span>Pasul {state.stepIndex + 1} din {recommendationStepOrder.length}</span><button type="button" onClick={onChangeBranch} disabled={state.busy} className="text-muted underline decoration-border underline-offset-4 hover:text-foreground disabled:opacity-50">Pentru mine · schimbă</button></div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-border"><div className="h-full rounded-full bg-brand transition-[width] duration-200" style={{ width: `${progress}%` }} /></div>
         </div>
 

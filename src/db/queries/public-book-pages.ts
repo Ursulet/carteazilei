@@ -253,6 +253,16 @@ export async function listPublicBookCards(db: Database = getDb(), limit = 96) {
     .limit(Math.min(Math.max(limit, 1), 100));
 }
 
+export async function listLatestPublicBookCards(db: Database = getDb(), limit = 4) {
+  return db
+    .select(bookCardSelection())
+    .from(books)
+    .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
+    .where(and(publishedBookConditions, publicBookPageEligibility))
+    .orderBy(desc(books.publishedAt), desc(books.updatedAt), asc(books.title))
+    .limit(Math.min(Math.max(limit, 1), 12));
+}
+
 export async function listPublicBookCardsByAuthor(authorId: string, db: Database = getDb()) {
   return db
     .select(bookCardSelection())

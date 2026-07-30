@@ -70,7 +70,7 @@ export function RetailerOffers({
           const logo = offer.logo;
           return (
             <Fragment key={offer.id}>
-              {!home && index === 1 ? <h3 className={`mt-3 font-display text-2xl font-semibold ${offers.length > 1 ? "sm:col-span-2" : ""}`}>Alte opțiuni</h3> : null}
+              {!home && index === 1 ? <h3 className={`mt-3 font-display text-2xl font-semibold ${offers.length > 1 ? "sm:col-span-2" : ""}`}>Alte magazine</h3> : null}
               <a
                 href={trackingHref(offer.id, context)}
                 target="_blank"
@@ -95,13 +95,11 @@ export function RetailerOffers({
                     <span className="flex flex-wrap items-center gap-2">
                       <strong className={home ? "truncate text-sm" : "block"}>{offer.partnerName}</strong>
                       {!home && placement ? <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide ${dark ? "bg-white/15 text-white" : "bg-paper text-accent-dark"}`}>{placement}</span> : null}
-                      {!home && offer.isPrimary && index === 0 ? <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide ${dark ? "bg-white text-brand" : "bg-brand text-white"}`}>Opțiunea principală</span> : null}
                     </span>
                     <span className={`mt-1 block ${home ? "text-xs font-semibold text-foreground" : `text-xs ${dark ? "text-white/70" : "text-muted"}`}`}>
                       {price ? price : offer.availability ? availabilityLabels[offer.availability] ?? offer.availability : "Vezi oferta"}
                     </span>
                     {!home ? <span className={`mt-2 block text-sm font-bold ${dark ? "text-white" : "text-brand"}`}>{offer.cta}</span> : null}
-                    {!home && price ? <span className={`mt-1 block text-[0.68rem] ${dark ? "text-white/55" : "text-muted"}`}>Preț verificat în ultimele 24 de ore</span> : null}
                     {!home && offer.affiliateDisclosure ? <span className={`mt-1 block text-[0.68rem] ${dark ? "text-white/55" : "text-muted"}`}>{offer.affiliateDisclosure}</span> : null}
                   </span>
                 </span>
@@ -111,8 +109,8 @@ export function RetailerOffers({
           );
         })}
       </div>
-      {hasAffiliate ? <p className={`mt-4 max-w-3xl text-[0.7rem] leading-5 ${dark ? "text-white/65" : "text-muted"}`}>Unele linkuri pot fi de afiliere. Cartea Zilei poate primi un comision, fără cost suplimentar pentru tine; recomandarea editorială rămâne independentă.</p> : null}
-      {hasPaidPlacement ? <p className={`mt-2 max-w-3xl text-xs leading-5 ${dark ? "text-white/65" : "text-muted"}`}>Plasările marcate „Promovat” sau „Parteneriat comercial” sunt colaborări comerciale distincte de afiliere.</p> : null}
+      {hasAffiliate ? <p className={`mt-4 max-w-3xl text-[0.7rem] leading-5 ${dark ? "text-white/65" : "text-muted"}`}>Unele linkuri sunt de afiliere. Putem primi un comision, fără cost suplimentar pentru tine.</p> : null}
+      {hasPaidPlacement ? <p className={`mt-2 max-w-3xl text-xs leading-5 ${dark ? "text-white/65" : "text-muted"}`}>Conținutul plătit este marcat „Promovat” sau „Parteneriat comercial”.</p> : null}
       {!home ? <p className={`mt-2 max-w-3xl text-xs leading-5 ${dark ? "text-white/55" : "text-muted"}`}>Prețul și disponibilitatea finală sunt cele afișate de partener.</p> : null}
     </>
   );

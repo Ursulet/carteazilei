@@ -34,7 +34,7 @@ const relationshipLabels = {
 } as const;
 
 const giftAgeLabels = {
-  "13_17": ["13–17 ani", "Recomandarea va cere compatibilitate Young Adult."],
+  "13_17": ["13–17 ani", "Vom căuta titluri potrivite adolescenților."],
   "18_25": ["18–25 ani", "Cititor adult tânăr."],
   "26_40": ["26–40 ani", "Cititor adult."],
   "41_60": ["41–60 ani", "Cititor adult."],
@@ -58,7 +58,7 @@ const habitLabels = {
 } as const;
 
 const giftStyleLabels = {
-  safe: ["O alegere sigură", "Prioritizăm claritatea editorială și evităm conținutul greu sau ambiguu."],
+  safe: ["O alegere sigură", "Evităm conținutul greu, ambiguu sau nepotrivit contextului."],
   balanced: ["Echilibrată", "Suficient de familiară, dar cu personalitate."],
   surprise: ["Surprinde-mă", "Acceptăm o alegere mai curajoasă și mai puțin previzibilă."],
 } as const;
@@ -79,7 +79,7 @@ const levelLabels = {
 
 const modeLabels = {
   alone: ["Citește singur", "Cartea trebuie să fie accesibilă fără ajutor permanent."],
-  together: ["Citiți împreună", "Luăm în calcul și eticheta editorială «Lectură împreună»."],
+  together: ["Citiți împreună", "Căutăm cărți potrivite pentru lectură împreună."],
   both: ["Și singur, și împreună", "Căutăm o alegere flexibilă."],
 } as const;
 
@@ -248,7 +248,7 @@ export function BranchRecommendationQuiz({ genres, initialSession, onChangeBranc
   if (completed) {
     const Icon = branch === "gift" ? Gift : Baby;
     return (
-      <section className="py-16 md:py-24"><div className="mx-auto w-full max-w-3xl px-5 sm:px-6"><div className="rounded-[2rem] border border-brand/30 bg-surface p-7 shadow-sm sm:p-10"><span className="flex size-12 items-center justify-center rounded-full bg-brand text-white"><Icon aria-hidden="true" className="size-6" /></span><p className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">{branch === "gift" ? "Profilul cadoului" : "Profilul copilului"}</p><h1 className="mt-4 font-display text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">Avem contextul necesar pentru alegere.</h1><p className="mt-6 text-lg leading-8 text-muted">Rezultatul folosește catalogul editorial, compatibilitatea de vârstă și răspunsurile acestui flux.</p><div className="mt-8 flex flex-wrap gap-3"><button type="button" onClick={() => void openResult()} disabled={busy} className="inline-flex min-h-11 items-center rounded-full bg-brand px-6 text-sm font-bold text-white hover:bg-brand-hover disabled:opacity-60">Vezi recomandarea <ArrowRight aria-hidden="true" className="ms-2 size-4" /></button><button type="button" onClick={onChangeBranch} disabled={busy} className="inline-flex min-h-11 items-center rounded-full border border-border px-6 text-sm font-bold hover:border-brand disabled:opacity-60"><RotateCcw aria-hidden="true" className="me-2 size-4" />Alege alt context</button></div>{error ? <p role="alert" className="mt-5 text-sm font-semibold text-danger">{error}</p> : null}</div></div></section>
+      <section className="py-16 md:py-24"><div className="mx-auto w-full max-w-3xl px-5 sm:px-6"><div className="rounded-[2rem] border border-brand/30 bg-surface p-7 shadow-sm sm:p-10"><span className="flex size-12 items-center justify-center rounded-full bg-brand text-white"><Icon aria-hidden="true" className="size-6" /></span><p className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">{branch === "gift" ? "Recomandare pentru cadou" : "Recomandare pentru copil"}</p><h1 className="mt-4 font-display text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">Am găsit cărțile potrivite răspunsurilor tale.</h1><p className="mt-6 text-lg leading-8 text-muted">Deschide recomandarea pentru a vedea cartea recomandată și motivele alegerii.</p><div className="mt-8 flex flex-wrap gap-3"><button type="button" onClick={() => void openResult()} disabled={busy} className="inline-flex min-h-11 items-center rounded-full bg-brand px-6 text-sm font-bold text-white hover:bg-brand-hover disabled:opacity-60">Vezi recomandarea <ArrowRight aria-hidden="true" className="ms-2 size-4" /></button><button type="button" onClick={onChangeBranch} disabled={busy} className="inline-flex min-h-11 items-center rounded-full border border-border px-6 text-sm font-bold hover:border-brand disabled:opacity-60"><RotateCcw aria-hidden="true" className="me-2 size-4" />Alege alt context</button></div>{error ? <p role="alert" className="mt-5 text-sm font-semibold text-danger">{error}</p> : null}</div></div></section>
     );
   }
 
@@ -262,23 +262,23 @@ export function BranchRecommendationQuiz({ genres, initialSession, onChangeBranc
 
         <div key={step} className="mt-10 animate-[quiz-step_180ms_ease-out]" aria-live="polite">
           {step === "gift_relationship" ? <SingleStep eyebrow="Contextul cadoului" title="Pentru cine este cartea?" description="Relația ne ajută să calibrăm cât de personală poate fi alegerea." values={giftRelationshipValues} labels={relationshipLabels} selected={answers.giftRelationship} onSelect={(value) => setAnswer({ giftRelationship: value })} /> : null}
-          {step === "gift_age" ? <SingleStep eyebrow="Compatibilitate" title="Ce vârstă aproximativă are persoana?" description="Folosim numai etichetele editoriale de audiență, nu presupuneri despre gusturi." values={giftAgeValues} labels={giftAgeLabels} selected={answers.giftAge} onSelect={(value) => setAnswer({ giftAge: value })} /> : null}
-          {step === "gift_occasion" ? <SingleStep eyebrow="Ocazie" title="Cu ce ocazie oferi cartea?" description="Ocazia schimbă tonul recomandării, nu îi cumpără un loc mai bun în clasament." values={giftOccasionValues} labels={occasionLabels} selected={answers.giftOccasion} onSelect={(value) => setAnswer({ giftOccasion: value })} /> : null}
+          {step === "gift_age" ? <SingleStep eyebrow="Vârsta cititorului" title="Ce vârstă aproximativă are persoana?" description="Așa evităm cărțile nepotrivite categoriei de vârstă." values={giftAgeValues} labels={giftAgeLabels} selected={answers.giftAge} onSelect={(value) => setAnswer({ giftAge: value })} /> : null}
+          {step === "gift_occasion" ? <SingleStep eyebrow="Ocazie" title="Cu ce ocazie oferi cartea?" description="Ocazia ne ajută să alegem o carte cu tonul potrivit." values={giftOccasionValues} labels={occasionLabels} selected={answers.giftOccasion} onSelect={(value) => setAnswer({ giftOccasion: value })} /> : null}
           {step === "gift_interests" ? <InterestStep title="Ce subiecte sau genuri îi plac?" selected={selectedInterests} genres={genres} onToggle={toggleInterest} /> : null}
           {step === "gift_reading_habit" ? <SingleStep eyebrow="Obicei de lectură" title="Cât de des citește?" description="Acest răspuns calibrează ritmul și lungimea, nu calitatea cărții." values={giftReadingHabitValues} labels={habitLabels} selected={answers.giftReadingHabit} onSelect={(value) => setAnswer({ giftReadingHabit: value })} /> : null}
           {step === "gift_style" ? <SingleStep eyebrow="Nivel de risc" title="Cât de sigură să fie alegerea?" description="O alegere sigură evită conținutul greu; una surprinzătoare acceptă o experiență mai neobișnuită." values={giftStyleValues} labels={giftStyleLabels} selected={answers.giftStyle} onSelect={(value) => setAnswer({ giftStyle: value })} /> : null}
 
-          {step === "child_age" ? <SingleStep eyebrow="Siguranță și audiență" title="Ce vârstă are copilul?" description="Compatibilitatea de vârstă este obligatorie pentru a intra în lista de candidați." values={childAgeValues} labels={childAgeLabels} selected={answers.childAge} onSelect={(value) => setAnswer({ childAge: value })} /> : null}
+          {step === "child_age" ? <SingleStep eyebrow="Vârsta copilului" title="Ce vârstă are copilul?" description="Vom afișa numai cărți potrivite categoriei de vârstă." values={childAgeValues} labels={childAgeLabels} selected={answers.childAge} onSelect={(value) => setAnswer({ childAge: value })} /> : null}
           {step === "child_reading_level" ? <SingleStep eyebrow="Nivel de lectură" title="Cum citește acum?" description="Nivelul ajustează complexitatea și lungimea potrivită." values={childReadingLevelValues} labels={levelLabels} selected={answers.childReadingLevel} onSelect={(value) => setAnswer({ childReadingLevel: value })} /> : null}
           {step === "child_reading_mode" ? <SingleStep eyebrow="Mod de lectură" title="Cum va fi citită cartea?" description="Lectura împreună permite alte alegeri decât lectura complet independentă." values={childReadingModeValues} labels={modeLabels} selected={answers.childReadingMode} onSelect={(value) => setAnswer({ childReadingMode: value })} /> : null}
           {step === "child_interests" ? <InterestStep title="Ce îi stârnește interesul?" selected={selectedInterests} genres={genres} onToggle={toggleInterest} /> : null}
-          {step === "child_goal" ? <SingleStep eyebrow="Scopul lecturii" title="Ce ai vrea să-i ofere cartea?" description="Acesta este semnalul principal al recomandării pentru copil." values={childGoalValues} labels={goalLabels} selected={answers.childGoal} onSelect={(value) => setAnswer({ childGoal: value })} /> : null}
-          {step === "child_sensitivities" ? <><p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Limite și sensibilități</p><h1 className="mt-4 font-display text-3xl font-semibold sm:text-4xl">Ce ar trebui evitat?</h1><p className="mt-4 leading-7 text-muted">Poți alege mai multe. Filtrele conservative de vârstă rămân active în orice situație.</p><div className="mt-8 grid gap-3 sm:grid-cols-2">{childSensitivityValues.map((value) => <Choice key={value} selected={answers.childSensitivities?.includes(value) ?? false} title={sensitivityLabels[value][0]} text={sensitivityLabels[value][1]} onClick={() => toggleSensitivity(value)} />)}</div></> : null}
+          {step === "child_goal" ? <SingleStep eyebrow="Scopul lecturii" title="Ce ai vrea să-i ofere cartea?" description="Răspunsul ne ajută să alegem o carte potrivită copilului." values={childGoalValues} labels={goalLabels} selected={answers.childGoal} onSelect={(value) => setAnswer({ childGoal: value })} /> : null}
+          {step === "child_sensitivities" ? <><p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Ce vrei să eviți</p><h1 className="mt-4 font-display text-3xl font-semibold sm:text-4xl">Ce ar trebui evitat?</h1><p className="mt-4 leading-7 text-muted">Poți alege mai multe. Vom ține cont și de vârsta copilului.</p><div className="mt-8 grid gap-3 sm:grid-cols-2">{childSensitivityValues.map((value) => <Choice key={value} selected={answers.childSensitivities?.includes(value) ?? false} title={sensitivityLabels[value][0]} text={sensitivityLabels[value][1]} onClick={() => toggleSensitivity(value)} />)}</div></> : null}
         </div>
 
         {error ? <p role="alert" className="mt-6 rounded-xl border border-danger/30 bg-red-50 px-4 py-3 text-sm font-semibold text-danger">{error}</p> : null}
         <div className="mt-10 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={() => setStepIndex((current) => Math.max(0, current - 1))} disabled={stepIndex === 0 || busy} className="inline-flex min-h-11 items-center justify-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand disabled:opacity-40"><ChevronLeft aria-hidden="true" className="me-2 size-4" />Înapoi</button><button type="button" onClick={() => void continueFlow()} disabled={!canContinue || busy} className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-6 text-sm font-bold text-white hover:bg-brand-hover disabled:opacity-50">{busy ? "Se salvează…" : stepIndex === steps.length - 1 ? "Pregătește recomandarea" : "Continuă"}<ArrowRight aria-hidden="true" className="ms-2 size-4" /></button></div>
-        <p className="mt-6 flex items-start justify-center gap-2 text-center text-xs leading-5 text-muted"><ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />Prețurile și partenerii comerciali nu participă la alegerea cărții.</p>
+        <p className="mt-6 flex items-start justify-center gap-2 text-center text-xs leading-5 text-muted"><ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />Răspunsurile sunt folosite numai pentru recomandarea cerută.</p>
       </div>
     </section>
   );

@@ -72,12 +72,12 @@ function ResultFeedback({
 
   return (
     <section className="border-t border-border pt-10" aria-labelledby="recommendation-feedback-title">
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Ajută-ne să calibrăm motorul</p>
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Părerea ta</p>
       <h2 id="recommendation-feedback-title" className="mt-3 font-display text-3xl font-semibold">
         {branch === "gift" ? "Cum ți se pare alegerea pentru cadou?" : branch === "child" ? "Cum ți se pare alegerea pentru copil?" : "Cum ți se pare recomandarea?"}
       </h2>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-        Feedbackul este păstrat pentru evaluarea versiunilor viitoare și nu schimbă pe loc rezultatul sau ordinea ofertelor.
+        Răspunsul tău ne ajută să facem recomandările viitoare mai utile.
       </p>
 
       <div className="mt-6 flex flex-wrap gap-3">

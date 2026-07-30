@@ -18,9 +18,9 @@ export function Wordmark({
   const compactAccent = words.length === 1 && normalizedName.toLocaleLowerCase("ro").endsWith("zilei")
     ? normalizedName.slice(-5)
     : null;
-  const accent = words.length > 1 ? words.pop() : compactAccent;
+  const accent = words.length > 1 ? words.at(-1) : compactAccent;
   const base = words.length > 1
-    ? words.join(" ")
+    ? words.slice(0, -1).join(" ")
     : compactAccent
       ? normalizedName.slice(0, -5)
       : normalizedName;

@@ -17,9 +17,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { DailyFeatureSection, RecentDailyFeaturesSection } from "@/components/editorial/daily-feature-section";
+import { PublicBookCard } from "@/components/editorial/public-book-card";
 import { ButtonLink } from "@/components/ui/button-link";
 import { getCurrentPublicDailyFeature, listRecentPublicDailyFeatures } from "@/db/queries/public-daily-features";
 import { getPublicHomepageDiscovery } from "@/db/queries/public-home";
+import { listLatestPublicBookCards } from "@/db/queries/public-book-pages";
 import { buildPublicMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -33,10 +35,11 @@ export const metadata: Metadata = buildPublicMetadata({
 const categoryIcons = [BookOpen, Lightbulb, Brain, Feather, LibraryBig];
 
 export default async function HomePage() {
-  const [{ date, feature }, discovery, recentDailyFeatures] = await Promise.all([
+  const [{ date, feature }, discovery, recentDailyFeatures, latestBooks] = await Promise.all([
     getCurrentPublicDailyFeature(),
     getPublicHomepageDiscovery(),
     listRecentPublicDailyFeatures(),
+    listLatestPublicBookCards(),
   ]);
 
   const quickGenres = discovery.genres.slice(0, 4);
@@ -171,19 +174,28 @@ export default async function HomePage() {
         </section>
 
         <RecentDailyFeaturesSection features={recentDailyFeatures} />
+
+        {latestBooks.length ? (
+          <section className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-6 lg:px-8 lg:py-10" aria-labelledby="latest-books-heading">
+            <SectionHeader eyebrow="Cele mai recente cărți" title="Recomandările noastre" href="/carti" action="Vezi toate cărțile" icon={BookOpen} headingId="latest-books-heading" />
+            <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {latestBooks.map((book) => <PublicBookCard key={book.id} book={book} />)}
+            </div>
+          </section>
+        ) : null}
       </div>
     </>
   );
 }
 
-function SectionHeader({ eyebrow, title, href, action, icon: Icon }: { eyebrow: string; title: string; href: string; action: string; icon: LucideIcon }) {
+function SectionHeader({ eyebrow, title, href, action, icon: Icon, headingId }: { eyebrow: string; title: string; href: string; action: string; icon: LucideIcon; headingId?: string }) {
   return (
     <div className="flex items-end justify-between gap-5">
       <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] items-start gap-3">
         <span className="mt-0.5 inline-flex size-11 items-center justify-center rounded-full bg-rust-soft text-rust-dark"><Icon aria-hidden="true" className="size-5 stroke-[1.7]" /></span>
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-rust-dark">{eyebrow}</p>
-          <h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{title}</h2>
+          <h2 id={headingId} className="mt-2 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{title}</h2>
         </div>
       </div>
       <Link href={href} className="hidden shrink-0 items-center text-sm font-bold text-rust-dark hover:text-rust sm:inline-flex">{action}<ArrowRight aria-hidden="true" className="ms-2 size-4" /></Link>

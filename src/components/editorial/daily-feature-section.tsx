@@ -91,7 +91,7 @@ export function DailyFeatureSection({ feature, date }: { feature: PublicDailyFea
 
           {feature.offers.length ? <aside className="min-w-0 rounded-2xl border border-border bg-paper/65 p-4 sm:p-5" aria-labelledby="daily-offers-heading">
             <h3 id="daily-offers-heading" className="flex items-center gap-2 font-display text-2xl font-semibold"><ShoppingBag aria-hidden="true" className="size-5 text-rust" />Unde o poți cumpăra</h3>
-            <p className="mt-1 text-xs text-muted">Alege oferta care ți se potrivește.</p>
+            <p className="mt-1 text-xs text-muted">Alege oferta recomandată de noi.</p>
             <RetailerOffers
               offers={feature.offers.slice(0, 4)}
               context={{ sourceContext: "daily_feature", sourcePath: "/", dailyFeatureId: feature.id }}

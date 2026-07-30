@@ -2,8 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AdminPageHeader, EmptyState } from "@/components/admin/editorial-ui";
+import { RecommendationSettingsForm } from "@/components/admin/recommendation-settings-form";
 import { getRecommendationAnalyticsOverview } from "@/db/queries/admin-analytics";
+import { getRecommendationCandidates } from "@/db/queries/recommendation-candidates";
+import { getRecommendationConfiguration } from "@/domain/recommendation/configuration-service";
+import { canMutateSection } from "@/lib/auth/access";
 import { requireSectionAccess } from "@/lib/auth/principal";
+
+import { updateRecommendationConfigurationAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Recomandări și analytics" };
@@ -39,8 +45,12 @@ function percentage(value: number | null) {
 }
 
 export default async function RecommendationAnalyticsPage() {
-  await requireSectionAccess("recommendations");
-  const analytics = await getRecommendationAnalyticsOverview();
+  const principal = await requireSectionAccess("recommendations");
+  const [analytics, configuration, candidates] = await Promise.all([
+    getRecommendationAnalyticsOverview(),
+    getRecommendationConfiguration(),
+    getRecommendationCandidates(null),
+  ]);
 
   const metrics = [
     {
@@ -87,10 +97,17 @@ export default async function RecommendationAnalyticsPage() {
   return (
     <div>
       <AdminPageHeader
-        eyebrow={`Ultimele ${analytics.windowDays} de zile`}
-        title="Recomandări și rezultate"
-        description="Indicatori calculați din evenimente server-side și acțiuni validate. Lipsa unui denominator este afișată ca «—», nu ca 0% succes."
+        eyebrow="Motor de recomandare"
+        title="Recomandări"
+        description="Configurează ponderile folosite la potrivire și urmărește rezultatele generate."
       />
+
+      <section className="rounded-2xl border border-border bg-surface p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wide text-accent-dark">Configurație activă</p><h2 className="mt-2 font-display text-2xl font-semibold">Scor și ponderi</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-muted">Valorile sunt normalizate automat. O modificare afectează numai recomandările generate după salvare.</p></div><div className="rounded-xl bg-paper px-4 py-3 text-sm"><strong>{candidates.length}</strong> {candidates.length === 1 ? "carte eligibilă" : "cărți eligibile"}<span className="mx-2 text-border">·</span>revizia <strong>{configuration.revision}</strong></div></div>
+        {canMutateSection(principal.permissions, "recommendations", principal.isSuperAdmin) ? <RecommendationSettingsForm action={updateRecommendationConfigurationAction} values={configuration} /> : <p className="mt-5 rounded-xl bg-paper px-4 py-3 text-sm text-muted">Rolul tău poate consulta configurația și rapoartele, dar nu le poate modifica.</p>}
+      </section>
+
+      <div className="mt-10 flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wide text-accent-dark">Ultimele {analytics.windowDays} de zile</p><h2 className="mt-2 font-display text-3xl font-semibold">Performanță și feedback</h2></div><Link href="/admin/books" className="text-sm font-semibold text-brand underline underline-offset-4">Completează profilurile cărților</Link></div>
 
       <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7" aria-label="Indicatori principali">
         {metrics.map((metric) => (

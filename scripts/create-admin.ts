@@ -42,11 +42,11 @@ async function createAdmin() {
       const [adminRole] = await transaction
         .select({ id: roles.id })
         .from(roles)
-        .where(eq(roles.code, "admin"))
+        .where(eq(roles.code, "super_admin"))
         .limit(1);
 
       if (!adminRole) {
-        throw new Error("Rolul admin lipsește. Rulează mai întâi pnpm db:seed.");
+        throw new Error("Rolul Super Admin lipsește. Rulează mai întâi pnpm db:seed.");
       }
 
       const [createdUser] = await transaction
@@ -56,6 +56,7 @@ async function createAdmin() {
           name: input.ADMIN_NAME,
           passwordHash,
           active: true,
+          status: "active",
         })
         .returning({ id: users.id });
 
@@ -88,4 +89,3 @@ createAdmin().catch((error: unknown) => {
   console.error("Crearea administratorului a eșuat.", error);
   process.exitCode = 1;
 });
-

@@ -70,7 +70,7 @@ export default async function DailyArchivePage({ searchParams }: { searchParams:
           <Breadcrumbs items={[{ label: "Acasă", href: "/" }, { label: "Cartea Zilei", href: "/cartea-zilei" }, { label: "Arhivă" }]} currentPath="/cartea-zilei/arhiva" />
           <p className="mt-10 text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Istoric editorial</p>
           <h1 className="mt-4 font-display text-5xl font-semibold tracking-[-0.03em] sm:text-6xl">Arhiva Cartea Zilei</h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-muted">Fiecare alegere rămâne legată de data ei. Nu reconstruim arhiva cu selecții aleatorii și nu publicăm zile fără conținut editorial complet.</p>
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-muted">Răsfoiește recomandările anterioare și deschide analiza completă a oricărei cărți.</p>
         </div>
       </section>
 

@@ -120,17 +120,17 @@ export function RecommendationResult({
 
   if (!result) {
     return (
-      <main className="py-16 md:py-24">
+      <div className="py-16 md:py-24">
         <div className="mx-auto w-full max-w-3xl px-5 sm:px-6">
           <div className="rounded-[2rem] border border-border bg-surface p-8 sm:p-12">
             <Info aria-hidden="true" className="size-10 text-accent-dark" />
-            <p className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Rezultat responsabil</p>
-            <h1 className="mt-4 font-display text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">Nu avem încă o potrivire suficient de sigură.</h1>
-            <p className="mt-6 text-lg leading-8 text-muted">Catalogul publicat sau profilarea editorială nu oferă momentan destule semnale pentru a susține o recomandare onestă. Nu completăm golul cu o alegere aleatorie.</p>
+            <p className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Recomandarea ta</p>
+            <h1 className="mt-4 font-display text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">Nu am găsit încă o carte suficient de apropiată.</h1>
+            <p className="mt-6 text-lg leading-8 text-muted">Poți ajusta preferințele sau poți explora catalogul pentru a alege direct.</p>
             <Link href="/recomanda-mi" className="mt-8 inline-flex min-h-11 items-center rounded-full bg-brand px-6 text-sm font-bold text-white hover:bg-brand-hover">Reia profilul de lectură</Link>
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -141,7 +141,7 @@ export function RecommendationResult({
     : `ALTERNATIVA #${result.rank}`;
 
   return (
-    <main>
+    <div>
       <ProductEventTracker
         key={`shown-${result.id}`}
         event={{
@@ -206,9 +206,8 @@ export function RecommendationResult({
         </div>
 
         <section className="border-t border-border pt-12" aria-labelledby="recommendation-offers-title">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">După alegerea editorială</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Disponibilitate</p>
           <h2 id="recommendation-offers-title" className="mt-3 font-display text-4xl font-semibold tracking-[-0.03em]">Unde o găsești</h2>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-muted">Prețul, afilierea și parteneriatele comerciale nu au fost folosite pentru alegerea acestei cărți.</p>
           <RetailerOffers
             key={result.id}
             offers={result.offers}
@@ -222,6 +221,6 @@ export function RecommendationResult({
 
         <ResultFeedback key={result.id} resultId={result.id} resultToken={resultToken} />
       </div>
-    </main>
+    </div>
   );
 }

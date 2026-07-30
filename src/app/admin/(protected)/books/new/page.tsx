@@ -12,5 +12,5 @@ export const metadata: Metadata = { title: "Carte nouă" };
 export default async function NewBookPage() {
   await requireSectionAccess("books");
   const options = await getBookFormOptions();
-  return <><AdminPageHeader eyebrow="Catalog" title="Carte nouă" description="Construiește fișa editorială, apoi folosește checklistul înainte de publicare." /><BookForm action={createBookAction} options={options} /></>;
+  return <><AdminPageHeader eyebrow="Catalog" title="Carte nouă" description="Completează datele disponibile și încarcă opțional coperta direct din formular. Cartea se salvează ca ciornă; checklistul este verificat numai la publicare." /><BookForm action={createBookAction} options={options} /></>;
 }

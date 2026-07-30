@@ -85,6 +85,27 @@
       "when": 1785357566140,
       "tag": "0011_wakeful_the_watchers",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785361506879,
+      "tag": "0012_daffy_cable",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785362712570,
+      "tag": "0013_lazy_paladin",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1785365169011,
+      "tag": "0014_foamy_oracle",
+      "breakpoints": true
     }
   ]
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { useCookieConsent } from "@/components/privacy/cookie-consent-provider";
 import type { CommercialTrackingContext } from "@/domain/commercial/tracking-service";
 
 export function CommercialImpressionTracker({
@@ -11,10 +12,11 @@ export function CommercialImpressionTracker({
   offerIds: string[];
   context: CommercialTrackingContext;
 }) {
+  const { analyticsAllowed } = useCookieConsent();
   const sent = useRef(false);
 
   useEffect(() => {
-    if (sent.current || offerIds.length === 0) return;
+    if (!analyticsAllowed || sent.current || offerIds.length === 0) return;
     sent.current = true;
     void fetch("/api/commercial/impressions", {
       method: "POST",
@@ -23,7 +25,7 @@ export function CommercialImpressionTracker({
       keepalive: true,
       credentials: "same-origin",
     });
-  }, [context, offerIds]);
+  }, [analyticsAllowed, context, offerIds]);
 
   return null;
 }

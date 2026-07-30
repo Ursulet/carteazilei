@@ -42,17 +42,34 @@ async function assertBookReferences(input: BookInput) {
   return cover;
 }
 
+async function resolveUniqueBookSlug(desiredSlug: string, bookId?: string) {
+  const db = getDb();
+  for (let suffix = 1; suffix <= 999; suffix += 1) {
+    const suffixText = suffix === 1 ? "" : `-${suffix}`;
+    const base = desiredSlug.slice(0, 160 - suffixText.length).replace(/-+$/g, "");
+    const candidate = `${base}${suffixText}`;
+    const [existing] = await db
+      .select({ id: books.id })
+      .from(books)
+      .where(eq(books.slug, candidate))
+      .limit(1);
+    if (!existing || existing.id === bookId) return candidate;
+  }
+  throw new EditorialServiceError("Nu am putut genera o adresă unică pentru această carte.");
+}
+
 export async function saveBook(input: BookInput, actorUserId: string, bookId?: string) {
   const db = getDb();
-  const [cover, editor] = await Promise.all([
+  const [cover, editor, resolvedSlug] = await Promise.all([
     assertBookReferences(input),
     ensureEditorForUser(db, actorUserId),
+    resolveUniqueBookSlug(input.slug, bookId),
   ]);
 
   if (input.status === "published") {
     const gate = evaluateBookPublishingGate({
       title: input.title,
-      slug: input.slug,
+      slug: resolvedSlug,
       authorId: input.authorId,
       activeEdition: input.edition.active,
       coverAlt: cover?.altText,
@@ -84,7 +101,7 @@ export async function saveBook(input: BookInput, actorUserId: string, bookId?: s
 
       const bookValues = {
         title: input.title,
-        slug: input.slug,
+        slug: resolvedSlug,
         originalTitle: input.originalTitle ?? null,
         primaryAuthorId: input.authorId,
         shortVerdict: input.verdict ?? null,

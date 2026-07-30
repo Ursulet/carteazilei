@@ -10,6 +10,7 @@ import {
   zodFieldErrors,
 } from "./form-data";
 import { EditorialServiceError } from "./action-state";
+import { slugify } from "@/lib/slug";
 
 const bookStatusSchema = z.enum([
   "draft",
@@ -65,6 +66,7 @@ const bookInputSchema = z.object({
 export type BookInput = z.infer<typeof bookInputSchema>;
 
 export function parseBookFormData(formData: FormData): BookInput {
+  const title = stringValue(formData, "title");
   const traitScores = stringValues(formData, "traitId").flatMap((traitId) => {
     const score = nullableInteger(stringValue(formData, `trait.${traitId}.score`));
     if (score === undefined) return [];
@@ -77,9 +79,9 @@ export function parseBookFormData(formData: FormData): BookInput {
   });
 
   const parsed = bookInputSchema.safeParse({
-    title: stringValue(formData, "title"),
+    title,
     originalTitle: optionalStringValue(formData, "originalTitle"),
-    slug: stringValue(formData, "slug"),
+    slug: optionalStringValue(formData, "slug") ?? slugify(title),
     authorId: stringValue(formData, "authorId"),
     summary: optionalStringValue(formData, "summary"),
     verdict: optionalStringValue(formData, "verdict"),

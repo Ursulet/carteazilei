@@ -2,9 +2,12 @@
 
 import { useEffect, useRef } from "react";
 
+import { useCookieConsent } from "@/components/privacy/cookie-consent-provider";
 import type { PublicProductEventInput } from "@/domain/analytics/event-contract";
+import { hasBrowserAnalyticsConsent } from "@/lib/privacy/consent";
 
 export function sendProductEvent(event: PublicProductEventInput) {
+  if (!hasBrowserAnalyticsConsent()) return Promise.resolve(undefined);
   return fetch("/api/analytics/events", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -15,14 +18,15 @@ export function sendProductEvent(event: PublicProductEventInput) {
 }
 
 export function ProductEventTracker({ event }: { event: PublicProductEventInput }) {
+  const { analyticsAllowed } = useCookieConsent();
   const serialized = JSON.stringify(event);
   const sent = useRef<string | null>(null);
 
   useEffect(() => {
-    if (sent.current === serialized) return;
+    if (!analyticsAllowed || sent.current === serialized) return;
     sent.current = serialized;
     void sendProductEvent(JSON.parse(serialized) as PublicProductEventInput);
-  }, [serialized]);
+  }, [analyticsAllowed, serialized]);
 
   return null;
 }

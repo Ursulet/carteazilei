@@ -2,11 +2,9 @@
 
 import {
   ArrowRight,
-  Baby,
   BookOpen,
   Check,
   ChevronLeft,
-  Gift,
   RotateCcw,
   Search,
   ShieldCheck,
@@ -402,17 +400,15 @@ export function RecommendationQuiz({
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Recomandare personalizată</p>
           <h1 className="mt-5 font-display text-4xl font-semibold tracking-[-0.03em] text-balance sm:text-5xl">Pentru cine cauți următoarea carte?</h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">Alegem întrebări diferite pentru contexte diferite. Începem cu fluxul complet pentru propria ta lectură.</p>
-          <div className="mt-10 grid gap-4">
+          <div className="mt-10">
             <button type="button" onClick={() => void start()} disabled={state.busy} className="group flex w-full items-center gap-5 rounded-2xl border border-brand bg-surface p-6 text-left transition hover:-translate-y-0.5 hover:bg-accent-soft hover:shadow-sm disabled:cursor-wait disabled:opacity-60">
               <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand text-white"><BookOpen aria-hidden="true" className="size-6" /></span>
               <span className="min-w-0 flex-1"><strong className="font-display text-2xl font-semibold">Pentru mine</strong><span className="mt-1 block text-sm leading-6 text-muted">Șase întrebări despre nevoia, ritmul și limitele tale de lectură.</span></span>
               <ArrowRight aria-hidden="true" className="size-5 shrink-0 text-brand" />
             </button>
-            <div aria-disabled="true" className="flex items-center gap-5 rounded-2xl border border-border bg-surface/60 p-6 opacity-65"><span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-paper text-muted"><Gift aria-hidden="true" className="size-6" /></span><span><strong className="font-display text-2xl font-semibold">Cadou</strong><span className="mt-1 block text-sm leading-6 text-muted">În pregătire — va folosi relația, ocazia și toleranța la risc.</span></span></div>
-            <div aria-disabled="true" className="flex items-center gap-5 rounded-2xl border border-border bg-surface/60 p-6 opacity-65"><span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-paper text-muted"><Baby aria-hidden="true" className="size-6" /></span><span><strong className="font-display text-2xl font-semibold">Pentru un copil</strong><span className="mt-1 block text-sm leading-6 text-muted">În pregătire — necesită etichete editoriale conservative pentru vârstă și sensibilități.</span></span></div>
           </div>
           {state.error ? <p role="alert" className="mt-5 rounded-xl border border-danger/30 bg-red-50 px-4 py-3 text-sm font-semibold text-danger">{state.error}</p> : null}
-          <p className="mt-8 flex items-start gap-2 text-xs leading-5 text-muted"><ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />Nu ai nevoie de cont. Răspunsurile sunt asociate unui identificator anonim și nu sunt folosite pentru publicitate comportamentală.</p>
+          <p className="mt-8 flex items-start gap-2 text-xs leading-5 text-muted"><ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />Răspunsurile sunt folosite pentru această recomandare și nu pentru publicitate comportamentală.</p>
         </div>
       </section>
     );
@@ -426,7 +422,7 @@ export function RecommendationQuiz({
             <span className="flex size-12 items-center justify-center rounded-full bg-brand text-white"><Check aria-hidden="true" className="size-6" /></span>
             <p className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Profil de lectură salvat</p>
             <h1 className="mt-4 font-display text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">Avem contextul de care avem nevoie.</h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">Răspunsurile au fost validate și păstrate în sesiunea anonimă. Recomandarea este aleasă determinist din catalogul editorial și îți explicăm clar de ce se potrivește.</p>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">Am găsit cărțile cele mai apropiate de preferințele tale. Deschide recomandarea pentru a vedea alegerea și motivele ei.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button type="button" onClick={() => void openResult()} disabled={state.busy} className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-6 text-sm font-bold text-white hover:bg-brand-hover disabled:cursor-wait disabled:opacity-60"><ArrowRight aria-hidden="true" className="me-2 size-4" />{state.busy ? "Pregătim recomandarea…" : "Vezi recomandarea"}</button>
               <button type="button" onClick={() => void start(true)} disabled={state.busy} className="inline-flex min-h-11 items-center justify-center rounded-full border border-border px-6 text-sm font-bold hover:border-brand disabled:cursor-wait disabled:opacity-60"><RotateCcw aria-hidden="true" className="me-2 size-4" />Începe un profil nou</button>
@@ -468,7 +464,7 @@ export function RecommendationQuiz({
           <button type="button" onClick={() => dispatch({ type: "BACK" })} disabled={state.stepIndex === 0 || state.busy} className="inline-flex min-h-11 items-center justify-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft aria-hidden="true" className="me-2 size-4" />Înapoi</button>
           <button type="button" onClick={() => void continueQuiz()} disabled={!canContinue || state.busy} className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-6 text-sm font-bold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50">{state.busy ? "Se salvează…" : state.stepIndex === recommendationStepOrder.length - 1 ? "Finalizează profilul" : "Continuă"}<ArrowRight aria-hidden="true" className="ms-2 size-4" /></button>
         </div>
-        <p className="mt-6 text-center text-xs leading-5 text-muted">Răspunsurile se salvează după fiecare pas. Poți reveni în această sesiune fără cont.</p>
+        <p className="mt-6 text-center text-xs leading-5 text-muted">Răspunsurile se păstrează pe măsură ce înaintezi.</p>
       </div>
     </section>
   );

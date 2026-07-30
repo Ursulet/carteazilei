@@ -7,6 +7,7 @@ import { initialEditorialActionState, type EditorialActionState } from "@/domain
 
 import { FieldError, FormSection, fieldClass, labelClass } from "./editorial-ui";
 import { SubmitButton } from "./submit-button";
+import { InlineMediaPicker } from "./inline-media-picker";
 
 type EditorProfileValues = {
   displayName: string;
@@ -38,7 +39,7 @@ export function EditorProfileForm({
           <label className={labelClass}>Slug *<input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" defaultValue={values.slug} className={fieldClass} /><FieldError errors={errors.slug} /></label>
           <label className={`${labelClass} md:col-span-2`}>Biografie<textarea name="bio" rows={8} defaultValue={values.bio ?? ""} className={fieldClass} /><FieldError errors={errors.bio} /></label>
           <label className={`${labelClass} md:col-span-2`}>Domenii de expertiză, câte unul pe linie<textarea name="expertise" rows={5} defaultValue={values.expertise.join("\n")} className={fieldClass} /><FieldError errors={errors.expertise} /></label>
-          <label className={labelClass}>Portret<select name="avatarAssetId" defaultValue={values.avatarAssetId ?? ""} className={fieldClass}><option value="">Fără imagine</option>{media.map((asset) => <option key={asset.id} value={asset.id}>{asset.altText}</option>)}</select><FieldError errors={errors.avatarAssetId} /></label>
+          <label className={labelClass}>Portret<InlineMediaPicker name="avatarAssetId" value={values.avatarAssetId} media={media} empty="Fără imagine" /><FieldError errors={errors.avatarAssetId} /></label>
           <label className="flex items-start gap-3 rounded-xl border border-border bg-paper p-4 text-sm font-semibold"><input name="publicProfile" type="checkbox" defaultChecked={values.publicProfile} className="mt-0.5 size-4 accent-brand" /><span>Publică profilul<span className="mt-1 block text-xs font-normal leading-5 text-muted">Necesită biografie. Profilul va apărea în `/echipa` și `/editor/[slug]`.</span></span></label>
         </div>
       </FormSection>

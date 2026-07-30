@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 
 import { AdminPageHeader } from "@/components/admin/editorial-ui";
+import { PublicSettingsForm } from "@/components/admin/public-settings-form";
+import { getPublicSiteSettings } from "@/domain/settings/public-settings-service";
+import { getAdminMedia } from "@/db/queries/admin-media";
 import { requireSectionAccess } from "@/lib/auth/principal";
 import { getServerEnv } from "@/lib/env/server";
 import { getMediaStorageStatus } from "@/lib/storage/media-storage";
+
+import { updatePublicSettingsAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Setări" };
@@ -21,17 +26,27 @@ function Setting({ label, value, note }: { label: string; value: string; note?: 
 export default async function SettingsPage() {
   await requireSectionAccess("settings");
   const env = getServerEnv();
-  const storage = await getMediaStorageStatus();
+  const [storage, publicSettings, media] = await Promise.all([
+    getMediaStorageStatus(),
+    getPublicSiteSettings(),
+    getAdminMedia(),
+  ]);
 
   return (
     <>
       <AdminPageHeader
         eyebrow="Configurare"
         title="Setări"
-        description="Valorile active ale aplicației. Se modifică din Environment Variables în Coolify și intră în vigoare după redeploy."
+        description="Administrează informațiile publice și verifică valorile operaționale active."
       />
 
       <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6">
+        <h2 className="font-display text-2xl font-semibold">Site public și GDPR</h2>
+        <p className="mt-1 text-sm leading-6 text-muted">Textele și preferințele de mai jos se salvează imediat în baza de date; nu au nevoie de redeploy.</p>
+        <PublicSettingsForm action={updatePublicSettingsAction} values={publicSettings} media={media.filter((asset) => asset.mimeType.startsWith("image/")).map((asset) => ({ id: asset.id, altText: asset.altText }))} />
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-display text-2xl font-semibold">Storage media</h2>
@@ -46,8 +61,8 @@ export default async function SettingsPage() {
           <Setting label={storage.driver === "local" ? "Director container" : "Bucket"} value={storage.location} />
         </dl>
         {storage.driver === "local" ? (
-          <div className="mt-5 rounded-xl border border-brand/20 bg-accent-soft px-4 py-3 text-sm leading-6 text-brand">
-            În Coolify, volumul persistent trebuie montat exact la <strong>{storage.location}</strong>. Altfel imaginile dispar la următorul redeploy.
+          <div className={`mt-5 rounded-xl border px-4 py-3 text-sm leading-6 ${storage.ready ? "border-brand/20 bg-accent-soft text-brand" : "border-danger/25 bg-red-50 text-danger"}`}>
+            {storage.ready ? <>Volumul este accesibil și permite scrierea la <strong>{storage.location}</strong>.</> : <>Volumul este configurat la <strong>{storage.location}</strong>, dar procesul nu poate scrie în el. Motiv: <code className="break-all">{storage.reason ?? "necunoscut"}</code>. După redeploy, entrypoint-ul Docker repară proprietarul directorului montat.</>}
           </div>
         ) : null}
       </section>

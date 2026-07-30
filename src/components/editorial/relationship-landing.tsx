@@ -43,7 +43,7 @@ export function RelationshipLanding({ page, relatedHubs }: { page: PublicRelatio
   ];
 
   return (
-    <main>
+    <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbItems)} />
       <JsonLd data={itemListJsonLd({ name: title, path: page.href, items: page.relationships.map((relationship) => ({ name: relationship.target.title, path: `/carte/${relationship.target.slug}` })) })} />
       <header className="border-b border-border bg-surface py-12 md:py-20">
@@ -68,7 +68,7 @@ export function RelationshipLanding({ page, relatedHubs }: { page: PublicRelatio
 
         <section className="rounded-2xl border border-border bg-surface p-6 sm:p-8" aria-labelledby="relationship-methodology">
           <h2 id="relationship-methodology" className="flex items-center gap-3 font-display text-3xl font-semibold"><ShieldCheck aria-hidden="true" className="size-6 text-brand" />Cum alegem relațiile</h2>
-          <p className="mt-5 max-w-4xl leading-7 text-muted">{nextRead ? "Această pagină folosește exclusiv relații de tip next read, fiecare încadrată editorial după elementul pe care îl continuă. Nu reutilizează ordinea paginii de similaritate." : "Sunt afișate numai relații active, aprobate de un editor și însoțite de un motiv public. Popularitatea și ofertele comerciale nu stabilesc asemănarea."}</p>
+          <p className="mt-5 max-w-4xl leading-7 text-muted">{nextRead ? "Am grupat recomandările după lucrul pe care ai putea vrea să-l păstrezi din lectura anterioară: tema, ritmul, stilul, lumea sau efectul emoțional." : "Fiecare carte are un motiv clar pentru care seamănă cu titlul de la care ai pornit, fie prin temă, ritm, stil sau lume."}</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href={`/carte/${page.source.book.slug}`} className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">Înapoi la analiza cărții</Link>
             <Link href={nextRead ? `/carti-asemanatoare-cu/${page.source.book.slug}` : `/ce-sa-citesc-dupa/${page.source.book.slug}`} className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">{nextRead ? "Vezi cărțile asemănătoare" : "Vezi ce să citești după"}</Link>
@@ -79,10 +79,10 @@ export function RelationshipLanding({ page, relatedHubs }: { page: PublicRelatio
 
         <section className="rounded-[2rem] bg-brand px-6 py-10 text-white sm:px-10">
           <h2 className="font-display text-4xl font-semibold">Vrei o singură alegere pentru momentul tău?</h2>
-          <p className="mt-4 max-w-2xl leading-7 text-white/75">Quiz-ul folosește preferințele tale înainte de a alege cartea și explică rezultatul.</p>
+          <p className="mt-4 max-w-2xl leading-7 text-white/75">Răspunde la câteva întrebări și primești o recomandare explicată.</p>
           <Link href="/recomanda-mi" className="mt-7 inline-flex min-h-11 items-center rounded-full bg-white px-6 text-sm font-bold text-brand hover:bg-paper">Recomandă-mi o carte</Link>
         </section>
       </div>
-    </main>
+    </div>
   );
 }

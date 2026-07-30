@@ -17,6 +17,11 @@ const optionalEmail = z.preprocess(
   z.email().optional(),
 );
 
+const optionalPort = z.preprocess(
+  (value) => (value === "" || value === undefined ? undefined : value),
+  z.coerce.number().int().min(1).max(65535).optional(),
+);
+
 const serverEnvSchema = z
   .object({
     DATABASE_URL: z.string().min(1, "DATABASE_URL lipsește."),
@@ -29,6 +34,12 @@ const serverEnvSchema = z
       .transform((value) => value === "true"),
     SEO_HUB_MINIMUM_BOOKS: z.coerce.number().int().min(5).max(50).default(5),
     PUBLIC_CONTACT_EMAIL: optionalEmail,
+    SMTP_HOST: optionalString,
+    SMTP_PORT: optionalPort,
+    SMTP_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
+    SMTP_USER: optionalString,
+    SMTP_PASSWORD: optionalString,
+    SMTP_FROM: optionalEmail,
     MEDIA_STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
     MEDIA_LOCAL_ROOT: z.string().min(1).default(".local-storage/media"),
     S3_ENDPOINT: optionalUrl,
@@ -71,6 +82,12 @@ export function getServerEnv(): ServerEnv {
     HEALTHCHECK_DATABASE: process.env.HEALTHCHECK_DATABASE,
     SEO_HUB_MINIMUM_BOOKS: process.env.SEO_HUB_MINIMUM_BOOKS,
     PUBLIC_CONTACT_EMAIL: process.env.PUBLIC_CONTACT_EMAIL,
+    SMTP_HOST: process.env.SMTP_HOST,
+    SMTP_PORT: process.env.SMTP_PORT,
+    SMTP_SECURE: process.env.SMTP_SECURE,
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+    SMTP_FROM: process.env.SMTP_FROM,
     MEDIA_STORAGE_DRIVER: process.env.MEDIA_STORAGE_DRIVER,
     MEDIA_LOCAL_ROOT: process.env.MEDIA_LOCAL_ROOT,
     S3_ENDPOINT: process.env.S3_ENDPOINT,

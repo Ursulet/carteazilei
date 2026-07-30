@@ -49,5 +49,5 @@ export default async function EditBookPage({ params }: { params: Promise<{ id: s
     seoCanonical: record.seo?.canonicalOverride,
     seoIndexable: record.seo?.indexable,
   };
-  return <><AdminPageHeader eyebrow="Catalog" title={record.book.title} description="Editează fișa și verifică fiecare criteriu înainte să schimbi starea în «Publicată»." /><BookCoverUploadForm action={uploadBookCoverAction.bind(null, id)} bookTitle={record.book.title} currentCoverId={record.edition?.coverAssetId} /><BookForm action={updateBookAction.bind(null, id)} values={values} options={options} gate={record.gate} bookId={id} canManageOffers={canAccessSection(principal.roles, "retailers")} /></>;
+  return <><AdminPageHeader eyebrow="Catalog" title={record.book.title} description="Editează fișa și verifică fiecare criteriu înainte să schimbi starea în «Publicată»." /><BookCoverUploadForm action={uploadBookCoverAction.bind(null, id)} bookTitle={record.book.title} currentCoverId={record.edition?.coverAssetId} /><BookForm action={updateBookAction.bind(null, id)} values={values} options={options} gate={record.gate} bookId={id} canManageOffers={canAccessSection(principal.permissions, "retailers", principal.isSuperAdmin)} /></>;
 }

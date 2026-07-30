@@ -1,11 +1,3 @@
 import type { MetadataRoute } from "next";
-
-import { absolutePublicUrl } from "@/lib/seo/urls";
-
-export default function robots(): MetadataRoute.Robots {
-  return {
-    rules: [{ userAgent: "*", allow: "/", disallow: ["/admin", "/api", "/go"] }],
-    sitemap: absolutePublicUrl("/sitemap.xml"),
-    host: absolutePublicUrl("/"),
-  };
-}
+import { getPublicSiteSettings } from "@/domain/settings/public-settings-service";
+export default async function robots(): Promise<MetadataRoute.Robots> { const settings = await getPublicSiteSettings(); return { rules: settings.indexingEnabled ? [{ userAgent: "*", allow: "/", disallow: ["/admin", "/api", "/go"] }] : [{ userAgent: "*", disallow: "/" }], sitemap: `${settings.canonicalHost.replace(/\/$/, "")}/sitemap.xml`, host: settings.canonicalHost }; }

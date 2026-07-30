@@ -64,6 +64,10 @@ export async function getAdminInternalUsers() {
       name: users.name,
       email: users.email,
       active: users.active,
+      status: users.status,
+      lastLoginAt: users.lastLoginAt,
+      createdAt: users.createdAt,
+      phone: users.phone,
       updatedAt: users.updatedAt,
       editorId: editors.id,
       displayName: editors.displayName,
@@ -74,10 +78,14 @@ export async function getAdminInternalUsers() {
         from user_roles ur join roles r on r.id = ur.role_id
         where ur.user_id = ${users.id}
       ), '{}'::text[])`,
+      roleNames: sql<string[]>`coalesce((
+        select array_agg(r.name order by r.name)
+        from user_roles ur join roles r on r.id = ur.role_id
+        where ur.user_id = ${users.id}
+      ), '{}'::text[])`,
     })
     .from(users)
     .leftJoin(editors, and(eq(editors.userId, users.id), isNull(editors.deletedAt)))
-    .where(isNull(users.deletedAt))
     .orderBy(desc(users.active), asc(users.name));
 }
 

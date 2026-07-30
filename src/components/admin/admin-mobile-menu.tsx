@@ -2,6 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { Menu, X } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { AdminNavigation } from "@/components/admin/admin-navigation";
@@ -14,11 +15,15 @@ export function AdminMobileMenu({
   name,
   email,
   roleLabel,
+  siteName,
+  logoAssetId,
 }: {
   sections: readonly AdminSection[];
   name: string;
   email: string;
   roleLabel: string;
+  siteName: string;
+  logoAssetId: string | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -38,7 +43,7 @@ export function AdminMobileMenu({
         <Dialog.Content className="fixed inset-y-0 start-0 z-[90] flex w-[min(90vw,20rem)] flex-col border-e border-border bg-surface p-5 shadow-xl focus:outline-none">
           <Dialog.Title className="sr-only">Meniu administrare</Dialog.Title>
           <div className="flex items-center justify-between border-b border-border pb-5">
-            <Wordmark onClick={() => setOpen(false)} />
+            <Wordmark siteName={siteName} logoAssetId={logoAssetId} onClick={() => setOpen(false)} />
             <Dialog.Close asChild>
               <button
                 type="button"
@@ -58,6 +63,7 @@ export function AdminMobileMenu({
             <p className="truncate px-3 text-sm font-semibold text-foreground">{name}</p>
             <p className="mt-1 truncate px-3 text-xs text-muted">{email}</p>
             <p className="mt-1 px-3 text-xs font-medium text-accent-dark">{roleLabel}</p>
+            <Dialog.Close asChild><Link href="/admin/account" className="mt-3 flex min-h-10 items-center rounded-xl px-3 text-sm font-semibold text-muted hover:bg-paper hover:text-foreground">Contul meu</Link></Dialog.Close>
             <div className="mt-3">
               <AdminSignOutButton />
             </div>
@@ -67,4 +73,3 @@ export function AdminMobileMenu({
     </Dialog.Root>
   );
 }
-

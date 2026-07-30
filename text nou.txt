@@ -1,0 +1,798 @@
+# FEATURE PROMPT — Admin Control Center complet, Users CRUD, RBAC, Site Settings, Contact și WhatsApp
+
+Vreau să completezi platforma CarteaZilei cu un panou de administrare complet, construit ca centru de control pentru întregul website.
+
+Nu modifica funcționalitățile deja implementate decât acolo unde este necesar pentru integrarea corectă a acestui modul.
+
+Panoul trebuie să permită administrarea utilizatorilor, rolurilor, permisiunilor, identității vizuale, informațiilor globale ale site-ului, formularului de contact, butonului WhatsApp și setărilor operaționale.
+
+---
+
+# 1. Admin Dashboard
+
+Creează un dashboard principal care să ofere o imagine clară asupra platformei.
+
+Dashboard-ul trebuie să afișeze:
+
+- numărul total de cărți;
+- cărți publicate;
+- cărți draft;
+- Cartea Zilei programată;
+- zile fără recomandare editorială programată;
+- numărul de autori;
+- numărul de parteneri comerciali;
+- numărul de oferte afiliate active;
+- utilizatori activi;
+- mesaje de contact necitite;
+- clickuri afiliate recente;
+- recomandări personalizate generate;
+- acțiuni administrative recente;
+- probleme care necesită atenție.
+
+Exemple de alerte:
+
+- „Nu există Cartea Zilei programată pentru mâine.”
+- „8 cărți publicate nu au ofertă de cumpărare.”
+- „4 cărți nu au descriere SEO.”
+- „3 mesaje de contact așteaptă răspuns.”
+- „Există utilizatori invitați care nu și-au activat contul.”
+
+Dashboard-ul trebuie să ofere linkuri directe către rezolvarea fiecărei probleme.
+
+---
+
+# 2. Users CRUD
+
+Creează o secțiune completă:
+
+`Administrare → Utilizatori`
+
+Administratorii autorizați trebuie să poată:
+
+- vedea lista utilizatorilor;
+- căuta după nume sau email;
+- filtra după rol;
+- filtra după status;
+- crea utilizator;
+- invita utilizator prin email;
+- edita utilizator;
+- activa sau dezactiva contul;
+- suspenda temporar un utilizator;
+- schimba rolurile;
+- revoca sesiunile active;
+- retrimite invitația;
+- forța resetarea parolei;
+- vedea ultima autentificare;
+- vedea data creării;
+- vedea istoricul principalelor acțiuni;
+- arhiva contul;
+- șterge contul doar atunci când regulile de integritate permit.
+
+Pentru fiecare utilizator trebuie să existe:
+
+- nume;
+- email;
+- avatar;
+- telefon opțional;
+- status;
+- roluri;
+- data creării;
+- ultima autentificare;
+- creatorul contului;
+- notițe interne opționale;
+- preferință limbă;
+- fus orar;
+- autentificare în doi pași, dacă sistemul o suportă.
+
+Statusuri:
+
+- invitat;
+- activ;
+- suspendat;
+- dezactivat;
+- arhivat.
+
+Nu permite ștergerea sau dezactivarea ultimului Super Admin.
+
+Un administrator nu trebuie să își poată elimina accidental propriul acces critic fără confirmare suplimentară.
+
+---
+
+# 3. RBAC complet
+
+Nu folosi doar un câmp simplu `isAdmin`.
+
+Implementează Role-Based Access Control real.
+
+Creează secțiuni separate:
+
+- Utilizatori;
+- Roluri;
+- Permisiuni.
+
+Roluri inițiale:
+
+## Super Admin
+
+Acces complet la:
+
+- utilizatori;
+- roluri;
+- permisiuni;
+- setări globale;
+- securitate;
+- integrări;
+- conținut;
+- publicare;
+- analytics;
+- parteneri;
+- oferte;
+- audit logs.
+
+## Admin
+
+Poate administra majoritatea platformei, dar nu poate:
+
+- șterge Super Admin;
+- modifica permisiunile rolului Super Admin;
+- vedea sau modifica secrete;
+- executa operațiuni critice de infrastructură.
+
+## Editor
+
+Poate administra:
+
+- cărți;
+- autori;
+- Cartea Zilei;
+- liste editoriale;
+- pagini;
+- SEO editorial;
+- relații între cărți.
+
+Nu poate administra:
+
+- utilizatori;
+- roluri;
+- securitate;
+- integrări;
+- setări comerciale critice.
+
+## Manager comercial
+
+Poate administra:
+
+- parteneri;
+- edituri;
+- librării;
+- linkuri afiliate;
+- prețuri;
+- oferte;
+- rapoarte comerciale.
+
+Nu poate modifica recomandarea editorială sau algoritmul.
+
+## Support
+
+Poate administra:
+
+- mesaje de contact;
+- răspunsuri;
+- statusuri;
+- note interne.
+
+Nu poate publica sau modifica conținut editorial.
+
+## Analyst
+
+Acces read-only la:
+
+- analytics;
+- clickuri;
+- recomandări;
+- performanță SEO;
+- rapoarte.
+
+Permisiunile trebuie să fie granulare.
+
+Exemple:
+
+- `users.view`
+- `users.create`
+- `users.update`
+- `users.suspend`
+- `users.delete`
+- `roles.view`
+- `roles.manage`
+- `books.view`
+- `books.create`
+- `books.update`
+- `books.publish`
+- `books.delete`
+- `daily_features.manage`
+- `partners.manage`
+- `offers.manage`
+- `site_settings.view`
+- `site_settings.update`
+- `contact_messages.view`
+- `contact_messages.reply`
+- `analytics.view`
+- `audit_logs.view`
+
+Toate permisiunile trebuie verificate pe server.
+
+Ascunderea unui buton în interfață nu reprezintă protecție suficientă.
+
+Creează o matrice vizuală de permisiuni pentru fiecare rol.
+
+Rolurile custom trebuie să poată fi create din admin.
+
+---
+
+# 4. Audit Log complet
+
+Creează secțiunea:
+
+`Administrare → Audit`
+
+Înregistrează acțiunile importante:
+
+- autentificare;
+- autentificare eșuată;
+- utilizator creat;
+- utilizator suspendat;
+- rol schimbat;
+- permisiune modificată;
+- carte creată;
+- carte publicată;
+- Cartea Zilei modificată;
+- partener adăugat;
+- ofertă modificată;
+- preț schimbat;
+- setare globală schimbată;
+- mesaj de contact procesat;
+- fișier încărcat;
+- fișier șters.
+
+Pentru fiecare eveniment:
+
+- utilizator;
+- acțiune;
+- entitate;
+- data și ora;
+- modificări relevante;
+- adresă IP, doar dacă politica de confidențialitate permite;
+- user agent, dacă este justificat;
+- rezultat: succes/eșec.
+
+Audit log-ul nu trebuie să poată fi modificat de editori sau administratori obișnuiți.
+
+Nu salva parole, tokenuri, secrete sau date sensibile în audit log.
+
+---
+
+# 5. Site Settings
+
+Creează o secțiune completă:
+
+`Administrare → Setări site`
+
+Setările trebuie stocate în baza de date și citite dinamic de site.
+
+Nu hardcoda identitatea site-ului în componente.
+
+Grupează setările astfel:
+
+## Identitate
+
+- numele site-ului;
+- numele scurt;
+- slogan;
+- descriere;
+- URL principal;
+- limba implicită;
+- fus orar;
+- email principal;
+- telefon;
+- adresă;
+- copyright;
+- numele juridic al operatorului.
+
+## Branding
+
+- logo principal;
+- logo pentru fundal închis;
+- simbol/logo compact;
+- favicon;
+- Apple Touch Icon;
+- imagine Open Graph implicită;
+- imagine placeholder pentru cărți;
+- culoare principală;
+- culoare accent;
+- setări minime pentru identitatea vizuală.
+
+Logo-ul și favicon-ul trebuie să poată fi încărcate din admin.
+
+După modificare, acestea trebuie să fie folosite automat în:
+
+- header;
+- footer;
+- metadata;
+- favicon;
+- Open Graph;
+- emailuri;
+- pagina de autentificare.
+
+## SEO global
+
+- titlu implicit;
+- title template;
+- meta description implicită;
+- keywords doar dacă sunt folosite intern, fără promisiuni SEO false;
+- canonical host;
+- indexare activă/inactivă;
+- imagine OG implicită;
+- verificări Search Console;
+- verificări Bing;
+- text implicit pentru pagini fără metadata custom;
+- organization schema data;
+- social profile URLs.
+
+## Social media
+
+- Facebook;
+- Instagram;
+- TikTok;
+- YouTube;
+- LinkedIn;
+- X;
+- Goodreads, dacă este relevant.
+
+Afișează în footer doar rețelele completate și active.
+
+## Date comerciale
+
+- disclosure afiliere implicit;
+- numele companiei;
+- CUI;
+- număr Registrul Comerțului;
+- adresă fiscală;
+- email comercial;
+- date de facturare relevante;
+- text implicit pentru parteneriate.
+
+## Pagini legale
+
+Permite administrarea sau asocierea pentru:
+
+- Politica de confidențialitate;
+- Termeni și condiții;
+- Politica de cookies;
+- Politica de afiliere;
+- Politica editorială.
+
+## Funcționalități
+
+Feature toggles pentru:
+
+- recomandare personalizată;
+- arhiva Cartea Zilei;
+- newsletter;
+- formular de contact;
+- buton WhatsApp;
+- recenzii utilizatori;
+- conturi publice;
+- prețuri;
+- comparație oferte;
+- modul mentenanță.
+
+## Mentenanță
+
+- activare mod mentenanță;
+- titlu;
+- mesaj;
+- dată estimată;
+- acces permis pentru admin;
+- pagină publică de mentenanță.
+
+---
+
+
+---
+
+# 7. Formular de contact public
+
+Creează pagina:
+
+`/contact`
+
+Formularul trebuie să conțină:
+
+- nume;
+- email;
+- telefon opțional;
+- subiect;
+- tip solicitare;
+- mesaj;
+- acord privind politica de confidențialitate.
+
+Tipuri de solicitare:
+
+- întrebare generală;
+- recomandare carte;
+- colaborare cu editură;
+- colaborare comercială;
+- problemă tehnică;
+- corectare informație;
+- presă;
+- altceva.
+
+Formularul trebuie să includă:
+
+- validare;
+- protecție anti-spam;
+- rate limiting;
+- honeypot;
+- mesaj de confirmare;
+- gestionarea erorilor;
+- acord GDPR;
+- fără expunerea directă a adreselor interne sensibile.
+
+Nu este suficient să trimită doar un email.
+
+Fiecare mesaj trebuie salvat și în baza de date.
+
+---
+
+# 8. Inbox pentru contact în admin
+
+Creează secțiunea:
+
+`Administrare → Mesaje`
+
+Administratorii autorizați trebuie să poată:
+
+- vedea mesajele;
+- filtra după tip;
+- filtra după status;
+- căuta;
+- deschide mesajul;
+- marca citit/necitit;
+- atribui unui membru al echipei;
+- adăuga note interne;
+- răspunde;
+- marca rezolvat;
+- arhiva;
+- marca spam;
+- șterge conform politicilor de retenție.
+
+Statusuri:
+
+- nou;
+- citit;
+- în lucru;
+- în așteptare;
+- rezolvat;
+- spam;
+- arhivat.
+
+Mesajul trebuie să afișeze:
+
+- expeditor;
+- email;
+- telefon;
+- categorie;
+- mesaj;
+- dată;
+- sursă;
+- responsabil;
+- istoric status;
+- răspunsuri;
+- note interne.
+
+Notele interne nu trebuie trimise utilizatorului.
+
+Creează notificare vizibilă în admin pentru mesajele noi.
+
+---
+
+# 9. Notificări email
+
+Când se primește un mesaj nou:
+
+- salvează mesajul;
+- notifică adresa configurată;
+- trimite expeditorului o confirmare, dacă emailurile sunt configurate.
+
+Șabloanele email trebuie să folosească:
+
+- logo-ul site-ului;
+- numele site-ului;
+- culorile de brand;
+- datele de contact;
+- footer legal.
+
+Dacă serviciul de email nu este configurat, mesajul trebuie să rămână salvat și vizibil în admin.
+
+Lipsa emailului nu trebuie să ducă la pierderea mesajului.
+
+---
+
+# 10. Buton WhatsApp
+
+Adaugă un buton WhatsApp global, configurabil din admin.
+
+Setări:
+
+- activ/inactiv;
+- număr WhatsApp;
+- mesaj precompletat;
+- etichetă;
+- poziție: stânga/dreapta;
+- afișare desktop;
+- afișare mobil;
+- pagini unde apare;
+- pagini unde nu apare;
+- program de disponibilitate;
+- mesaj online;
+- mesaj offline;
+- tracking clickuri.
+
+Exemplu mesaj:
+
+`Bună! Am ajuns de pe CarteaZilei.ro și aș dori mai multe informații.`
+
+Butonul trebuie să fie:
+
+- discret;
+- accesibil;
+- compatibil mobil;
+- fără animații agresive;
+- fără să acopere CTA-uri sau formularul;
+- fără popup automat.
+
+Pe click trebuie deschis WhatsApp cu mesajul precompletat.
+
+Numărul trebuie validat și transformat în format internațional.
+
+---
+
+# 11. Setări WhatsApp în admin
+
+Creează:
+
+`Setări site → WhatsApp`
+
+Câmpuri:
+
+- activează WhatsApp;
+- număr;
+- mesaj implicit;
+- text buton;
+- poziție;
+- program;
+- afișare pe mobil;
+- afișare pe desktop;
+- pagini incluse;
+- pagini excluse;
+- culoare personalizată opțional;
+- activează tracking.
+
+Afișează preview în admin.
+
+---
+
+# 12. Administrare navigație și footer
+
+Creează posibilitatea de a administra:
+
+- meniul principal;
+- linkurile din footer;
+- grupurile din footer;
+- ordinea;
+- vizibilitatea;
+- link intern sau extern;
+- deschidere în tab nou;
+- roluri care pot vedea linkul în admin.
+
+Nu permite URL-uri periculoase.
+
+Header-ul și footer-ul trebuie să se actualizeze dinamic.
+
+---
+
+# 13. Administrare pagini statice
+
+Creează un modul simplu pentru pagini statice:
+
+- titlu;
+- slug;
+- conținut;
+- status;
+- SEO;
+- imagine OG;
+- autor;
+- data publicării;
+- ultima actualizare.
+
+Exemple:
+
+- Despre;
+- Cum recomandăm;
+- Politica editorială;
+- Afiliere;
+- Contact;
+- Parteneriate.
+
+Folosește un editor sigur și controlat.
+
+Nu permite injectarea de scripturi arbitrare.
+
+---
+
+# 14. Media Library
+
+Creează o bibliotecă media în admin. De asemenea, in toate ecranele unde apare atribut de media, adminul trebuie sa poata incarca de acolo direct imaginea, nu sa o incarce in media prima data. 
+
+Administratorii autorizați trebuie să poată:
+
+- încărca imagini;
+- căuta;
+- filtra;
+- vedea dimensiuni;
+- edita alt text;
+- edita titlu;
+- vedea unde este folosită imaginea;
+- arhiva;
+- șterge doar dacă nu este utilizată sau după confirmare.
+
+Validări:
+
+- tip fișier;
+- dimensiune;
+- extensie;
+- securitate;
+- optimizare;
+- metadata.
+
+---
+
+# 15. Admin navigation finală
+
+Structura recomandată:
+
+## Dashboard
+
+## Conținut
+- Cărți
+- Autori
+- Cartea Zilei
+- Arhivă
+- Liste editoriale
+- Pagini
+- Taxonomii
+- Relații între cărți
+
+## Recomandări
+- Sesiuni
+- Rezultate
+- Feedback
+- Configurare algoritm
+
+## Comercial
+- Parteneri
+- Oferte
+- Linkuri afiliate
+- Clickuri
+- Rapoarte
+
+## Comunicare
+- Mesaje
+- Contact
+- Newsletter
+- WhatsApp
+
+## Media
+- Bibliotecă media
+
+## Utilizatori și acces
+- Utilizatori
+- Roluri
+- Permisiuni
+- Sesiuni
+
+## Configurare
+- Setări site
+- Branding
+- SEO
+- Social media
+- Navigație
+- Integrări
+- Feature flags
+- Mentenanță
+
+## Sistem
+- Audit logs
+- Status sistem
+- Joburi
+- Erori
+
+Fiecare element trebuie afișat în funcție de permisiunile utilizatorului.
+
+---
+
+# 16. UX admin
+
+Adminul trebuie să fie rapid și clar.
+
+Include:
+
+- căutare globală;
+- breadcrumbs;
+- filtre persistente;
+- paginare;
+- sortare;
+- empty states;
+- skeleton loading;
+- confirmări pentru acțiuni destructive;
+- notificări succes/eroare;
+- autosave doar unde este sigur;
+- status draft/publicat;
+- preview înainte de publicare;
+- responsive pentru tabletă și mobil.
+
+Formularele mari trebuie organizate în taburi sau secțiuni.
+
+Nu afișa toate setările într-o singură pagină interminabilă.
+
+---
+
+# 17. Securitate
+
+Toate operațiunile administrative trebuie protejate pe server.
+
+Obligatoriu:
+
+- RBAC real;
+- verificare permisiuni pentru fiecare acțiune;
+- validare input;
+- rate limiting;
+- protecție CSRF;
+- sesiuni securizate;
+- revocare sesiuni;
+- protecție împotriva escaladării de privilegii;
+- audit;
+- soft delete;
+- confirmare pentru operațiuni critice;
+- protecție împotriva ștergerii ultimului Super Admin;
+- sanitizarea conținutului;
+- validarea uploadurilor;
+- lipsa secretelor în client.
+
+---
+
+# 18. Criterii de acceptare
+
+Feature-ul este considerat finalizat doar când:
+
+- există CRUD complet pentru utilizatori;
+- există CRUD pentru roluri custom;
+- există matrice de permisiuni;
+- permisiunile sunt aplicate server-side;
+- există Super Admin protejat;
+- identitatea site-ului poate fi schimbată din admin;
+- logo-ul și favicon-ul pot fi schimbate din admin;
+- setările SEO globale sunt editabile;
+- meniul și footer-ul sunt administrabile;
+- formularul de contact funcționează;
+- mesajele sunt salvate și gestionabile din admin;
+- există notificări pentru mesaje noi;
+- butonul WhatsApp este complet configurabil;
+- paginile statice sunt administrabile;
+- există bibliotecă media;
+- există audit log;
+- toate acțiunile administrative importante sunt auditate;
+- adminul afișează doar modulele permise rolului curent;
+- nu există date critice hardcodate în componente.
+
+Obiectivul final este ca proprietarul CarteaZilei să poată administra întregul website din panoul de control fără să fie necesară modificarea codului pentru operațiunile editoriale și comerciale uzuale.

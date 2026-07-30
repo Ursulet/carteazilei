@@ -1,8 +1,7 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 
 import type { Database } from "@/db";
-import { roles, userRoles, users } from "@/db/schema";
-import type { RoleCode } from "@/lib/auth/access";
+import { permissions, rolePermissions, roles, userRoles, users } from "@/db/schema";
 
 type AuthUserLookup = {
   id: string;
@@ -10,11 +9,15 @@ type AuthUserLookup = {
   name: string;
   passwordHash: string | null;
   sessionVersion: number;
-  roles: RoleCode[];
+  roles: string[];
+  roleNames: string[];
+  permissions: string[];
+  isSuperAdmin: boolean;
+  mustResetPassword: boolean;
 };
 
-function uniqueRoles(values: Array<RoleCode | null>): RoleCode[] {
-  return [...new Set(values.filter((value): value is RoleCode => value !== null))];
+function uniqueStrings(values: Array<string | null>): string[] {
+  return [...new Set(values.filter((value): value is string => value !== null))];
 }
 
 async function selectAuthUser(db: Database, predicate: ReturnType<typeof eq>) {
@@ -25,12 +28,23 @@ async function selectAuthUser(db: Database, predicate: ReturnType<typeof eq>) {
       name: users.name,
       passwordHash: users.passwordHash,
       sessionVersion: users.sessionVersion,
+      mustResetPassword: users.mustResetPassword,
       role: roles.code,
+      roleName: roles.name,
+      isSuperAdmin: roles.isSuperAdmin,
+      permission: permissions.code,
     })
     .from(users)
     .leftJoin(userRoles, eq(users.id, userRoles.userId))
     .leftJoin(roles, eq(userRoles.roleId, roles.id))
-    .where(and(predicate, eq(users.active, true), isNull(users.deletedAt)));
+    .leftJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
+    .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+    .where(and(
+      predicate,
+      eq(users.active, true),
+      isNull(users.deletedAt),
+      sql`(${users.status} = 'active' or (${users.status} = 'suspended' and ${users.suspendedUntil} <= now()))`,
+    ));
 
   const firstRow = rows[0];
 
@@ -44,7 +58,11 @@ async function selectAuthUser(db: Database, predicate: ReturnType<typeof eq>) {
     name: firstRow.name,
     passwordHash: firstRow.passwordHash,
     sessionVersion: firstRow.sessionVersion,
-    roles: uniqueRoles(rows.map((row) => row.role)),
+    roles: uniqueStrings(rows.map((row) => row.role)),
+    roleNames: uniqueStrings(rows.map((row) => row.roleName)),
+    permissions: uniqueStrings(rows.map((row) => row.permission)),
+    isSuperAdmin: rows.some((row) => row.isSuperAdmin),
+    mustResetPassword: firstRow.mustResetPassword,
   } satisfies AuthUserLookup;
 }
 
@@ -55,4 +73,3 @@ export function getAuthUserByEmail(db: Database, email: string) {
 export function getAuthUserById(db: Database, userId: string) {
   return selectAuthUser(db, eq(users.id, userId));
 }
-

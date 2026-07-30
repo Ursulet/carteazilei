@@ -13,6 +13,8 @@ const auditInputSchema = z.object({
   diff: z.unknown().optional(),
   metadata: z.unknown().optional(),
   ipHash: z.string().max(128).nullable().optional(),
+  userAgent: z.string().max(500).nullable().optional(),
+  outcome: z.enum(["success", "failure"]).optional(),
 });
 
 const forbiddenKey = /password|secret|token|authorization|cookie/i;
@@ -79,5 +81,7 @@ export async function writeAuditLog(
     diff: sanitizeObject(parsed.diff),
     metadata: sanitizeObject(parsed.metadata),
     ipHash: parsed.ipHash,
+    userAgent: parsed.userAgent,
+    outcome: parsed.outcome ?? "success",
   });
 }

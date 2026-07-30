@@ -18,6 +18,8 @@ export const auditLogs = pgTable(
     diff: jsonb("diff").$type<AuditMetadata>(),
     metadata: jsonb("metadata").$type<AuditMetadata>(),
     ipHash: text("ip_hash"),
+    userAgent: text("user_agent"),
+    outcome: text("outcome").default("success").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
@@ -26,4 +28,3 @@ export const auditLogs = pgTable(
     index("audit_logs_created_at_idx").on(table.createdAt),
   ],
 );
-

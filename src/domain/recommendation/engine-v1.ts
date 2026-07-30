@@ -12,20 +12,12 @@ import type {
   ReadingPace,
 } from "./types";
 import { buildRecommendationExplanation } from "./explanation-v1";
+import {
+  defaultRecommendationConfiguration,
+  type RecommendationConfiguration,
+} from "./configuration-model";
 
 export const RECOMMENDATION_ALGORITHM_VERSION = "recommendation-v1";
-export const MINIMUM_RECOMMENDATION_SCORE = 35;
-
-export const recommendationV1Weights = {
-  need: 26,
-  genre: 16,
-  pace: 12,
-  length: 8,
-  reference: 18,
-  audience: 8,
-  editorial_confidence: 8,
-  freshness: 4,
-} as const;
 
 /** Limitează o valoare numerică la intervalul inclusiv dat. */
 function clamp(value: number, minimum = 0, maximum = 1) {
@@ -234,19 +226,20 @@ function scoreCandidate(
   candidate: RecommendationCandidate,
   input: RecommendationEngineInput,
   referenceAvailable: boolean,
+  configuration: RecommendationConfiguration,
 ): ScoredRecommendationCandidate | null {
   if (hardConflictCodes(candidate, input.answers.dealBreakers).length) return null;
 
   const contributions: ScoreContribution[] = [];
   const activeWeights: number[] = [
-    recommendationV1Weights.need,
-    recommendationV1Weights.editorial_confidence,
-    recommendationV1Weights.freshness,
+    configuration.needWeight,
+    configuration.editorialConfidenceWeight,
+    configuration.freshnessWeight,
   ];
   const need = primaryNeedFit(candidate, input.answers.need);
   contributions.push({
     component: "need",
-    points: need * recommendationV1Weights.need,
+    points: need * configuration.needWeight,
     reasonCode:
       need >= 0.45
         ? `MATCH_PRIMARY_NEED_${codeFragment(input.answers.need)}`
@@ -254,38 +247,38 @@ function scoreCandidate(
   });
 
   if (!input.answers.genres.includes("any")) {
-    activeWeights.push(recommendationV1Weights.genre);
+    activeWeights.push(configuration.genreWeight);
     const genre = genreFit(candidate, input.answers.genres);
     contributions.push({
       component: "genre",
-      points: genre.fit * recommendationV1Weights.genre,
+      points: genre.fit * configuration.genreWeight,
       reasonCode: genre.matched[0] ? `MATCH_GENRE_${codeFragment(genre.matched[0].slug)}` : undefined,
     });
   }
   if (input.answers.pace !== "any") {
-    activeWeights.push(recommendationV1Weights.pace);
+    activeWeights.push(configuration.paceWeight);
     const fit = paceFit(candidate, input.answers.pace);
-    contributions.push({ component: "pace", points: fit * recommendationV1Weights.pace, reasonCode: fit >= 0.55 ? `MATCH_${codeFragment(input.answers.pace)}_PACE` : undefined });
+    contributions.push({ component: "pace", points: fit * configuration.paceWeight, reasonCode: fit >= 0.55 ? `MATCH_${codeFragment(input.answers.pace)}_PACE` : undefined });
   }
   if (input.answers.length !== "any") {
-    activeWeights.push(recommendationV1Weights.length);
+    activeWeights.push(configuration.lengthWeight);
     const fit = lengthFit(candidate, input.answers.length);
-    contributions.push({ component: "length", points: fit * recommendationV1Weights.length, reasonCode: fit >= 0.5 ? `MATCH_LENGTH_${codeFragment(input.answers.length)}` : undefined });
+    contributions.push({ component: "length", points: fit * configuration.lengthWeight, reasonCode: fit >= 0.5 ? `MATCH_LENGTH_${codeFragment(input.answers.length)}` : undefined });
   }
   if (referenceAvailable) {
-    activeWeights.push(recommendationV1Weights.reference);
+    activeWeights.push(configuration.referenceWeight);
     const reference = referenceFit(candidate);
-    contributions.push({ component: "reference", points: reference.fit * recommendationV1Weights.reference, reasonCode: reference.relation ? `MATCH_REFERENCE_${codeFragment(reference.relation.type)}` : undefined });
+    contributions.push({ component: "reference", points: reference.fit * configuration.referenceWeight, reasonCode: reference.relation ? `MATCH_REFERENCE_${codeFragment(reference.relation.type)}` : undefined });
   }
 
   contributions.push({
     component: "editorial_confidence",
-    points: (candidate.editorialConfidence / 100) * recommendationV1Weights.editorial_confidence,
+    points: (candidate.editorialConfidence / 100) * configuration.editorialConfidenceWeight,
     reasonCode: candidate.editorialConfidence >= 75 ? "EDITORIAL_CONFIDENCE_HIGH" : "EDITORIAL_CONFIDENCE_SUFFICIENT",
   });
   contributions.push({
     component: "freshness",
-    points: freshnessFit(candidate) * recommendationV1Weights.freshness,
+    points: freshnessFit(candidate) * configuration.freshnessWeight,
     reasonCode: "EDITORIAL_FRESHNESS",
   });
 
@@ -317,9 +310,9 @@ function stableScoreOrder(candidates: ScoredRecommendationCandidate[]) {
  * diferite, apoi relaxează numai genul și, în ultimă instanță, autorul.
  * Seria/subgenul nu sunt modelate încă și nu sunt fabricate din titlu.
  */
-function selectDiverseTopThree(candidates: ScoredRecommendationCandidate[]) {
+function selectDiverseTopThree(candidates: ScoredRecommendationCandidate[], minimumScore: number) {
   const ordered = stableScoreOrder(candidates).filter(
-    (candidate) => candidate.score >= MINIMUM_RECOMMENDATION_SCORE,
+    (candidate) => candidate.score >= minimumScore,
   );
   const selected: ScoredRecommendationCandidate[] = [];
   while (selected.length < 3 && selected.length < ordered.length) {
@@ -347,15 +340,16 @@ function selectDiverseTopThree(candidates: ScoredRecommendationCandidate[]) {
 /** Rulează motorul V1, normalizează semnalele absente și construiește snapshoturile. */
 export function runRecommendationEngineV1(
   input: RecommendationEngineInput,
+  configuration: RecommendationConfiguration = defaultRecommendationConfiguration,
 ): RecommendationEngineResult[] {
   const referenceAvailable = Boolean(
     input.answers.likedBookId &&
       input.candidates.some((candidate) => candidate.referenceRelations.length > 0),
   );
   const scored = input.candidates
-    .map((candidate) => scoreCandidate(candidate, input, referenceAvailable))
+    .map((candidate) => scoreCandidate(candidate, input, referenceAvailable, configuration))
     .filter((candidate): candidate is ScoredRecommendationCandidate => candidate !== null);
-  return selectDiverseTopThree(scored).map((candidate, index) => ({
+  return selectDiverseTopThree(scored, configuration.minimumScore).map((candidate, index) => ({
     ...candidate,
     rank: index + 1,
     explanation: buildRecommendationExplanation(candidate, input.answers),

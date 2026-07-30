@@ -11,6 +11,8 @@ import {
   recordCommercialClick,
   resolveTrackableOffer,
 } from "@/domain/commercial/tracking-service";
+import { getPublicSiteSettings } from "@/domain/settings/public-settings-service";
+import { cookieConsentName, hasAnalyticsConsent } from "@/lib/privacy/consent";
 import { consumePublicRateLimit } from "@/lib/security/public-rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -57,11 +59,15 @@ export async function GET(
   });
   if (!parsed.success) return unavailable("Context invalid.");
 
-  const visitor = getAnalyticsVisitor(request.cookies.get(analyticsVisitorCookie)?.value);
+  const settings = await getPublicSiteSettings();
+  const analyticsAllowed = settings.analyticsEnabled && hasAnalyticsConsent(request.cookies.get(cookieConsentName)?.value);
+  const visitor = analyticsAllowed
+    ? getAnalyticsVisitor(request.cookies.get(analyticsVisitorCookie)?.value)
+    : null;
   const rateLimit = await consumePublicRateLimit({
     scope: "retailer-redirect",
     headers: request.headers,
-    fallbackIdentity: visitor.rawToken,
+    fallbackIdentity: visitor?.rawToken ?? `outbound:${offerId}`,
     maximumRequests: 60,
     windowMilliseconds: 60 * 1_000,
     blockMilliseconds: 2 * 60 * 1_000,
@@ -82,16 +88,18 @@ export async function GET(
   const purchaseUrl = externalPurchaseUrl(offer.purchaseUrl);
   if (!purchaseUrl) return unavailable("Oferta nu mai este disponibilă.");
 
-  try {
-    await recordCommercialClick(offer, context, visitor.anonymousSessionId);
-  } catch (error) {
-    console.error("Commercial click tracking failed", error);
+  if (analyticsAllowed && visitor) {
+    try {
+      await recordCommercialClick(offer, context, visitor.anonymousSessionId);
+    } catch (error) {
+      console.error("Commercial click tracking failed", error);
+    }
   }
 
   const response = NextResponse.redirect(purchaseUrl, 302);
   response.headers.set("cache-control", "no-store");
   response.headers.set("x-robots-tag", "noindex, nofollow");
-  if (visitor.created) {
+  if (visitor?.created) {
     response.cookies.set(analyticsVisitorCookie, visitor.rawToken, {
       httpOnly: true,
       sameSite: "lax",

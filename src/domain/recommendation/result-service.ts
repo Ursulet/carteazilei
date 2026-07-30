@@ -20,6 +20,7 @@ import { getServerEnv } from "@/lib/env/server";
 
 import type { RecommendationExplanationSnapshot } from "./engine-types";
 import { RECOMMENDATION_ALGORITHM_VERSION, runRecommendationEngineV1 } from "./engine-v1";
+import { getRecommendationConfiguration } from "./configuration-service";
 import {
   completeSelfRecommendationAnswersSchema,
   recommendationSnapshotSchema,
@@ -115,14 +116,17 @@ export async function generateRecommendationResults(
     throw new RecommendationSessionError("Răspunsurile complete nu mai pot fi validate.", 409);
   }
 
-  const candidates = await getRecommendationCandidates(answers.data.likedBookId, db);
+  const [candidates, configuration] = await Promise.all([
+    getRecommendationCandidates(answers.data.likedBookId, db),
+    getRecommendationConfiguration(db),
+  ]);
   const engineResults = runRecommendationEngineV1({
     answers: {
       ...answers.data,
       likedBookId: answers.data.likedBookId ?? null,
     },
     candidates,
-  });
+  }, configuration);
 
   await db.transaction(async (transaction) => {
     const [locked] = await transaction
@@ -146,7 +150,7 @@ export async function generateRecommendationResults(
           score: result.score.toFixed(2),
           reasonCodes: result.reasonCodes,
           explanationSnapshot: JSON.stringify(result.explanation),
-          algorithmVersion: RECOMMENDATION_ALGORITHM_VERSION,
+          algorithmVersion: `${RECOMMENDATION_ALGORITHM_VERSION}:r${configuration.revision}`,
         })),
       );
     }

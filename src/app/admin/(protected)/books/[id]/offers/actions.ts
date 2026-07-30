@@ -10,7 +10,7 @@ import {
 } from "@/domain/commercial/commercial-service";
 import type { EditorialActionState } from "@/domain/editorial/action-state";
 import { toActionState } from "@/domain/editorial/action-state";
-import { requireMutationAccess } from "@/lib/auth/principal";
+import { requirePermission } from "@/lib/auth/principal";
 
 function revalidateCommercialBookPaths(bookId: string) {
   revalidatePath(`/admin/books/${bookId}/offers`);
@@ -25,7 +25,7 @@ export async function createBookOfferAction(
   _state: EditorialActionState,
   formData: FormData,
 ): Promise<EditorialActionState> {
-  const principal = await requireMutationAccess("retailers");
+  const principal = await requirePermission("offers.manage");
   try {
     await saveBookOffer(bookId, parseBookOfferFormData(formData), principal.id);
   } catch (error) {
@@ -41,7 +41,7 @@ export async function updateBookOfferAction(
   _state: EditorialActionState,
   formData: FormData,
 ): Promise<EditorialActionState> {
-  const principal = await requireMutationAccess("retailers");
+  const principal = await requirePermission("offers.manage");
   try {
     await saveBookOffer(
       bookId,
@@ -57,7 +57,7 @@ export async function updateBookOfferAction(
 }
 
 export async function deleteBookOfferAction(bookId: string, offerId: string) {
-  const principal = await requireMutationAccess("retailers");
+  const principal = await requirePermission("offers.manage");
   await deleteBookOffer(bookId, offerId, principal.id);
   revalidateCommercialBookPaths(bookId);
   redirect(`/admin/books/${bookId}/offers`);

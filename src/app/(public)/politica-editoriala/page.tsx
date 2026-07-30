@@ -12,11 +12,11 @@ export const metadata: Metadata = buildPublicMetadata({
 
 export default function EditorialPolicyPage() {
   return (
-    <TrustPage eyebrow="Încredere" title="Analize asumate, surse clare, limite spuse direct" intro="Publicăm numai conținut care poate fi atribuit, revizuit și corectat. O carte nu devine recomandare doar pentru că este disponibilă comercial." path="/politica-editoriala">
-      <section><h2>Standardul de publicare</h2><ul className="mt-5"><li>Fiecare analiză are editor și stare editorială explicită.</li><li>Verdictul, argumentele și rezervele sunt scrise separat de sinopsis.</li><li>Datele de ediție, ISBN-ul, numărul de pagini și coperta sunt tratate ca informații despre o ediție concretă.</li><li>Faptele despre autori și sursele sensibile trebuie documentate intern înainte de publicare.</li></ul></section>
-      <section><h2>Ce nu publicăm</h2><p className="mt-4">Nu fabricăm recenzii, citate, testimoniale, ratinguri, premii, numere de cititori sau sigle de presă. Nu copiem descrieri comerciale și nu marcăm o informație drept verificată fără proces de verificare.</p></section>
-      <section><h2>Corecții și actualizări</h2><p className="mt-4">Paginile importante afișează editorul și, când există, data revizuirii. O eroare factuală poate fi semnalată prin <Link href="/contact" className="font-bold text-foreground underline underline-offset-4">pagina de contact</Link>; corecțiile nu sunt ascunse prin rescriere promoțională.</p></section>
-      <section><h2>Relația cu partenerii</h2><p className="mt-4">Afilierea monetizează ieșirea spre magazin, nu alegerea cărții. Sponsorizările și parteneriatele comerciale sunt marcate vizibil, păstrate în afara motorului de recomandare și evaluate separat de conținutul editorial.</p></section>
+    <TrustPage eyebrow="Politica editorială" title="Analize asumate, surse clare, limite spuse direct" intro="Vrem ca fiecare recomandare să fie utilă, ușor de înțeles și corectabilă atunci când apare o eroare." path="/politica-editoriala">
+      <section><h2>Cum scriem despre cărți</h2><ul className="mt-5"><li>Separăm prezentarea cărții de opinia editorului.</li><li>Spunem atât motivele recomandării, cât și posibilele limite.</li><li>Verificăm datele despre ediție, autor și copertă înainte de publicare.</li><li>Semnăm recomandările editoriale cu numele editorului.</li></ul></section>
+      <section><h2>Ce nu publicăm</h2><p className="mt-4">Nu inventăm citate, premii, ratinguri sau testimoniale și nu prezentăm descrierile magazinelor drept opinii editoriale proprii.</p></section>
+      <section><h2>Corecții și actualizări</h2><p className="mt-4">Dacă observi o informație greșită, o poți semnala prin <Link href="/contact" className="font-bold text-foreground underline underline-offset-4">pagina de contact</Link>. Verificăm sursa și corectăm pagina când este cazul.</p></section>
+      <section><h2>Colaborări marcate clar</h2><p className="mt-4">O ofertă sponsorizată este etichetată „Promovat” sau „Parteneriat comercial”. O astfel de colaborare nu schimbă motivele editoriale ale recomandării.</p></section>
     </TrustPage>
   );
 }

@@ -44,6 +44,7 @@ CMD ["pnpm", "db:migrate"]
 FROM node:24-alpine AS runner
 WORKDIR /app
 RUN apk add --no-cache libc6-compat \
+    su-exec \
     && addgroup --system --gid 1001 nodejs \
     && adduser --system --uid 1001 --ingroup nodejs nextjs
 
@@ -59,11 +60,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=sharp-runtime --chown=nextjs:nodejs /sharp-runtime/@img ./node_modules/@img
 RUN mkdir -p /app/storage/media && chown -R nextjs:nodejs /app/storage
+COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/carteazilei-entrypoint
 
-USER nextjs
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3000/api/health').then((response) => { if (!response.ok) process.exit(1) }).catch(() => process.exit(1))"
 
+ENTRYPOINT ["/usr/local/bin/carteazilei-entrypoint"]
 CMD ["node", "server.js"]

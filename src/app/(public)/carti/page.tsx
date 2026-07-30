@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
-import { Breadcrumbs } from "@/components/editorial/breadcrumbs";
 import { PublicBookCard } from "@/components/editorial/public-book-card";
+import { PublicEmptyState } from "@/components/editorial/public-empty-state";
+import { PublicPageHeader } from "@/components/editorial/public-page-header";
 import { listPublicBookCards } from "@/db/queries/public-book-pages";
 import { buildPublicMetadata } from "@/lib/seo/metadata";
 
@@ -14,5 +16,5 @@ export const metadata: Metadata = buildPublicMetadata({
 
 export default async function BooksPage() {
   const books = await listPublicBookCards();
-  return <><header className="border-b border-border py-12 md:py-20"><div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8"><Breadcrumbs items={[{ label: "Acasă", href: "/" }, { label: "Cărți" }]} /><p className="mt-10 text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Catalog editorial</p><h1 className="mt-4 font-display text-5xl font-semibold tracking-[-0.03em] sm:text-6xl">Cărți analizate, nu doar listate</h1><p className="mt-6 max-w-3xl text-lg leading-8 text-muted">Fiecare pagină publică are un verdict, o ediție verificată și cel puțin o rezervă editorială.</p></div></header><section className="py-16 md:py-24"><div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8">{books.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{books.map((book) => <PublicBookCard key={book.id} book={book} />)}</div> : <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-14 text-center"><h2 className="font-display text-3xl font-semibold">Catalogul public este în pregătire.</h2><p className="mt-3 text-sm text-muted">Cărțile vor apărea după ce îndeplinesc toate criteriile editoriale.</p></div>}</div></section></>;
+  return <><PublicPageHeader eyebrow="Catalog" title="Cărți care merită descoperite" description="Răsfoiește titlurile, citește pe scurt de ce merită și vezi cui i s-ar potrivi fiecare carte." currentLabel="Cărți" currentPath="/carti" /><section className="py-16 md:py-24"><div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8">{books.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{books.map((book) => <PublicBookCard key={book.id} book={book} />)}</div> : <PublicEmptyState title="Găsește următoarea lectură" description="Catalogul nu are încă titluri publice. Recomandările vor apărea aici pe măsură ce sunt adăugate."><Link href="/" className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">Înapoi la pagina principală</Link></PublicEmptyState>}</div></section></>;
 }

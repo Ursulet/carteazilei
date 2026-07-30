@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
+import { useCookieConsent } from "@/components/privacy/cookie-consent-provider";
 import { sendProductEvent } from "./product-event-tracker";
 
 const landingMarker = "cz_landing_tracked";
@@ -18,12 +19,13 @@ function currentReferrerHost() {
 }
 
 export function PublicPageViewTracker() {
+  const { analyticsAllowed } = useCookieConsent();
   const pathname = usePathname();
   const sentPaths = useRef(new Set<string>());
   const firstRuntimePage = useRef(true);
 
   useEffect(() => {
-    if (!pathname || sentPaths.current.has(pathname)) return;
+    if (!analyticsAllowed || !pathname || sentPaths.current.has(pathname)) return;
     sentPaths.current.add(pathname);
 
     let isLanding = firstRuntimePage.current;
@@ -42,7 +44,7 @@ export function PublicPageViewTracker() {
       isLanding,
       ...(referrerHost ? { referrerHost } : {}),
     });
-  }, [pathname]);
+  }, [analyticsAllowed, pathname]);
 
   return null;
 }

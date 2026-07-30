@@ -1,0 +1,2 @@
+export const contactCategories = [["general", "Întrebare generală"], ["book_recommendation", "Recomandare carte"], ["publisher_collaboration", "Colaborare cu editură"], ["commercial", "Colaborare comercială"], ["technical", "Problemă tehnică"], ["correction", "Corectare informație"], ["press", "Presă"], ["other", "Altceva"]] as const;
+export const contactStatuses = [["new", "Nou"], ["read", "Citit"], ["in_progress", "În lucru"], ["waiting", "În așteptare"], ["resolved", "Rezolvat"], ["spam", "Spam"], ["archived", "Arhivat"]] as const;

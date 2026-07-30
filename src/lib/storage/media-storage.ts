@@ -132,11 +132,18 @@ export async function getMediaStorageStatus() {
   }
 
   const root = localRoot();
+  const probe = path.join(root, `.carteazilei-write-check-${randomUUID()}`);
   try {
     await mkdir(root, { recursive: true });
     await access(root, constants.R_OK | constants.W_OK);
-    return { driver: "local" as const, ready: true, location: root };
-  } catch {
-    return { driver: "local" as const, ready: false, location: root };
+    await writeFile(probe, "ok", { flag: "wx" });
+    await rm(probe, { force: true });
+    return { driver: "local" as const, ready: true, location: root, reason: null };
+  } catch (error) {
+    await rm(probe, { force: true }).catch(() => undefined);
+    const reason = error instanceof Error && "code" in error
+      ? `${String((error as NodeJS.ErrnoException).code)}: ${error.message}`
+      : "Directorul nu poate fi creat sau nu permite scrierea.";
+    return { driver: "local" as const, ready: false, location: root, reason };
   }
 }

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
-import { Breadcrumbs } from "@/components/editorial/breadcrumbs";
+import { PublicEmptyState } from "@/components/editorial/public-empty-state";
+import { PublicPageHeader } from "@/components/editorial/public-page-header";
 import { listPublicEditors } from "@/db/queries/public-trust";
 import { buildPublicMetadata } from "@/lib/seo/metadata";
 
@@ -16,12 +17,12 @@ export const metadata: Metadata = buildPublicMetadata({
 export default async function TeamPage() {
   const editors = await listPublicEditors();
   return (
-    <main>
-      <header className="border-b border-border bg-surface py-12 md:py-20"><div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8"><Breadcrumbs items={[{ label: "Acasă", href: "/" }, { label: "Echipa" }]} /><p className="mt-10 text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Responsabilitate editorială</p><h1 className="mt-4 font-display text-5xl font-semibold tracking-[-0.03em] sm:text-6xl">Oamenii din spatele selecțiilor</h1><p className="mt-6 max-w-3xl text-lg leading-8 text-muted">Afișăm numai profile activate explicit și completate cu biografie. Nu inventăm comitete, titluri sau validări.</p></div></header>
+    <div>
+      <PublicPageHeader eyebrow="Echipa" title="Oamenii din spatele recomandărilor" description="Cunoaște editorii care aleg cărțile și explică motivele fiecărei recomandări." currentLabel="Echipa" currentPath="/echipa" />
       <section className="py-16 md:py-24"><div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8">
-        {editors.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{editors.map((editor) => <Link key={editor.id} href={`/editor/${editor.slug}`} className="group rounded-2xl border border-border bg-surface p-6 transition hover:-translate-y-0.5 hover:border-accent hover:shadow-sm"><EditorPortrait editor={editor} /><h2 className="mt-5 font-display text-3xl font-semibold">{editor.name}</h2><p className="mt-4 line-clamp-4 text-sm leading-6 text-muted">{editor.bio}</p>{editor.expertise.length ? <div className="mt-5 flex flex-wrap gap-2">{editor.expertise.slice(0, 4).map((item) => <span key={item} className="rounded-full bg-paper px-3 py-1 text-xs font-bold text-muted">{item}</span>)}</div> : null}<p className="mt-5 text-xs font-bold uppercase tracking-wide text-accent-dark">{editor.reviewCount} analize · {editor.dailyFeatureCount} selecții zilnice</p></Link>)}</div> : <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-14 text-center"><h2 className="font-display text-3xl font-semibold">Profilele editoriale sunt în pregătire.</h2><p className="mt-3 text-sm text-muted">Un profil apare numai după ce este completat și activat explicit în admin.</p></div>}
+        {editors.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{editors.map((editor) => <Link key={editor.id} href={`/editor/${editor.slug}`} className="group rounded-2xl border border-border bg-surface p-6 transition hover:-translate-y-0.5 hover:border-accent hover:shadow-sm"><EditorPortrait editor={editor} /><h2 className="mt-5 font-display text-3xl font-semibold">{editor.name}</h2><p className="mt-4 line-clamp-4 text-sm leading-6 text-muted">{editor.bio}</p>{editor.expertise.length ? <div className="mt-5 flex flex-wrap gap-2">{editor.expertise.slice(0, 4).map((item) => <span key={item} className="rounded-full bg-paper px-3 py-1 text-xs font-bold text-muted">{item}</span>)}</div> : null}<p className="mt-5 text-xs font-bold uppercase tracking-wide text-accent-dark">{editor.reviewCount} analize · {editor.dailyFeatureCount} selecții zilnice</p></Link>)}</div> : <PublicEmptyState title="Echipa va apărea aici" description="Până adăugăm profilurile editorilor, poți descoperi proiectul și felul în care alegem cărțile."><Link href="/despre" className="inline-flex min-h-11 items-center rounded-full bg-brand px-5 text-sm font-bold text-white hover:bg-brand-hover">Despre Cartea Zilei</Link></PublicEmptyState>}
       </div></section>
-    </main>
+    </div>
   );
 }
 

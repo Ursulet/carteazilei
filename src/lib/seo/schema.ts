@@ -3,7 +3,7 @@ import { absolutePublicUrl } from "./urls";
 
 export type StructuredBreadcrumb = { name: string; path: string };
 
-export function organizationWebsiteJsonLd(): JsonLdValue {
+export function organizationWebsiteJsonLd({ name = "Cartea Zilei", logoPath = "/og.png" }: { name?: string; logoPath?: string } = {}): JsonLdValue {
   const home = absolutePublicUrl("/");
   return {
     "@context": "https://schema.org",
@@ -11,15 +11,15 @@ export function organizationWebsiteJsonLd(): JsonLdValue {
       {
         "@type": "Organization",
         "@id": `${home}#organization`,
-        name: "CarteaZilei",
+        name,
         url: home,
-        logo: absolutePublicUrl("/og.png"),
+        logo: absolutePublicUrl(logoPath),
       },
       {
         "@type": "WebSite",
         "@id": `${home}#website`,
         url: home,
-        name: "CarteaZilei",
+        name,
         inLanguage: "ro-RO",
         publisher: { "@id": `${home}#organization` },
         potentialAction: {

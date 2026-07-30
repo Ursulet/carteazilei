@@ -18,15 +18,19 @@ export default async function AdminDashboardPage() {
     { label: "Autori", value: summary.authors, detail: "în catalog", href: "/admin/authors", section: "authors" as const },
     { label: "Imagini", value: summary.media, detail: "în biblioteca media", href: "/admin/media", section: "media" as const },
     { label: "Parteneri activi", value: summary.partners, detail: `${summary.offers} oferte active`, href: "/admin/retailers", section: "retailers" as const },
+    { label: "Oferte afiliate", value: summary.affiliateOffers, detail: `${summary.recentClicks} clickuri în ultimele 7 zile`, href: "/admin/retailers", section: "retailers" as const },
+    { label: "Utilizatori activi", value: summary.activeUsers, detail: `${summary.invitedUsers} invitații în așteptare`, href: "/admin/editors", section: "editors" as const },
+    { label: "Mesaje necitite", value: summary.unreadMessages, detail: "în inbox-ul de contact", href: "/admin/messages?status=new", section: "messages" as const },
+    { label: "Recomandări generate", value: summary.recentRecommendations, detail: "în ultimele 7 zile", href: "/admin/recommendations", section: "recommendations" as const },
     { label: "Selecții calendar", value: summary.dailyFeatures, detail: "programate sau publicate", href: "/admin/daily-features", section: "daily-features" as const },
-  ].filter((card) => canAccessSection(principal.roles, card.section));
+  ].filter((card) => canAccessSection(principal.permissions, card.section, principal.isSuperAdmin));
 
   const quickActions = [
     { label: "Adaugă o carte", href: "/admin/books/new", section: "books" as const },
     { label: "Adaugă un autor", href: "/admin/authors/new", section: "authors" as const },
     { label: "Încarcă o imagine", href: "/admin/media", section: "media" as const },
     { label: "Planifică Cartea Zilei", href: "/admin/daily-features/new", section: "daily-features" as const },
-  ].filter((action) => canAccessSection(principal.roles, action.section));
+  ].filter((action) => canAccessSection(principal.permissions, action.section, principal.isSuperAdmin));
 
   return (
     <div>
@@ -46,9 +50,11 @@ export default async function AdminDashboardPage() {
         ))}
       </section>
 
+      {summary.alerts.filter((alert) => alert && canAccessSection(principal.permissions, alert.section, principal.isSuperAdmin)).length ? <section className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5"><p className="text-xs font-bold uppercase tracking-wide text-amber-900">Necesită atenție</p><div className="mt-3 grid gap-2">{summary.alerts.filter((alert) => alert && canAccessSection(principal.permissions, alert.section, principal.isSuperAdmin)).map((alert) => alert ? <Link key={alert.label} href={alert.href} className="flex items-center justify-between rounded-xl bg-white/70 px-4 py-3 text-sm font-semibold text-amber-950 hover:bg-white"><span>{alert.label}</span><ArrowUpRight className="size-4" /></Link> : null)}</div></section> : null}
+
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
-          <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wide text-accent-dark">Catalog</p><h2 className="mt-2 font-display text-2xl font-semibold">Modificate recent</h2></div>{canAccessSection(principal.roles, "books") ? <Link href="/admin/books" className="text-sm font-semibold text-brand underline underline-offset-4">Toate cărțile</Link> : null}</div>
+          <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wide text-accent-dark">Catalog</p><h2 className="mt-2 font-display text-2xl font-semibold">Modificate recent</h2></div>{canAccessSection(principal.permissions, "books", principal.isSuperAdmin) ? <Link href="/admin/books" className="text-sm font-semibold text-brand underline underline-offset-4">Toate cărțile</Link> : null}</div>
           {summary.recentBooks.length ? (
             <ul className="mt-5 divide-y divide-border">
               {summary.recentBooks.map((book) => <li key={book.id} className="flex flex-col gap-2 py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between"><div><Link href={`/admin/books/${book.id}`} className="font-bold underline decoration-border underline-offset-4 hover:decoration-brand">{book.title}</Link><p className="mt-1 text-xs text-muted">{book.author} · {new Intl.DateTimeFormat("ro-RO", { dateStyle: "medium" }).format(book.updatedAt)}</p></div><StatusBadge status={book.status} /></li>)}
@@ -63,6 +69,7 @@ export default async function AdminDashboardPage() {
           </div>
         </aside>
       </div>
+      {summary.recentAudit.length && canAccessSection(principal.permissions, "audit", principal.isSuperAdmin) ? <section className="mt-8 rounded-2xl border border-border bg-surface p-5 sm:p-6"><div className="flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-wide text-accent-dark">Sistem</p><h2 className="mt-2 font-display text-2xl font-semibold">Acțiuni administrative recente</h2></div><Link href="/admin/audit" className="text-sm font-semibold text-brand underline">Jurnal complet</Link></div><ul className="mt-5 divide-y divide-border">{summary.recentAudit.map((entry) => <li key={entry.id} className="flex justify-between gap-4 py-3 text-sm"><span><strong>{entry.actorName ?? "Sistem"}</strong> · {entry.action} · {entry.entityType}</span><time className="shrink-0 text-xs text-muted">{new Intl.DateTimeFormat("ro-RO", { dateStyle: "medium", timeStyle: "short" }).format(entry.createdAt)}</time></li>)}</ul></section> : null}
     </div>
   );
 }

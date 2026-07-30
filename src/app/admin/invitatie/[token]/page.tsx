@@ -1,0 +1,5 @@
+import { InvitationAcceptForm } from "@/components/admin/invitation-accept-form";
+import { Wordmark } from "@/components/layout/wordmark";
+import { getPublicSiteSettings } from "@/domain/settings/public-settings-service";
+import { acceptInvitationAction } from "./actions";
+export default async function InvitationPage({ params }: { params: Promise<{ token: string }> }) { const [{ token }, settings] = await Promise.all([params, getPublicSiteSettings()]); return <main className="grid min-h-screen place-items-center bg-paper px-5 py-10"><section className="w-full max-w-lg rounded-3xl border border-border bg-surface p-6 shadow-xl sm:p-8"><Wordmark siteName={settings.siteName} logoAssetId={settings.logoAssetId} /><p className="mt-8 text-xs font-bold uppercase tracking-[0.16em] text-accent-dark">Invitație echipă</p><h1 className="mt-2 font-display text-3xl font-semibold">Activează contul</h1><p className="mt-3 text-sm leading-6 text-muted">Alege parola cu care te vei autentifica în administrare. Linkul poate fi folosit o singură dată.</p><InvitationAcceptForm action={acceptInvitationAction.bind(null, token)} /></section></main>; }

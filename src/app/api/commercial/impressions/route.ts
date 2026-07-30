@@ -9,9 +9,11 @@ import {
   normalizeCommercialSourcePath,
   recordCommercialImpressions,
 } from "@/domain/commercial/tracking-service";
+import { getPublicSiteSettings } from "@/domain/settings/public-settings-service";
 import { readBoundedJson } from "@/lib/http/bounded-json";
 import { isTrustedSameOriginMutation } from "@/lib/http/same-origin";
 import { consumePublicRateLimit } from "@/lib/security/public-rate-limit";
+import { cookieConsentName, hasAnalyticsConsent } from "@/lib/privacy/consent";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,11 @@ function json(data: unknown, init?: ResponseInit) {
 
 export async function POST(request: NextRequest) {
   if (!isTrustedSameOriginMutation(request)) {
+    return json({ ok: false }, { status: 403 });
+  }
+
+  const settings = await getPublicSiteSettings();
+  if (!settings.analyticsEnabled || !hasAnalyticsConsent(request.cookies.get(cookieConsentName)?.value)) {
     return json({ ok: false }, { status: 403 });
   }
 

@@ -45,7 +45,7 @@ export function SeoHubPage({
     items: books.map((book) => ({ name: book.title, path: `/carte/${book.slug}` })),
   });
   return (
-    <main>
+    <div>
       <JsonLd data={structuredBreadcrumbs} />
       <JsonLd data={structuredList} />
       <header className="border-b border-border bg-surface py-12 md:py-20">
@@ -88,6 +88,6 @@ export function SeoHubPage({
           <Link href="/recomanda-mi" className="mt-7 inline-flex min-h-11 items-center justify-center rounded-full bg-white px-6 text-sm font-bold text-brand hover:bg-paper">Recomandă-mi o carte</Link>
         </section>
       </div>
-    </main>
+    </div>
   );
 }

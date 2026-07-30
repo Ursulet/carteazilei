@@ -29,7 +29,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/despre",
     "/cum-recomandam",
     "/politica-editoriala",
-    "/afiliere",
     "/contact",
     "/legal/confidentialitate",
   ];

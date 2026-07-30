@@ -1,39 +1,6 @@
 import Link from "next/link";
-
-import { footerNavigation } from "@/components/layout/navigation";
+import { CookieSettingsButton } from "@/components/privacy/cookie-settings-button";
 import { Wordmark } from "@/components/layout/wordmark";
 
-export function SiteFooter() {
-  return (
-    <footer className="bg-brand text-white">
-      <div className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-6 md:py-16 lg:px-8">
-        <div className="grid gap-10 border-b border-white/15 pb-10 md:grid-cols-[1fr_auto] md:items-start">
-          <div className="max-w-md">
-            <Wordmark onDark />
-            <p className="mt-4 text-sm leading-6 text-white/70">
-              Recomandări explicate. Mai puține titluri. Alegeri mai bune.
-            </p>
-          </div>
-          <nav
-            className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-3"
-            aria-label="Navigare secundară"
-          >
-            {footerNavigation.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="text-white/70 transition-colors hover:text-white"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-        <p className="pt-6 text-xs text-white/55">
-          © {new Date().getFullYear()} Cartea Zilei. Conținut editorial în limba română.
-        </p>
-      </div>
-    </footer>
-  );
-}
-
+type Item = { id?: string; label: string; href: string; groupLabel?: string | null; external?: boolean; openInNewTab?: boolean };
+export function SiteFooter({ siteName, siteTagline, logoAssetId, navigation, social, copyrightText }: { siteName: string; siteTagline: string; logoAssetId: string | null; navigation: Item[]; social: Array<{ label: string; href: string }>; copyrightText: string | null }) { const groups = [...new Set(navigation.map((item) => item.groupLabel || "Informații"))]; return <footer className="bg-brand text-white"><div className="mx-auto w-full max-w-7xl px-5 py-12 sm:px-6 md:py-16 lg:px-8"><div className="grid gap-10 border-b border-white/15 pb-10 lg:grid-cols-[1fr_2fr]"><div className="max-w-md"><Wordmark onDark siteName={siteName} logoAssetId={logoAssetId} /><p className="mt-4 text-sm leading-6 text-white/70">{siteTagline}</p>{social.length ? <div className="mt-5 flex flex-wrap gap-3">{social.map((item) => <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-white/70 underline hover:text-white">{item.label}</a>)}</div> : null}</div><div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">{groups.map((group) => <nav key={group} aria-label={group}><h2 className="text-xs font-bold uppercase tracking-wide text-white/50">{group}</h2><div className="mt-4 grid gap-3">{navigation.filter((item) => (item.groupLabel || "Informații") === group).map((item) => <Link key={item.id ?? item.href} href={item.href} target={item.openInNewTab ? "_blank" : undefined} rel={item.external ? "noopener noreferrer" : undefined} className="text-sm text-white/70 hover:text-white">{item.label}</Link>)}</div></nav>)}<div><h2 className="text-xs font-bold uppercase tracking-wide text-white/50">Preferințe</h2><div className="mt-4"><CookieSettingsButton /></div></div></div></div><p className="pt-6 text-xs text-white/55">{copyrightText || `© ${new Date().getFullYear()} ${siteName}. Toate drepturile rezervate.`}</p></div></footer>; }

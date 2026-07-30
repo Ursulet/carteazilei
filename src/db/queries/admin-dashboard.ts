@@ -1,42 +1,25 @@
 import "server-only";
-
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
-
 import { getDb } from "@/db";
-import { authors, bookOffers, books, dailyFeatures, mediaAssets, retailers } from "@/db/schema";
+import { auditLogs, authors, bookEditions, bookOffers, books, commercialClickEvents, contactMessages, dailyFeatures, mediaAssets, recommendationResults, retailers, seoMetadata, users } from "@/db/schema";
+import { getEditorialDate } from "@/domain/editorial/bucharest-date";
 
-export async function getAdminDashboardSummary() {
-  const db = getDb();
-  const [bookCounts, authorCounts, dailyCounts, commercialCounts, mediaCounts, recentBooks] = await Promise.all([
-    db.select({
-      total: sql<number>`count(*)::int`,
-      draft: sql<number>`count(*) filter (where ${books.status} in ('draft', 'needs_review', 'ready'))::int`,
-      published: sql<number>`count(*) filter (where ${books.status} = 'published')::int`,
-    }).from(books).where(isNull(books.deletedAt)),
-    db.select({ total: sql<number>`count(*)::int` }).from(authors).where(isNull(authors.deletedAt)),
-    db.select({
-      scheduled: sql<number>`count(*) filter (where ${dailyFeatures.status} in ('scheduled', 'published'))::int`,
-    }).from(dailyFeatures).where(isNull(dailyFeatures.deletedAt)),
-    db.select({
-      partners: sql<number>`count(distinct ${retailers.id}) filter (where ${retailers.active})::int`,
-      offers: sql<number>`count(distinct ${bookOffers.id}) filter (where ${bookOffers.active} and ${bookOffers.deletedAt} is null)::int`,
-    }).from(retailers).leftJoin(bookOffers, eq(bookOffers.retailerId, retailers.id)).where(isNull(retailers.deletedAt)),
-    db.select({ total: sql<number>`count(*)::int` }).from(mediaAssets).where(isNull(mediaAssets.deletedAt)),
-    db.select({ id: books.id, title: books.title, status: books.status, author: authors.name, updatedAt: books.updatedAt })
-      .from(books)
-      .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
-      .where(and(isNull(books.deletedAt), isNull(authors.deletedAt)))
-      .orderBy(desc(books.updatedAt))
-      .limit(5),
-  ]);
-
-  return {
-    books: bookCounts[0] ?? { total: 0, draft: 0, published: 0 },
-    authors: authorCounts[0]?.total ?? 0,
-    dailyFeatures: dailyCounts[0]?.scheduled ?? 0,
-    partners: commercialCounts[0]?.partners ?? 0,
-    offers: commercialCounts[0]?.offers ?? 0,
-    media: mediaCounts[0]?.total ?? 0,
-    recentBooks,
-  };
+export async function getAdminDashboardSummary() { const db = getDb(); const tomorrow = getEditorialDate(new Date(Date.now() + 24 * 60 * 60 * 1000)); const [bookCounts, authorCounts, dailyCounts, commercialCounts, mediaCounts, userCounts, contactCounts, clickCounts, recommendationCounts, dailyTomorrow, missingOffers, missingSeo, missingDays, recentBooks, recentAudit] = await Promise.all([
+  db.select({ total: sql<number>`count(*)::int`, draft: sql<number>`count(*) filter (where ${books.status} in ('draft', 'needs_review', 'ready'))::int`, published: sql<number>`count(*) filter (where ${books.status} = 'published')::int` }).from(books).where(isNull(books.deletedAt)),
+  db.select({ total: sql<number>`count(*)::int` }).from(authors).where(isNull(authors.deletedAt)),
+  db.select({ scheduled: sql<number>`count(*) filter (where ${dailyFeatures.status} in ('scheduled', 'published'))::int` }).from(dailyFeatures).where(isNull(dailyFeatures.deletedAt)),
+  db.select({ partners: sql<number>`count(distinct ${retailers.id}) filter (where ${retailers.active})::int`, offers: sql<number>`count(distinct ${bookOffers.id}) filter (where ${bookOffers.active} and ${bookOffers.deletedAt} is null)::int`, affiliateOffers: sql<number>`count(distinct ${bookOffers.id}) filter (where ${bookOffers.active} and ${bookOffers.affiliate} and ${bookOffers.deletedAt} is null)::int` }).from(retailers).leftJoin(bookOffers, eq(bookOffers.retailerId, retailers.id)).where(isNull(retailers.deletedAt)),
+  db.select({ total: sql<number>`count(*)::int` }).from(mediaAssets).where(isNull(mediaAssets.deletedAt)),
+  db.select({ active: sql<number>`count(*) filter (where ${users.status} = 'active' and ${users.deletedAt} is null)::int`, invited: sql<number>`count(*) filter (where ${users.status} = 'invited' and ${users.deletedAt} is null)::int` }).from(users),
+  db.select({ unread: sql<number>`count(*) filter (where ${contactMessages.status} = 'new' and ${contactMessages.deletedAt} is null)::int` }).from(contactMessages),
+  db.select({ recent: sql<number>`count(*) filter (where ${commercialClickEvents.clickedAt} > now() - interval '7 days')::int` }).from(commercialClickEvents),
+  db.select({ recent: sql<number>`count(*) filter (where ${recommendationResults.createdAt} > now() - interval '7 days')::int` }).from(recommendationResults),
+  db.select({ total: sql<number>`count(*)::int` }).from(dailyFeatures).where(and(eq(dailyFeatures.featureDate, tomorrow), sql`${dailyFeatures.status} in ('scheduled','published')`, isNull(dailyFeatures.deletedAt))),
+  db.select({ total: sql<number>`count(*)::int` }).from(books).where(and(eq(books.status, "published"), isNull(books.deletedAt), sql`not exists (select 1 from ${bookEditions} e join ${bookOffers} o on o.edition_id = e.id and o.active and o.deleted_at is null where e.book_id = ${books.id} and e.deleted_at is null)`)),
+  db.select({ total: sql<number>`count(*)::int` }).from(books).where(and(eq(books.status, "published"), isNull(books.deletedAt), sql`not exists (select 1 from ${seoMetadata} s where s.entity_type = 'book' and s.entity_id = ${books.id} and length(coalesce(s.description_override,'')) >= 30)`)),
+  db.execute<{ total: number }>(sql`select count(*)::int as total from generate_series(current_date + 1, current_date + 7, interval '1 day') d where not exists (select 1 from daily_features f where f.feature_date = d::date and f.status in ('scheduled','published') and f.deleted_at is null)`),
+  db.select({ id: books.id, title: books.title, status: books.status, author: authors.name, updatedAt: books.updatedAt }).from(books).innerJoin(authors, eq(authors.id, books.primaryAuthorId)).where(and(isNull(books.deletedAt), isNull(authors.deletedAt))).orderBy(desc(books.updatedAt)).limit(5),
+  db.select({ id: auditLogs.id, action: auditLogs.action, entityType: auditLogs.entityType, createdAt: auditLogs.createdAt, actorName: users.name }).from(auditLogs).leftJoin(users, eq(users.id, auditLogs.actorUserId)).orderBy(desc(auditLogs.createdAt)).limit(6),
+]);
+  return { books: bookCounts[0] ?? { total: 0, draft: 0, published: 0 }, authors: authorCounts[0]?.total ?? 0, dailyFeatures: dailyCounts[0]?.scheduled ?? 0, partners: commercialCounts[0]?.partners ?? 0, offers: commercialCounts[0]?.offers ?? 0, affiliateOffers: commercialCounts[0]?.affiliateOffers ?? 0, media: mediaCounts[0]?.total ?? 0, activeUsers: userCounts[0]?.active ?? 0, invitedUsers: userCounts[0]?.invited ?? 0, unreadMessages: contactCounts[0]?.unread ?? 0, recentClicks: clickCounts[0]?.recent ?? 0, recentRecommendations: recommendationCounts[0]?.recent ?? 0, recentBooks, recentAudit, alerts: [dailyTomorrow[0]?.total ? null : { label: "Nu există Cartea Zilei programată pentru mâine.", href: "/admin/daily-features/new", section: "daily-features" as const }, missingOffers[0]?.total ? { label: `${missingOffers[0].total} cărți publicate nu au ofertă de cumpărare.`, href: "/admin/readiness", section: "readiness" as const } : null, missingSeo[0]?.total ? { label: `${missingSeo[0].total} cărți publicate nu au descriere SEO completă.`, href: "/admin/seo", section: "seo" as const } : null, contactCounts[0]?.unread ? { label: `${contactCounts[0].unread} mesaje de contact așteaptă procesare.`, href: "/admin/messages?status=new", section: "messages" as const } : null, userCounts[0]?.invited ? { label: `${userCounts[0].invited} utilizatori invitați nu și-au activat contul.`, href: "/admin/editors?status=invited", section: "editors" as const } : null, Number(missingDays[0]?.total ?? 0) ? { label: `${missingDays[0]?.total} zile din următoarele 7 nu au recomandare programată.`, href: "/admin/daily-features", section: "daily-features" as const } : null].filter(Boolean) };
 }

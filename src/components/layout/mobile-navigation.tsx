@@ -6,10 +6,10 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ButtonLink } from "@/components/ui/button-link";
-import { primaryNavigation } from "@/components/layout/navigation";
 import { Wordmark } from "@/components/layout/wordmark";
 
-export function MobileNavigation() {
+type NavigationItem = { label: string; href: string; external?: boolean; openInNewTab?: boolean };
+export function MobileNavigation({ siteName, logoAssetId, navigation, recommendationEnabled }: { siteName: string; logoAssetId: string | null; navigation: NavigationItem[]; recommendationEnabled: boolean }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -29,7 +29,7 @@ export function MobileNavigation() {
         <Dialog.Content className="fixed inset-y-0 end-0 z-[70] flex w-[min(90vw,24rem)] flex-col border-s border-border bg-surface p-6 shadow-xl focus:outline-none">
           <Dialog.Title className="sr-only">Meniu principal</Dialog.Title>
           <div className="flex items-center justify-between border-b border-border pb-5">
-            <Wordmark onClick={() => setOpen(false)} />
+            <Wordmark siteName={siteName} logoAssetId={logoAssetId} onClick={() => setOpen(false)} />
             <Dialog.Close asChild>
               <button
                 type="button"
@@ -42,10 +42,12 @@ export function MobileNavigation() {
           </div>
 
           <nav className="flex flex-col gap-1 py-7" aria-label="Navigare mobilă">
-            {primaryNavigation.map((item) => (
+            {navigation.map((item) => (
               <Dialog.Close asChild key={item.href}>
                 <Link
                   href={item.href}
+                  target={item.openInNewTab ? "_blank" : undefined}
+                  rel={item.external ? "noopener noreferrer" : undefined}
                   className="rounded-xl px-4 py-3 text-lg font-medium text-foreground hover:bg-paper"
                 >
                   {item.label}
@@ -64,9 +66,9 @@ export function MobileNavigation() {
                 Caută
               </Link>
             </Dialog.Close>
-            <Dialog.Close asChild>
+            {recommendationEnabled ? <Dialog.Close asChild>
               <ButtonLink href="/recomanda-mi">Recomandă-mi o carte</ButtonLink>
-            </Dialog.Close>
+            </Dialog.Close> : null}
           </div>
         </Dialog.Content>
       </Dialog.Portal>

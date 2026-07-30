@@ -8,6 +8,8 @@ export const mediaAssets = pgTable(
   {
     id: uuidPrimaryKey(),
     storageKey: text("storage_key").notNull().unique(),
+    title: text("title"),
+    status: text("status").default("active").notNull(),
     mimeType: text("mime_type").notNull(),
     byteSize: integer("byte_size").notNull(),
     width: integer("width"),
@@ -21,6 +23,7 @@ export const mediaAssets = pgTable(
   },
   (table) => [
     check("media_assets_byte_size_positive", sql`${table.byteSize} > 0`),
+    check("media_assets_status_valid", sql`${table.status} in ('active', 'archived')`),
     check(
       "media_assets_width_positive",
       sql`${table.width} is null or ${table.width} > 0`,
@@ -36,4 +39,3 @@ export const mediaAssets = pgTable(
     index("media_assets_mime_type_idx").on(table.mimeType),
   ],
 );
-

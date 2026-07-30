@@ -7,16 +7,16 @@ import { formatEditorialDate } from "@/domain/editorial/bucharest-date";
 import { BookCover } from "./book-cover";
 import { RetailerOffers } from "./retailer-offers";
 
-export function DailyFeatureSection({ feature, date }: { feature: PublicDailyFeature | null; date: string }) {
+export function DailyFeatureSection({ feature }: { feature: PublicDailyFeature | null; date: string }) {
   if (!feature) {
     return (
       <section id="cartea-zilei" className="border-y border-border bg-brand py-16 text-white md:py-24 lg:py-28">
         <div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">Selecția editorială · {formatEditorialDate(date)}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">Descoperă o carte</p>
           <div className="mt-5 max-w-3xl">
-            <h2 className="font-display text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">Alegerea de astăzi este în pregătire.</h2>
-            <p className="mt-5 text-base leading-7 text-white/70 sm:text-lg">Nu completăm automat această zi cu o carte aleatorie. Până apare selecția editorului, poți răsfoi recomandările publicate anterior.</p>
-            <Link href="/cartea-zilei/arhiva" className="mt-8 inline-flex min-h-11 items-center justify-center rounded-full border border-white/35 px-6 text-sm font-bold text-white transition hover:bg-white hover:text-brand">Vezi arhiva</Link>
+            <h2 className="font-display text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">Găsește o recomandare care ți se potrivește.</h2>
+            <p className="mt-5 text-base leading-7 text-white/70 sm:text-lg">Răsfoiește alegerile anterioare sau răspunde la câteva întrebări pentru o recomandare personalizată.</p>
+            <div className="mt-8 flex flex-wrap gap-3"><Link href="/cartea-zilei/arhiva" className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-6 text-sm font-bold text-brand transition hover:bg-paper">Vezi recomandările</Link><Link href="/recomanda-mi" className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/35 px-6 text-sm font-bold text-white transition hover:bg-white hover:text-brand">Recomandă-mi o carte</Link></div>
           </div>
         </div>
       </section>

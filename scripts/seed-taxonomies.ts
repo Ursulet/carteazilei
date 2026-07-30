@@ -5,28 +5,13 @@ import {
   audiences,
   genres,
   moods,
+  permissions,
   readingTraits,
+  rolePermissions,
   roles,
   themes,
 } from "@/db/schema";
-
-const roleSeed = [
-  {
-    code: "admin" as const,
-    name: "Administrator",
-    description: "Acces complet la conținut, utilizatori și configurare.",
-  },
-  {
-    code: "editor" as const,
-    name: "Editor",
-    description: "Creare, revizuire și publicare de conținut editorial.",
-  },
-  {
-    code: "analyst" as const,
-    name: "Analist",
-    description: "Acces read-only la analytics și feedback-ul recomandărilor.",
-  },
-];
+import { defaultRoleDefinitions, permissionDefinitions } from "@/lib/auth/permissions";
 
 const genreSeed = [
   ["Ficțiune", "fictiune"],
@@ -91,16 +76,31 @@ async function seed() {
   try {
     await db.transaction(async (transaction) => {
       await transaction
+        .insert(permissions)
+        .values(permissionDefinitions.map(([code, name, description, group, dangerous]) => ({ code, name, description, group, dangerous })))
+        .onConflictDoUpdate({ target: permissions.code, set: { name: sql`excluded.name`, description: sql`excluded.description`, group: sql`excluded.group_name`, dangerous: sql`excluded.dangerous`, updatedAt: new Date() } });
+
+      await transaction
         .insert(roles)
-        .values(roleSeed)
+        .values(defaultRoleDefinitions.map((role) => ({ code: role.code, name: role.name, description: role.description, isSystem: true, isSuperAdmin: role.isSuperAdmin ?? false, active: true })))
         .onConflictDoUpdate({
           target: roles.code,
           set: {
             name: sql`excluded.name`,
             description: sql`excluded.description`,
+            isSystem: true,
+            isSuperAdmin: sql`excluded.is_super_admin`,
             updatedAt: new Date(),
           },
         });
+
+      const [seededRoles, seededPermissions] = await Promise.all([
+        transaction.select({ id: roles.id, code: roles.code }).from(roles),
+        transaction.select({ id: permissions.id, code: permissions.code }).from(permissions),
+      ]);
+      const roleIds = new Map(seededRoles.map((role) => [role.code, role.id]));
+      const permissionIds = new Map(seededPermissions.map((permission) => [permission.code, permission.id]));
+      await transaction.insert(rolePermissions).values(defaultRoleDefinitions.flatMap((role) => role.permissions.map((permission) => ({ roleId: roleIds.get(role.code)!, permissionId: permissionIds.get(permission)! })))).onConflictDoNothing();
 
       await transaction
         .insert(genres)

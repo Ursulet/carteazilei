@@ -8,6 +8,7 @@ import { initialEditorialActionState } from "@/domain/editorial/action-state";
 
 import { FieldError, FormSection, fieldClass, labelClass } from "./editorial-ui";
 import { SubmitButton } from "./submit-button";
+import { InlineMediaPicker } from "./inline-media-picker";
 
 type Values = {
   name?: string | null;
@@ -103,14 +104,7 @@ export function CommercialPartnerForm({
           </label>
           <label className={`${labelClass} md:col-span-2`}>
             Logo
-            <select name="logoAssetId" defaultValue={values.logoAssetId ?? ""} className={fieldClass}>
-              <option value="">Fără logo</option>
-              {options.media.map((asset) => (
-                <option key={asset.id} value={asset.id}>
-                  {asset.altText} — {asset.storageKey}
-                </option>
-              ))}
-            </select>
+            <InlineMediaPicker name="logoAssetId" value={values.logoAssetId} media={options.media} empty="Fără logo" />
             <span className="mt-1.5 block text-xs font-normal text-muted">
               Logo-urile se încarcă din secțiunea Media.
             </span>

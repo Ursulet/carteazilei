@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { startTransition, useActionState, useState, type FormEvent } from "react";
 
 import type { EditorialActionState, PublishingGateItem } from "@/domain/editorial/action-state";
 import { initialEditorialActionState } from "@/domain/editorial/action-state";
+import { slugify } from "@/lib/slug";
 
 import { FieldError, FormSection, fieldClass, labelClass } from "./editorial-ui";
 import { PublishingChecklist } from "./publishing-checklist";
-import { SubmitButton } from "./submit-button";
+import { InlineMediaPicker } from "./inline-media-picker";
 
 type Option = { id: string; name: string };
 type TraitOption = Option & { code: string };
@@ -80,20 +81,32 @@ export function BookForm({ action, values = {}, options, gate = [], bookId, canM
   bookId?: string;
   canManageOffers?: boolean;
 }) {
-  const [state, formAction] = useActionState(action, initialEditorialActionState);
+  const [state, formAction, isPending] = useActionState(action, initialEditorialActionState);
   const errors = state.fieldErrors ?? {};
   const scoreMap = new Map(values.traitScores?.map((item) => [item.traitId, item]));
+  const [slug, setSlug] = useState(values.slug ?? "");
+  const [slugWasEdited, setSlugWasEdited] = useState(Boolean(values.slug));
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  }
+
+  function handleTitleChange(title: string) {
+    if (!slugWasEdited) setSlug(slugify(title));
+  }
 
   return (
-    <form action={formAction} className="grid gap-6">
+    <form onSubmit={handleSubmit} className="grid gap-6">
       {state.status === "error" ? <div role="alert" className="rounded-xl border border-danger/30 bg-red-50 px-4 py-3 text-sm font-medium text-danger">{state.message}</div> : null}
       <FormSection title="Identitate și flux editorial" description="Datele canonice ale operei și starea ei în circuitul editorial.">
         <div className="grid gap-5 md:grid-cols-2">
-          <label className={labelClass}>Titlu *<input name="title" required defaultValue={values.title ?? ""} className={fieldClass} /><FieldError errors={errors.title} /></label>
+          <label className={labelClass}>Titlu *<input name="title" required defaultValue={values.title ?? ""} onChange={(event) => handleTitleChange(event.target.value)} className={fieldClass} /><FieldError errors={errors.title} /></label>
           <label className={labelClass}>Titlu original<input name="originalTitle" defaultValue={values.originalTitle ?? ""} className={fieldClass} /></label>
-          <label className={labelClass}>Slug *<input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" defaultValue={values.slug ?? ""} className={fieldClass} /><FieldError errors={errors.slug} /></label>
+          <label className={labelClass}>Adresă URL (generată automat)<input name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={slug} onChange={(event) => { setSlugWasEdited(true); setSlug(event.target.value); }} onBlur={() => setSlug(slugify(slug))} className={fieldClass} placeholder="se-completează-din-titlu" /><span className="mt-1.5 block text-xs font-normal text-muted">Poți modifica adresa înainte de salvare dacă este necesar.</span><FieldError errors={errors.slug} /></label>
           <label className={labelClass}>Autor *<select name="authorId" required defaultValue={values.authorId ?? ""} className={fieldClass}><option value="">Alege autorul</option>{options.authors.map((author) => <option key={author.id} value={author.id}>{author.name}</option>)}</select><FieldError errors={errors.authorId} />{options.authors.length === 0 ? <span className="mt-2 block text-xs text-danger">Creează mai întâi un autor.</span> : null}</label>
-          <label className={labelClass}>Stare<select name="status" defaultValue={values.status ?? "draft"} className={fieldClass}><option value="draft">Ciornă</option><option value="needs_review">Necesită revizie</option><option value="ready">Pregătită</option><option value="published">Publicată</option><option value="archived">Arhivată</option></select></label>
+          {bookId ? <label className={labelClass}>Stare<select name="status" defaultValue={values.status ?? "draft"} className={fieldClass}><option value="draft">Ciornă</option><option value="needs_review">Necesită revizie</option><option value="ready">Pregătită</option><option value="published">Publicată</option><option value="archived">Arhivată</option></select></label> : <div className="rounded-xl border border-border bg-paper p-4 text-sm"><input type="hidden" name="status" value="draft" /><span className="font-semibold">Se salvează ca ciornă</span><span className="mt-1 block text-xs leading-5 text-muted">Poți încărca acum coperta. Checklistul va fi obligatoriu abia când alegi publicarea.</span></div>}
           <label className={labelClass}>Încredere editorială: 0–100<input name="editorialConfidence" type="number" min="0" max="100" required defaultValue={values.editorialConfidence ?? 0} className={fieldClass} /></label>
         </div>
       </FormSection>
@@ -113,7 +126,7 @@ export function BookForm({ action, values = {}, options, gate = [], bookId, canM
         </div>
       </FormSection>
 
-      <FormSection title="Ediție și copertă" description="Coperta se alege din biblioteca media; textul alternativ este păstrat împreună cu fișierul.">
+      <FormSection title="Ediție și copertă" description="Poți alege o imagine existentă sau o poți încărca direct aici, fără să părăsești formularul.">
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           <label className={labelClass}>Eticheta ediției<input name="editionLabel" defaultValue={values.editionLabel ?? ""} className={fieldClass} /></label>
           <label className={labelClass}>ISBN-10<input name="isbn10" inputMode="numeric" defaultValue={values.isbn10 ?? ""} className={fieldClass} /></label>
@@ -122,7 +135,7 @@ export function BookForm({ action, values = {}, options, gate = [], bookId, canM
           <label className={labelClass}>An publicare<input name="publicationYear" type="number" min="1450" max="3000" defaultValue={values.publicationYear ?? ""} className={fieldClass} /></label>
           <label className={labelClass}>Număr pagini<input name="pageCount" type="number" min="1" defaultValue={values.pageCount ?? ""} className={fieldClass} /></label>
           <label className={labelClass}>Limbă<input name="language" defaultValue={values.language ?? "ro"} className={fieldClass} /></label>
-          <label className={`${labelClass} md:col-span-2`}>Copertă<select name="coverAssetId" defaultValue={values.coverAssetId ?? ""} className={fieldClass}><option value="">Fără copertă</option>{options.media.map((asset) => <option key={asset.id} value={asset.id}>{asset.altText} — {asset.storageKey}</option>)}</select><FieldError errors={errors.coverAssetId} /></label>
+          <label className={`${labelClass} md:col-span-2`}>Copertă<InlineMediaPicker name="coverAssetId" value={values.coverAssetId} media={options.media} empty="Fără copertă" /><FieldError errors={errors.coverAssetId} /></label>
           <label className="flex items-center gap-3 text-sm font-semibold"><input type="checkbox" name="editionActive" defaultChecked={values.editionActive ?? true} className="size-4 accent-[var(--brand)]" />Ediție activă</label>
         </div>
       </FormSection>
@@ -156,7 +169,7 @@ export function BookForm({ action, values = {}, options, gate = [], bookId, canM
 
       {(state.gate ?? gate).length ? <PublishingChecklist items={state.gate ?? gate} /> : null}
       <div className="flex flex-wrap items-center gap-3">
-        <SubmitButton>{bookId ? "Salvează modificările" : "Creează cartea"}</SubmitButton>
+        <button type="submit" disabled={isPending} className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-6 text-sm font-bold text-white transition hover:bg-brand-hover disabled:cursor-wait disabled:opacity-60">{isPending ? "Se salvează…" : bookId ? "Salvează modificările" : "Creează ciorna"}</button>
         {bookId && canManageOffers ? <Link href={`/admin/books/${bookId}/offers`} className="inline-flex min-h-11 items-center rounded-full border border-brand px-5 text-sm font-bold text-brand hover:bg-accent-soft">Oferte & afiliere</Link> : null}
         {bookId ? <Link href={`/admin/preview/book/${bookId}`} target="_blank" className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">Previzualizare protejată</Link> : null}
         <Link href="/admin/books" className="text-sm font-semibold text-muted hover:text-foreground">Renunță</Link>

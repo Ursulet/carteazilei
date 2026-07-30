@@ -1,9 +1,11 @@
 import "server-only";
 
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 
 import { getDb } from "@/db";
 import { getAuthUserByEmail } from "@/db/queries/auth-users";
+import { users } from "@/db/schema";
 import { writeAuditLog } from "@/lib/audit/service";
 import { verifyPassword } from "@/lib/auth/password";
 import {
@@ -33,17 +35,21 @@ export async function authenticateInternalUser(
 
   if (rateLimit.blocked || !parsed.success) {
     await verifyPassword(null, password);
+    await writeAuditLog({ actorUserId: null, action: "auth.sign_in_failed", entityType: "user", outcome: "failure", metadata: { reason: rateLimit.blocked ? "rate_limited" : "invalid_input" } });
     return null;
   }
 
-  const account = await getAuthUserByEmail(getDb(), email);
+  const db = getDb();
+  const account = await getAuthUserByEmail(db, email);
   const validPassword = await verifyPassword(account?.passwordHash ?? null, password);
 
   if (!account || !validPassword || account.roles.length === 0) {
+    await writeAuditLog({ actorUserId: account?.id ?? null, action: "auth.sign_in_failed", entityType: "user", entityId: account?.id, outcome: "failure", metadata: { reason: "invalid_credentials" } });
     return null;
   }
 
   await clearLoginRateLimit(rateLimit.keyHashes);
+  await db.update(users).set({ lastLoginAt: new Date(), updatedAt: new Date() }).where(eq(users.id, account.id));
   await writeAuditLog({
     actorUserId: account.id,
     action: "auth.sign_in",
@@ -60,4 +66,3 @@ export async function authenticateInternalUser(
     sessionVersion: account.sessionVersion,
   };
 }
-

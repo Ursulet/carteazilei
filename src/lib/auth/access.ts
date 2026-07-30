@@ -1,144 +1,66 @@
-export type RoleCode = "admin" | "editor" | "analyst";
+import type { PermissionCode } from "./permissions";
+import { hasPermission } from "./permissions";
 
-export const roleLabels: Record<RoleCode, string> = {
+export type RoleCode = string;
+
+export const roleLabels: Record<string, string> = {
+  super_admin: "Super Admin",
   admin: "Administrator",
   editor: "Editor",
+  commercial_manager: "Manager comercial",
+  support: "Support",
   analyst: "Analist",
 };
 
 export const adminSections = [
-  {
-    id: "dashboard",
-    href: "/admin",
-    label: "Dashboard",
-    description: "Starea editorială și operațională",
-    roles: ["admin", "editor", "analyst"],
-  },
-  {
-    id: "books",
-    href: "/admin/books",
-    label: "Cărți",
-    description: "Catalogul editorial",
-    roles: ["admin", "editor"],
-  },
-  {
-    id: "readiness",
-    href: "/admin/readiness",
-    label: "Calitatea catalogului",
-    description: "Cărți și pagini care trebuie completate",
-    roles: ["admin", "editor"],
-  },
-  {
-    id: "authors",
-    href: "/admin/authors",
-    label: "Autori",
-    description: "Profiluri și surse",
-    roles: ["admin", "editor"],
-  },
-  {
-    id: "daily-features",
-    href: "/admin/daily-features",
-    label: "Cartea Zilei",
-    description: "Calendarul selecțiilor",
-    roles: ["admin", "editor"],
-  },
-  {
-    id: "lists",
-    href: "/admin/lists",
-    label: "Liste editoriale",
-    description: "Liste, hub-uri și ghiduri",
-    roles: ["admin", "editor"],
-  },
-  {
-    id: "taxonomies",
-    href: "/admin/taxonomies",
-    label: "Taxonomii",
-    description: "Genuri, teme și audiențe",
-    roles: ["admin", "editor"],
-  },
-  {
-    id: "relationships",
-    href: "/admin/relationships",
-    label: "Relații între cărți",
-    description: "Similaritate și next reads",
-    roles: ["admin", "editor"],
-  },
-  {
-    id: "recommendations",
-    href: "/admin/recommendations",
-    label: "Recomandări",
-    description: "Feedback și performanța motorului",
-    roles: ["admin", "analyst"],
-  },
-  {
-    id: "media",
-    href: "/admin/media",
-    label: "Media",
-    description: "Coperte și atribuiri",
-    roles: ["admin", "editor"],
-  },
-  {
-    id: "seo",
-    href: "/admin/seo",
-    label: "SEO",
-    description: "Indexare și metadata",
-    roles: ["admin", "editor"],
-  },
-  {
-    id: "retailers",
-    href: "/admin/retailers",
-    label: "Parteneri comerciali",
-    description: "Parteneri, oferte și afiliere",
-    roles: ["admin"],
-  },
-  {
-    id: "editors",
-    href: "/admin/editors",
-    label: "Utilizatori și editori",
-    description: "Roluri și profile interne",
-    roles: ["admin"],
-  },
-  {
-    id: "settings",
-    href: "/admin/settings",
-    label: "Setări",
-    description: "Configurare operațională",
-    roles: ["admin"],
-  },
-  {
-    id: "audit",
-    href: "/admin/audit",
-    label: "Audit log",
-    description: "Istoricul operațiilor sensibile",
-    roles: ["admin"],
-  },
+  { id: "dashboard", group: "Dashboard", href: "/admin", label: "Dashboard", description: "Starea editorială și operațională", viewPermission: "dashboard.view", mutationPermission: "dashboard.view" },
+  { id: "books", group: "Conținut", href: "/admin/books", label: "Cărți", description: "Catalogul editorial", viewPermission: "books.view", mutationPermission: "books.update" },
+  { id: "readiness", group: "Conținut", href: "/admin/readiness", label: "Calitatea catalogului", description: "Cărți și pagini de completat", viewPermission: "books.view", mutationPermission: "books.update" },
+  { id: "authors", group: "Conținut", href: "/admin/authors", label: "Autori", description: "Profiluri și surse", viewPermission: "authors.manage", mutationPermission: "authors.manage" },
+  { id: "daily-features", group: "Conținut", href: "/admin/daily-features", label: "Cartea Zilei", description: "Calendarul selecțiilor", viewPermission: "daily_features.manage", mutationPermission: "daily_features.manage" },
+  { id: "lists", group: "Conținut", href: "/admin/lists", label: "Liste editoriale", description: "Liste, hub-uri și ghiduri", viewPermission: "lists.manage", mutationPermission: "lists.manage" },
+  { id: "pages", group: "Conținut", href: "/admin/pages", label: "Pagini", description: "Pagini statice și legale", viewPermission: "pages.manage", mutationPermission: "pages.manage" },
+  { id: "taxonomies", group: "Conținut", href: "/admin/taxonomies", label: "Taxonomii", description: "Genuri, teme și audiențe", viewPermission: "taxonomies.manage", mutationPermission: "taxonomies.manage" },
+  { id: "relationships", group: "Conținut", href: "/admin/relationships", label: "Relații între cărți", description: "Similaritate și next reads", viewPermission: "relationships.manage", mutationPermission: "relationships.manage" },
+  { id: "recommendations", group: "Recomandări", href: "/admin/recommendations", label: "Recomandări", description: "Sesiuni, rezultate și configurare", viewPermission: "recommendations.view", mutationPermission: "recommendations.configure" },
+  { id: "retailers", group: "Comercial", href: "/admin/retailers", label: "Parteneri și oferte", description: "Parteneri, oferte și afiliere", viewPermission: "partners.manage", mutationPermission: "partners.manage" },
+  { id: "messages", group: "Comunicare", href: "/admin/messages", label: "Mesaje", description: "Inbox-ul formularului de contact", viewPermission: "contact_messages.view", mutationPermission: "contact_messages.manage" },
+  { id: "media", group: "Media", href: "/admin/media", label: "Bibliotecă media", description: "Imagini și atribuiri", viewPermission: "media.view", mutationPermission: "media.manage" },
+  { id: "editors", group: "Utilizatori și acces", href: "/admin/editors", label: "Utilizatori", description: "Conturi, status și sesiuni", viewPermission: "users.view", mutationPermission: "users.update" },
+  { id: "roles", group: "Utilizatori și acces", href: "/admin/roles", label: "Roluri și permisiuni", description: "Matricea RBAC", viewPermission: "roles.view", mutationPermission: "roles.manage" },
+  { id: "permissions", group: "Utilizatori și acces", href: "/admin/permissions", label: "Permisiuni", description: "Catalogul drepturilor de sistem", viewPermission: "permissions.view", mutationPermission: "permissions.manage" },
+  { id: "settings", group: "Configurare", href: "/admin/settings", label: "Setări site", description: "Identitate, branding și funcționalități", viewPermission: "site_settings.view", mutationPermission: "site_settings.update" },
+  { id: "seo", group: "Configurare", href: "/admin/seo", label: "SEO", description: "Indexare și metadata", viewPermission: "seo.view", mutationPermission: "seo.manage" },
+  { id: "navigation", group: "Configurare", href: "/admin/navigation", label: "Navigație", description: "Meniul principal și footer", viewPermission: "navigation.manage", mutationPermission: "navigation.manage" },
+  { id: "audit", group: "Sistem", href: "/admin/audit", label: "Audit log", description: "Istoricul operațiilor sensibile", viewPermission: "audit_logs.view", mutationPermission: "audit_logs.view" },
+  { id: "system", group: "Sistem", href: "/admin/system", label: "Status sistem", description: "Storage și stare operațională", viewPermission: "system.view", mutationPermission: "system.view" },
 ] as const satisfies ReadonlyArray<{
   id: string;
+  group: string;
   href: string;
   label: string;
   description: string;
-  roles: readonly RoleCode[];
+  viewPermission: PermissionCode;
+  mutationPermission: PermissionCode;
 }>;
 
 export type AdminSectionId = (typeof adminSections)[number]["id"];
 export type AdminSection = (typeof adminSections)[number];
 
-export function canAccessSection(roles: readonly RoleCode[], sectionId: AdminSectionId) {
+export function canAccessSection(
+  permissions: readonly string[],
+  sectionId: AdminSectionId,
+  isSuperAdmin = false,
+) {
   const section = adminSections.find((item) => item.id === sectionId);
-  return Boolean(
-    section &&
-      roles.some((role) => (section.roles as readonly RoleCode[]).includes(role)),
-  );
+  return Boolean(section && hasPermission(permissions, section.viewPermission, isSuperAdmin));
 }
 
-export function canMutateSection(roles: readonly RoleCode[], sectionId: AdminSectionId) {
-  if (roles.includes("admin")) {
-    return true;
-  }
-
-  if (roles.includes("analyst")) {
-    return false;
-  }
-
-  return canAccessSection(roles, sectionId) && sectionId !== "recommendations";
+export function canMutateSection(
+  permissions: readonly string[],
+  sectionId: AdminSectionId,
+  isSuperAdmin = false,
+) {
+  const section = adminSections.find((item) => item.id === sectionId);
+  return Boolean(section && hasPermission(permissions, section.mutationPermission, isSuperAdmin));
 }

@@ -8,13 +8,14 @@ import { toActionState } from "@/domain/editorial/action-state";
 import { parseBookFormData } from "@/domain/editorial/book-input";
 import { assignBookCover, deleteBook, saveBook } from "@/domain/editorial/book-service";
 import { deleteMedia, uploadMedia } from "@/domain/editorial/media-service";
-import { requireMutationAccess } from "@/lib/auth/principal";
+import { requirePermission } from "@/lib/auth/principal";
 
 export async function createBookAction(_state: EditorialActionState, formData: FormData): Promise<EditorialActionState> {
-  const principal = await requireMutationAccess("books");
+  const principal = await requirePermission("books.create");
   let id: string;
   try {
-    id = await saveBook(parseBookFormData(formData), principal.id);
+    const input = parseBookFormData(formData);
+    id = await saveBook({ ...input, status: "draft" }, principal.id);
   } catch (error) {
     return toActionState(error);
   }
@@ -23,9 +24,10 @@ export async function createBookAction(_state: EditorialActionState, formData: F
 }
 
 export async function updateBookAction(bookId: string, _state: EditorialActionState, formData: FormData): Promise<EditorialActionState> {
-  const principal = await requireMutationAccess("books");
+  const input = parseBookFormData(formData);
+  const principal = await requirePermission(input.status === "published" ? "books.publish" : "books.update");
   try {
-    await saveBook(parseBookFormData(formData), principal.id, bookId);
+    await saveBook(input, principal.id, bookId);
   } catch (error) {
     return toActionState(error);
   }
@@ -36,7 +38,7 @@ export async function updateBookAction(bookId: string, _state: EditorialActionSt
 }
 
 export async function deleteBookAction(bookId: string) {
-  const principal = await requireMutationAccess("books");
+  const principal = await requirePermission("books.delete");
   await deleteBook(bookId, principal.id);
   revalidatePath("/admin/books");
   redirect("/admin/books");
@@ -47,7 +49,7 @@ export async function uploadBookCoverAction(
   _state: EditorialActionState,
   formData: FormData,
 ): Promise<EditorialActionState> {
-  const principal = await requireMutationAccess("books");
+  const principal = await requirePermission("media.manage");
   let assetId: string | undefined;
   try {
     assetId = await uploadMedia(formData, principal.id);

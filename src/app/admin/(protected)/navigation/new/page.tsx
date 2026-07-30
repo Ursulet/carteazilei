@@ -1,0 +1,2 @@
+import { AdminPageHeader } from "@/components/admin/editorial-ui"; import { NavigationItemForm } from "@/components/admin/navigation-item-form"; import { requirePermission } from "@/lib/auth/principal"; import { createNavigationAction } from "../actions";
+export default async function NewNavigationPage() { await requirePermission("navigation.manage"); return <><AdminPageHeader eyebrow="Navigație" title="Link nou" description="Adaugă o destinație sigură în header sau footer." /><NavigationItemForm action={createNavigationAction} /></>; }

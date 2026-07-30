@@ -11,15 +11,19 @@ import {
   canAccessSection,
   canMutateSection,
   type AdminSectionId,
-  type RoleCode,
 } from "@/lib/auth/access";
+import { hasPermission, type PermissionCode } from "@/lib/auth/permissions";
 import { authOptions, SESSION_MAX_AGE_SECONDS } from "@/lib/auth/options";
 
 export type InternalPrincipal = {
   id: string;
   email: string;
   name: string;
-  roles: RoleCode[];
+  roles: string[];
+  roleNames: string[];
+  permissions: string[];
+  isSuperAdmin: boolean;
+  mustResetPassword: boolean;
 };
 
 export const getInternalPrincipal = cache(async (): Promise<InternalPrincipal | null> => {
@@ -50,6 +54,10 @@ export const getInternalPrincipal = cache(async (): Promise<InternalPrincipal | 
     email: account.email,
     name: account.name,
     roles: account.roles,
+    roleNames: account.roleNames,
+    permissions: account.permissions,
+    isSuperAdmin: account.isSuperAdmin,
+    mustResetPassword: account.mustResetPassword,
   };
 });
 
@@ -66,7 +74,11 @@ export async function requireInternalPrincipal() {
 export async function requireSectionAccess(sectionId: AdminSectionId) {
   const principal = await requireInternalPrincipal();
 
-  if (!canAccessSection(principal.roles, sectionId)) {
+  if (principal.mustResetPassword) {
+    redirect("/admin/account?reset=1");
+  }
+
+  if (!canAccessSection(principal.permissions, sectionId, principal.isSuperAdmin)) {
     redirect("/admin/interzis");
   }
 
@@ -76,9 +88,17 @@ export async function requireSectionAccess(sectionId: AdminSectionId) {
 export async function requireMutationAccess(sectionId: AdminSectionId) {
   const principal = await requireSectionAccess(sectionId);
 
-  if (!canMutateSection(principal.roles, sectionId)) {
+  if (!canMutateSection(principal.permissions, sectionId, principal.isSuperAdmin)) {
     throw new Error("Acțiunea nu este permisă pentru rolul curent.");
   }
 
+  return principal;
+}
+
+export async function requirePermission(permission: PermissionCode) {
+  const principal = await requireInternalPrincipal();
+  if (!hasPermission(principal.permissions, permission, principal.isSuperAdmin)) {
+    throw new Error("Acțiunea nu este permisă pentru rolul curent.");
+  }
   return principal;
 }

@@ -50,6 +50,9 @@ export async function uploadMedia(formData: FormData, actorUserId: string) {
     metadata = await inspectImage(bytes);
   } catch (error) {
     console.error("Image inspection failed", error);
+    if (error instanceof Error && error.name === "ImageInspectionUnavailableError") {
+      throw new EditorialServiceError("Procesarea imaginilor nu este disponibilă momentan. Verifică dependențele containerului.");
+    }
     throw new EditorialServiceError("Fișierul nu este o imagine validă sau este deteriorat.", { file: ["Încarcă JPEG, PNG, WebP sau AVIF."] });
   }
   const format = metadata.format as keyof typeof supportedImages | undefined;

@@ -17,6 +17,7 @@ import { bookCardSelection, publicBookPageEligibility, publishedBookConditions }
 import { getPublicEditorialListPage } from "./public-seo-hubs";
 
 function publicEditorSelection() {
+  const outerEditorId = sql.raw('"editors"."id"');
   return {
     id: editors.id,
     name: editors.displayName,
@@ -31,12 +32,12 @@ function publicEditorSelection() {
     },
     reviewCount: sql<number>`(
       select count(*)::int from editorial_reviews trust_review
-      where trust_review.editor_id = ${editors.id}
+      where trust_review.editor_id = ${outerEditorId}
         and trust_review.status = 'published' and trust_review.deleted_at is null
     )`,
     dailyFeatureCount: sql<number>`(
       select count(*)::int from daily_features trust_daily
-      where trust_daily.editor_id = ${editors.id}
+      where trust_daily.editor_id = ${outerEditorId}
         and trust_daily.status = 'published' and trust_daily.deleted_at is null
     )`,
   };

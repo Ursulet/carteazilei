@@ -73,6 +73,7 @@ function coverSelection() {
 }
 
 export function bookCardSelection() {
+  const outerBookId = sql.raw('"books"."id"');
   return {
     id: books.id,
     title: books.title,
@@ -81,10 +82,10 @@ export function bookCardSelection() {
     authorId: authors.id,
     author: authors.name,
     cover: {
-      id: sql<string | null>`(select m.id from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${books.id} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
-      altText: sql<string | null>`(select m.alt_text from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${books.id} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
-      width: sql<number | null>`(select m.width from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${books.id} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
-      height: sql<number | null>`(select m.height from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${books.id} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
+      id: sql<string | null>`(select m.id from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${outerBookId} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
+      altText: sql<string | null>`(select m.alt_text from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${outerBookId} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
+      width: sql<number | null>`(select m.width from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${outerBookId} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
+      height: sql<number | null>`(select m.height from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${outerBookId} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
     },
   };
 }

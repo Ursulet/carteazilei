@@ -85,6 +85,7 @@ export async function getBookFormOptions(db: Database = getDb()) {
 }
 
 export async function getBookPublishingSnapshot(db: Database, bookId: string) {
+  const outerBookId = sql.raw('"books"."id"');
   const [row] = await db
     .select({
       title: books.title,
@@ -92,12 +93,12 @@ export async function getBookPublishingSnapshot(db: Database, bookId: string) {
       authorId: books.primaryAuthorId,
       summary: books.spoilerFreeSummary,
       editorialConfidence: books.editorialConfidence,
-      activeEdition: sql<boolean>`exists(select 1 from book_editions e where e.book_id = ${books.id} and e.active and e.deleted_at is null)`,
-      coverAlt: sql<string | null>`(select m.alt_text from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${books.id} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
-      verdict: sql<string | null>`(select r.verdict from editorial_reviews r where r.book_id = ${books.id} and r.deleted_at is null order by r.updated_at desc limit 1)`,
-      caveats: sql<string[]>`coalesce((select r.caveats from editorial_reviews r where r.book_id = ${books.id} and r.deleted_at is null order by r.updated_at desc limit 1), '{}'::text[])`,
-      editorId: sql<string | null>`(select r.editor_id from editorial_reviews r where r.book_id = ${books.id} and r.deleted_at is null order by r.updated_at desc limit 1)`,
-      genreIds: sql<string[]>`coalesce((select array_agg(bg.genre_id::text) from book_genres bg where bg.book_id = ${books.id}), '{}'::text[])`,
+      activeEdition: sql<boolean>`exists(select 1 from book_editions e where e.book_id = ${outerBookId} and e.active and e.deleted_at is null)`,
+      coverAlt: sql<string | null>`(select m.alt_text from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${outerBookId} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
+      verdict: sql<string | null>`(select r.verdict from editorial_reviews r where r.book_id = ${outerBookId} and r.deleted_at is null order by r.updated_at desc limit 1)`,
+      caveats: sql<string[]>`coalesce((select r.caveats from editorial_reviews r where r.book_id = ${outerBookId} and r.deleted_at is null order by r.updated_at desc limit 1), '{}'::text[])`,
+      editorId: sql<string | null>`(select r.editor_id from editorial_reviews r where r.book_id = ${outerBookId} and r.deleted_at is null order by r.updated_at desc limit 1)`,
+      genreIds: sql<string[]>`coalesce((select array_agg(bg.genre_id::text) from book_genres bg where bg.book_id = ${outerBookId}), '{}'::text[])`,
     })
     .from(books)
     .where(and(eq(books.id, bookId), isNull(books.deletedAt)))

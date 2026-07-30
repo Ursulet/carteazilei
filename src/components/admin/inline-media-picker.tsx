@@ -21,6 +21,7 @@ export function InlineMediaPicker({
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const altTextRef = useRef<HTMLInputElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
@@ -52,6 +53,7 @@ export function InlineMediaPicker({
       setItems((current) => [body.asset!, ...current.filter((asset) => asset.id !== body.asset!.id)]);
       setSelected(body.asset.id);
       setOpen(false);
+      setFileName(null);
       if (fileRef.current) fileRef.current.value = "";
       if (altTextRef.current) altTextRef.current.value = "";
       if (titleRef.current) titleRef.current.value = "";
@@ -69,18 +71,22 @@ export function InlineMediaPicker({
           <option value="">{empty}</option>
           {items.map((asset) => <option key={asset.id} value={asset.id}>{asset.altText}</option>)}
         </select>
-        <button type="button" onClick={() => { setOpen((current) => !current); setError(null); }} className="shrink-0 rounded-xl border border-border px-3 text-xs font-semibold hover:border-brand">
-          Încarcă
+        <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setOpen((current) => !current); setError(null); }} className="shrink-0 rounded-xl border border-border px-3 text-xs font-semibold hover:border-brand">
+          Adaugă imagine
         </button>
       </div>
       {selected ? <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-paper p-3"><Image src={`/media/${selected}`} alt="Previzualizarea imaginii selectate" width={64} height={80} unoptimized className="h-20 w-16 rounded-lg object-cover" /><span className="text-xs text-muted">Imagine selectată și pregătită pentru salvarea formularului.</span></div> : null}
       {open ? (
         <div className="mt-3 grid gap-3 rounded-xl border border-border bg-paper p-4">
-          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="text-xs" />
-          <input ref={altTextRef} minLength={5} maxLength={500} placeholder="Descriere alternativă" className="rounded-lg border border-border bg-surface px-3 py-2 text-sm" />
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(event) => { setFileName(event.target.files?.[0]?.name ?? null); setError(null); }} className="sr-only" />
+          <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); fileRef.current?.click(); }} className="flex min-h-20 w-full items-center justify-center rounded-xl border-2 border-dashed border-brand/35 bg-surface px-4 text-center text-sm font-bold text-brand transition hover:border-brand hover:bg-accent-soft">
+            {fileName ? `Imagine aleasă: ${fileName}` : "Alege poza de pe calculator"}
+          </button>
+          <p className="-mt-1 text-xs text-muted">Formate acceptate: JPG, PNG, WebP sau AVIF.</p>
+          <input ref={altTextRef} minLength={5} maxLength={500} placeholder="Descriere alternativă — obligatorie" className="rounded-lg border border-border bg-surface px-3 py-2 text-sm" />
           <input ref={titleRef} maxLength={200} placeholder="Titlu intern (opțional)" className="rounded-lg border border-border bg-surface px-3 py-2 text-sm" />
           {error ? <p aria-live="polite" className="text-xs font-semibold text-danger">{error}</p> : null}
-          <button type="button" onClick={upload} disabled={pending} className="justify-self-start rounded-full bg-brand px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">
+          <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void upload(); }} disabled={pending || !fileName} className="justify-self-start rounded-full bg-brand px-4 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45">
             {pending ? "Se încarcă…" : "Încarcă și selectează"}
           </button>
         </div>

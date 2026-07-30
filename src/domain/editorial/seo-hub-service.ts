@@ -56,9 +56,10 @@ async function uniqueSeoMetadata(
 async function eligibleBookIds(bookIds: string[]) {
   if (!bookIds.length) return new Map<string, number | null>();
   const db = getDb();
+  const outerBookId = sql.raw('"books"."id"');
   const rows = await db.select({
     id: books.id,
-    pageCount: sql<number | null>`(select e.page_count from book_editions e where e.book_id = ${books.id} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
+    pageCount: sql<number | null>`(select e.page_count from book_editions e where e.book_id = ${outerBookId} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
   }).from(books)
     .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
     .where(and(inArray(books.id, bookIds), eq(books.status, "published"), isNull(books.deletedAt), eq(authors.status, "published"), isNull(authors.deletedAt), publicBookPageEligibility));

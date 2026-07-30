@@ -15,6 +15,7 @@ const ANALYTICS_WINDOW_DAYS = 30;
 
 export async function getRecommendationAnalyticsOverview(db: Database = getDb()) {
   const since = new Date(Date.now() - ANALYTICS_WINDOW_DAYS * 24 * 60 * 60 * 1_000);
+  const sinceIso = since.toISOString();
   const needExpression = sql<string>`(${recommendationSessions.answersJson}->'steps'->>'need')`;
 
   const [
@@ -53,8 +54,8 @@ export async function getRecommendationAnalyticsOverview(db: Database = getDb())
       .where(gte(recommendationFeedback.createdAt, since)),
     db.execute(sql<{ clicks: number; impressions: number }>`
       select
-        (select count(*)::int from commercial_click_events where clicked_at >= ${since}) as clicks,
-        (select count(*)::int from commercial_impression_events where displayed_at >= ${since}) as impressions
+        (select count(*)::int from commercial_click_events where clicked_at >= ${sinceIso}::timestamptz) as clicks,
+        (select count(*)::int from commercial_impression_events where displayed_at >= ${sinceIso}::timestamptz) as impressions
     `),
     db
       .select({
@@ -122,7 +123,7 @@ export async function getRecommendationAnalyticsOverview(db: Database = getDb())
         left join recommendation_results result on result.session_id = session.id
         where session.status = 'completed'
           and session.result_token_hash is not null
-          and session.completed_at >= ${since}
+          and session.completed_at >= ${sinceIso}::timestamptz
         group by session.id
       )
       select issue_type, need, pace, reading_length, count(*)::int as total

@@ -23,7 +23,7 @@ export async function listPublicAuthors(db: Database = getDb()) {
       name: authors.name,
       slug: authors.slug,
       bio: authors.bio,
-      bookCount: sql<number>`count(${books.id})::int`,
+      bookCount: sql<number>`count("books"."id")::int`,
     })
     .from(authors)
     .innerJoin(books, eq(books.primaryAuthorId, authors.id))

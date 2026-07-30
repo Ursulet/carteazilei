@@ -337,6 +337,7 @@ export async function getPublicEditorialListPage(
     .limit(1);
   if (!list) return null;
   const normalizedList = { ...list, seo: list.seo ?? emptyHubSeo };
+  const outerBookId = sql.raw('"books"."id"');
 
   const rows = await db
     .select({
@@ -344,7 +345,7 @@ export async function getPublicEditorialListPage(
       reason: editorialListBooks.reason,
       position: editorialListBooks.position,
       segment: editorialListBooks.segment,
-      pageCount: sql<number | null>`(select e.page_count from book_editions e where e.book_id = ${books.id} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
+      pageCount: sql<number | null>`(select e.page_count from book_editions e where e.book_id = ${outerBookId} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
     })
     .from(editorialListBooks)
     .innerJoin(books, eq(books.id, editorialListBooks.bookId))

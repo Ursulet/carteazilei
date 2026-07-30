@@ -24,13 +24,11 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NODE_ENV=production
 RUN pnpm build
 
-# Next.js standalone tracing does not copy Sharp's platform-specific optional
-# packages. Materialize the Alpine x64 runtime files so image uploads work in
-# the final container as well as during the build.
-FROM dependencies AS sharp-runtime
-RUN mkdir -p /sharp-runtime/@img \
-    && cp -LR node_modules/.pnpm/@img+sharp-linuxmusl-x64@0.35.3/node_modules/@img/sharp-linuxmusl-x64 /sharp-runtime/@img/sharp-linuxmusl-x64 \
-    && cp -LR node_modules/.pnpm/@img+sharp-libvips-linuxmusl-x64@1.3.2/node_modules/@img/sharp-libvips-linuxmusl-x64 /sharp-runtime/@img/sharp-libvips-linuxmusl-x64
+# Keep pnpm's complete production dependency graph for the runtime image.
+# In particular, Sharp's Alpine binary expects libvips through pnpm's nested
+# symlinks; copying only the two package directories breaks that relationship.
+FROM dependencies AS production-dependencies
+RUN pnpm prune --prod
 
 # Build this target separately for single, one-off operational jobs such as
 # migrations, taxonomy seeding and the initial administrator bootstrap.
@@ -58,7 +56,7 @@ ENV MEDIA_LOCAL_ROOT=/app/storage/media
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=sharp-runtime --chown=nextjs:nodejs /sharp-runtime/@img ./node_modules/@img
+COPY --from=production-dependencies --chown=nextjs:nodejs /app/node_modules ./node_modules
 RUN mkdir -p /app/storage/media && chown -R nextjs:nodejs /app/storage
 COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/carteazilei-entrypoint
 

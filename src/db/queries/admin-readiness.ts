@@ -59,6 +59,7 @@ function addIsoDays(value: string, days: number) {
 
 async function getBookReadinessRows(db: Database) {
   const staleBefore = new Date(Date.now() - 30 * 24 * 60 * 60 * 1_000);
+  const staleBeforeIso = staleBefore.toISOString();
   const rows = await db.execute(sql<BookReadinessDbRow>`
     select
       b.id,
@@ -113,7 +114,7 @@ async function getBookReadinessRows(db: Database) {
             and edition.active and edition.deleted_at is null
             and offer.active and offer.deleted_at is null
             and partner.active and partner.deleted_at is null
-            and (offer.checked_at is null or offer.checked_at < ${staleBefore})
+            and (offer.checked_at is null or offer.checked_at < ${staleBeforeIso}::timestamptz)
         ) then 'stale_offer' end,
         case when b.status = 'needs_review'
           or latest_review.status = 'needs_review'

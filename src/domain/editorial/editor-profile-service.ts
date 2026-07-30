@@ -37,6 +37,7 @@ export function parseEditorProfileFormData(formData: FormData) {
 }
 
 export async function getAdminEditorProfiles() {
+  const outerUserId = sql.raw('"users"."id"');
   return getDb()
     .select({
       id: editors.id,
@@ -48,7 +49,7 @@ export async function getAdminEditorProfiles() {
       roles: sql<string[]>`coalesce((
         select array_agg(r.code order by r.code)
         from user_roles ur join roles r on r.id = ur.role_id
-        where ur.user_id = ${users.id}
+        where ur.user_id = ${outerUserId}
       ), '{}'::text[])`,
     })
     .from(editors)
@@ -58,6 +59,7 @@ export async function getAdminEditorProfiles() {
 }
 
 export async function getAdminInternalUsers() {
+  const outerUserId = sql.raw('"users"."id"');
   return getDb()
     .select({
       userId: users.id,
@@ -76,12 +78,12 @@ export async function getAdminInternalUsers() {
       roles: sql<string[]>`coalesce((
         select array_agg(r.code order by r.code)
         from user_roles ur join roles r on r.id = ur.role_id
-        where ur.user_id = ${users.id}
+        where ur.user_id = ${outerUserId}
       ), '{}'::text[])`,
       roleNames: sql<string[]>`coalesce((
         select array_agg(r.name order by r.name)
         from user_roles ur join roles r on r.id = ur.role_id
-        where ur.user_id = ${users.id}
+        where ur.user_id = ${outerUserId}
       ), '{}'::text[])`,
     })
     .from(users)

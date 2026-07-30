@@ -53,23 +53,24 @@ export async function searchPublicCatalog(
     const titleNormalized = sql<string>`unaccent(lower(${books.title}))`;
     const authorNormalized = sql<string>`unaccent(lower(${authors.name}))`;
     const textQuery = sql`websearch_to_tsquery('simple', unaccent(${query}))`;
+    const outerBookId = sql.raw('"books"."id"');
 
     const thematicExactMatch = sql<boolean>`(
       exists (
         select 1 from book_genres bg join genres g on g.id = bg.genre_id
-        where bg.book_id = ${books.id} and g.status = 'published' and g.deleted_at is null
+        where bg.book_id = ${outerBookId} and g.status = 'published' and g.deleted_at is null
           and unaccent(lower(g.name)) = ${normalizedQuery}
       ) or exists (
         select 1 from book_themes bt join themes t on t.id = bt.theme_id
-        where bt.book_id = ${books.id} and t.status = 'published' and t.deleted_at is null
+        where bt.book_id = ${outerBookId} and t.status = 'published' and t.deleted_at is null
           and unaccent(lower(t.name)) = ${normalizedQuery}
       ) or exists (
         select 1 from book_moods bm join moods m on m.id = bm.mood_id
-        where bm.book_id = ${books.id} and m.status = 'published' and m.deleted_at is null
+        where bm.book_id = ${outerBookId} and m.status = 'published' and m.deleted_at is null
           and unaccent(lower(m.name)) = ${normalizedQuery}
       ) or exists (
         select 1 from book_audiences ba join audiences a on a.id = ba.audience_id
-        where ba.book_id = ${books.id} and a.status = 'published' and a.deleted_at is null
+        where ba.book_id = ${outerBookId} and a.status = 'published' and a.deleted_at is null
           and unaccent(lower(a.name)) = ${normalizedQuery}
       )
     )`;
@@ -77,28 +78,28 @@ export async function searchPublicCatalog(
     const thematicMatch = sql<boolean>`(
       exists (
         select 1 from book_genres bg join genres g on g.id = bg.genre_id
-        where bg.book_id = ${books.id} and g.status = 'published' and g.deleted_at is null
+        where bg.book_id = ${outerBookId} and g.status = 'published' and g.deleted_at is null
           and (
             position(${normalizedQuery} in unaccent(lower(concat_ws(' ', g.name, g.description, g.search_intent, g.editorial_intro)))) > 0
             or similarity(unaccent(lower(g.name)), ${normalizedQuery}) >= 0.25
           )
       ) or exists (
         select 1 from book_themes bt join themes t on t.id = bt.theme_id
-        where bt.book_id = ${books.id} and t.status = 'published' and t.deleted_at is null
+        where bt.book_id = ${outerBookId} and t.status = 'published' and t.deleted_at is null
           and (
             position(${normalizedQuery} in unaccent(lower(concat_ws(' ', t.name, t.description, t.search_intent, t.editorial_intro)))) > 0
             or similarity(unaccent(lower(t.name)), ${normalizedQuery}) >= 0.25
           )
       ) or exists (
         select 1 from book_moods bm join moods m on m.id = bm.mood_id
-        where bm.book_id = ${books.id} and m.status = 'published' and m.deleted_at is null
+        where bm.book_id = ${outerBookId} and m.status = 'published' and m.deleted_at is null
           and (
             position(${normalizedQuery} in unaccent(lower(concat_ws(' ', m.name, m.description, m.search_intent, m.editorial_intro)))) > 0
             or similarity(unaccent(lower(m.name)), ${normalizedQuery}) >= 0.25
           )
       ) or exists (
         select 1 from book_audiences ba join audiences a on a.id = ba.audience_id
-        where ba.book_id = ${books.id} and a.status = 'published' and a.deleted_at is null
+        where ba.book_id = ${outerBookId} and a.status = 'published' and a.deleted_at is null
           and (
             position(${normalizedQuery} in unaccent(lower(concat_ws(' ', a.name, a.description, a.search_intent, a.editorial_intro)))) > 0
             or similarity(unaccent(lower(a.name)), ${normalizedQuery}) >= 0.25
@@ -157,7 +158,7 @@ export async function searchPublicCatalog(
         name: authors.name,
         slug: authors.slug,
         bio: authors.bio,
-        bookCount: sql<number>`count(distinct ${books.id})::int`,
+        bookCount: sql<number>`count(distinct "books"."id")::int`,
         score: authorScore,
       })
       .from(authors)

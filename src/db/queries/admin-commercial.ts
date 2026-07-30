@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 
 export async function getAdminCommercialPartners(db: Database = getDb()) {
+  const outerRetailerId = sql.raw('"retailers"."id"');
   return db
     .select({
       id: retailers.id,
@@ -26,12 +27,12 @@ export async function getAdminCommercialPartners(db: Database = getDb()) {
       updatedAt: retailers.updatedAt,
       offerCount: sql<number>`(
         select count(*)::int from ${bookOffers}
-        where ${bookOffers.retailerId} = ${retailers.id}
+        where ${bookOffers.retailerId} = ${outerRetailerId}
           and ${bookOffers.deletedAt} is null
       )`,
       clickCount: sql<number>`(
         select count(*)::int from ${commercialClickEvents}
-        where ${commercialClickEvents.partnerId} = ${retailers.id}
+        where ${commercialClickEvents.partnerId} = ${outerRetailerId}
       )`,
     })
     .from(retailers)
@@ -154,11 +155,12 @@ export async function getAdminBookOffer(
 }
 
 export async function getCommercialOverview(db: Database = getDb()) {
+  const outerOfferId = sql.raw('"book_offers"."id"');
   const [totals, contexts, topPartners, topBooks, topOffers] = await Promise.all([
     db
       .select({
-        clicks: sql<number>`count(distinct ${commercialClickEvents.id})::int`,
-        impressions: sql<number>`count(distinct ${commercialImpressionEvents.id})::int`,
+        clicks: sql<number>`count(distinct "commercial_click_events"."id")::int`,
+        impressions: sql<number>`count(distinct "commercial_impression_events"."id")::int`,
       })
       .from(retailers)
       .leftJoin(commercialClickEvents, eq(commercialClickEvents.partnerId, retailers.id))
@@ -186,25 +188,25 @@ export async function getCommercialOverview(db: Database = getDb()) {
       .select({
         id: retailers.id,
         name: retailers.name,
-        clicks: sql<number>`count(${commercialClickEvents.id})::int`,
+        clicks: sql<number>`count("commercial_click_events"."id")::int`,
       })
       .from(retailers)
       .leftJoin(commercialClickEvents, eq(commercialClickEvents.partnerId, retailers.id))
       .where(isNull(retailers.deletedAt))
       .groupBy(retailers.id, retailers.name)
-      .orderBy(desc(sql`count(${commercialClickEvents.id})`))
+      .orderBy(desc(sql`count("commercial_click_events"."id")`))
       .limit(5),
     db
       .select({
         id: books.id,
         title: books.title,
-        clicks: sql<number>`count(${commercialClickEvents.id})::int`,
+        clicks: sql<number>`count("commercial_click_events"."id")::int`,
       })
       .from(books)
       .leftJoin(commercialClickEvents, eq(commercialClickEvents.bookId, books.id))
       .where(isNull(books.deletedAt))
       .groupBy(books.id, books.title)
-      .orderBy(desc(sql`count(${commercialClickEvents.id})`))
+      .orderBy(desc(sql`count("commercial_click_events"."id")`))
       .limit(5),
     db
       .select({
@@ -213,11 +215,11 @@ export async function getCommercialOverview(db: Database = getDb()) {
         partnerName: retailers.name,
         clicks: sql<number>`(
           select count(*)::int from ${commercialClickEvents}
-          where ${commercialClickEvents.offerId} = ${bookOffers.id}
+          where ${commercialClickEvents.offerId} = ${outerOfferId}
         )`,
         impressions: sql<number>`(
           select count(*)::int from ${commercialImpressionEvents}
-          where ${commercialImpressionEvents.offerId} = ${bookOffers.id}
+          where ${commercialImpressionEvents.offerId} = ${outerOfferId}
         )`,
       })
       .from(bookOffers)
@@ -227,7 +229,7 @@ export async function getCommercialOverview(db: Database = getDb()) {
       .where(and(isNull(bookOffers.deletedAt), isNull(books.deletedAt), isNull(retailers.deletedAt)))
       .orderBy(desc(sql`(
         select count(*) from ${commercialClickEvents}
-        where ${commercialClickEvents.offerId} = ${bookOffers.id}
+        where ${commercialClickEvents.offerId} = ${outerOfferId}
       )`), asc(books.title), asc(retailers.name))
       .limit(10),
   ]);

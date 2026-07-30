@@ -72,7 +72,14 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
+  typescript: {
+    // Coolify builds the already type-checked commit on a small server. Avoid
+    // running the same memory-heavy TypeScript pass a second time in Docker.
+    ignoreBuildErrors: process.env.NEXT_BUILD_SKIP_TYPECHECK === "1",
+  },
   experimental: {
+    // Keep Docker builds predictable on low-memory deployment servers.
+    cpus: 1,
     serverActions: {
       bodySizeLimit: "6mb",
     },

@@ -21,6 +21,7 @@ COPY . .
 # NEXT_PUBLIC_* values are embedded in the browser bundle and are not secrets.
 ARG NEXT_PUBLIC_SITE_URL=https://carteazilei.ro
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEXT_BUILD_SKIP_TYPECHECK=1
 ENV NODE_ENV=production
 RUN pnpm build
 

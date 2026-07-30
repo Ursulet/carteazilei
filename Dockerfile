@@ -24,11 +24,32 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NODE_ENV=production
 RUN pnpm build
 
-# Keep pnpm's complete production dependency graph for the runtime image.
-# In particular, Sharp's Alpine binary expects libvips through pnpm's nested
-# symlinks; copying only the two package directories breaks that relationship.
-FROM dependencies AS production-dependencies
-RUN pnpm prune --prod
+# Next.js traces the Sharp JavaScript package and its native Alpine binary into
+# the standalone output, but it does not always trace the separately packaged
+# libvips shared libraries. Copy only those missing packages and rebuild their
+# pnpm links. This keeps image uploads working without duplicating the complete
+# production node_modules tree in the final image.
+RUN set -eux; \
+    for pair in "0.34.5:1.2.4" "0.35.3:1.3.2"; do \
+      sharp_version="${pair%%:*}"; \
+      libvips_version="${pair##*:}"; \
+      libvips_package="@img+sharp-libvips-linuxmusl-x64@${libvips_version}"; \
+      libvips_source="node_modules/.pnpm/${libvips_package}/node_modules/@img/sharp-libvips-linuxmusl-x64"; \
+      libvips_target=".next/standalone/node_modules/.pnpm/${libvips_package}/node_modules/@img"; \
+      test -d "${libvips_source}"; \
+      mkdir -p "${libvips_target}"; \
+      cp -a "${libvips_source}" "${libvips_target}/"; \
+      for package_dir in \
+        .next/standalone/node_modules/.pnpm/sharp@${sharp_version}* \
+        .next/standalone/node_modules/.pnpm/@img+sharp-linuxmusl-x64@${sharp_version}; do \
+        if [ -d "${package_dir}" ]; then \
+          mkdir -p "${package_dir}/node_modules/@img"; \
+          ln -sfn \
+            "../../../${libvips_package}/node_modules/@img/sharp-libvips-linuxmusl-x64" \
+            "${package_dir}/node_modules/@img/sharp-libvips-linuxmusl-x64"; \
+        fi; \
+      done; \
+    done
 
 # Build this target separately for single, one-off operational jobs such as
 # migrations, taxonomy seeding and the initial administrator bootstrap.
@@ -56,7 +77,6 @@ ENV MEDIA_LOCAL_ROOT=/app/storage/media
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=production-dependencies --chown=nextjs:nodejs /app/node_modules ./node_modules
 RUN mkdir -p /app/storage/media && chown -R nextjs:nodejs /app/storage
 COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/carteazilei-entrypoint
 

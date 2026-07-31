@@ -151,29 +151,31 @@ function booleanValue(value: unknown, fallback = false) {
 
 function parseTraitString(value: string, row: number) {
   if (!value.trim()) return [];
-  return list(value).map((item) => {
+  return list(value).flatMap((item) => {
     const [code = "", rawScore = "", rawConfidence = ""] = item.split(":").map((part) => part.trim());
     if (!code) throw new EditorialServiceError(`Rândul ${row}: scor de lectură fără cod.`);
-    return {
+    if (!rawScore) return [];
+    return [{
       code,
       score: integerValue(rawScore, `scor ${code}`, row, 0, 100) ?? 0,
       confidence: integerValue(rawConfidence, `încredere ${code}`, row, 0, 100, 0) ?? 0,
-    };
+    }];
   });
 }
 
 function parseTraitJson(value: unknown, row: number): TraitScore[] {
   if (typeof value === "string") return parseTraitString(value, row);
   if (!Array.isArray(value)) return [];
-  return value.map((item) => {
+  return value.flatMap((item) => {
     const record = asRecord(item);
     const code = stringFrom(record, "code");
     if (!code) throw new EditorialServiceError(`Rândul ${row}: scor de lectură fără cod.`);
-    return {
+    if (record.score === undefined || record.score === null || String(record.score).trim() === "") return [];
+    return [{
       code,
       score: integerValue(record.score, `scor ${code}`, row, 0, 100) ?? 0,
       confidence: integerValue(record.confidence, `încredere ${code}`, row, 0, 100, 0) ?? 0,
-    };
+    }];
   });
 }
 

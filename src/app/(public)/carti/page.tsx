@@ -84,23 +84,6 @@ export default async function BooksPage({ searchParams }: { searchParams: Promis
         description="Explorează întregul catalog sau filtrează cărțile după gen, temă, atmosferă și cititorul căruia i se potrivesc."
         currentLabel="Cărți"
         currentPath="/carti"
-        aside={(
-          <div className="rounded-2xl border border-border bg-paper/70 p-5 shadow-sm">
-            <div className="flex items-center gap-4">
-              <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-rust-soft text-rust-dark"><BookOpen aria-hidden="true" className="size-6" /></span>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-rust-dark">{activeFilterCount ? "Rezultate disponibile" : "În catalog"}</p>
-                <p className="mt-1 font-display text-3xl font-semibold">{totalBooks} {totalBooks === 1 ? "carte" : "cărți"}</p>
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4 text-xs font-semibold text-muted">
-              <span className="rounded-full bg-surface px-3 py-1.5">Gen</span>
-              <span className="rounded-full bg-surface px-3 py-1.5">Temă</span>
-              <span className="rounded-full bg-surface px-3 py-1.5">Atmosferă</span>
-              <span className="rounded-full bg-surface px-3 py-1.5">Pentru cine</span>
-            </div>
-          </div>
-        )}
       />
       <section className="py-12 md:py-16">
         <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
@@ -126,12 +109,18 @@ export default async function BooksPage({ searchParams }: { searchParams: Promis
               </button>
             </div>
 
-            <div className="mt-6 grid gap-4 border-t border-border pt-6 md:grid-cols-2 xl:grid-cols-4">
-              <FilterGroup title="Genuri" name="gen" options={options.genres} selected={filters.genres ?? []} />
-              <FilterGroup title="Teme" name="tema" options={options.themes} selected={filters.themes ?? []} />
-              <FilterGroup title="Atmosferă" name="stare" options={options.moods} selected={filters.moods ?? []} />
-              <FilterGroup title="Pentru cine" name="pentru" options={options.audiences} selected={filters.audiences ?? []} />
-            </div>
+            {options.genres.length || options.themes.length || options.moods.length || options.audiences.length ? (
+              <div className="mt-6 grid gap-4 border-t border-border pt-6 md:grid-cols-2 xl:grid-cols-4">
+                <FilterGroup title="Genuri" name="gen" options={options.genres} selected={filters.genres ?? []} />
+                <FilterGroup title="Teme" name="tema" options={options.themes} selected={filters.themes ?? []} />
+                <FilterGroup title="Atmosferă" name="stare" options={options.moods} selected={filters.moods ?? []} />
+                <FilterGroup title="Pentru cine" name="pentru" options={options.audiences} selected={filters.audiences ?? []} />
+              </div>
+            ) : (
+              <p className="mt-6 border-t border-border pt-5 text-sm text-muted">
+                Cărțile publicate nu au încă genuri, teme, atmosfere sau audiențe asociate.
+              </p>
+            )}
 
             {activeFilterCount ? (
               <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">

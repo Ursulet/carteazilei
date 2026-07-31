@@ -7,6 +7,7 @@ import { formatEditorialDate } from "@/domain/editorial/bucharest-date";
 import { JsonLd } from "@/lib/seo/json-ld";
 import { breadcrumbJsonLd } from "@/lib/seo/schema";
 
+import { AuthorLink } from "./author-link";
 import { BookCover } from "./book-cover";
 import { Breadcrumbs } from "./breadcrumbs";
 import { RetailerOffers } from "./retailer-offers";
@@ -31,7 +32,7 @@ export function DailyFeatureArticle({ feature, currentEntry = false }: { feature
             <div className="lg:col-span-7">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Cartea Zilei · {formatEditorialDate(feature.featureDate)}</p>
               <h1 className="mt-4 font-display text-5xl font-semibold tracking-[-0.03em] sm:text-6xl">{feature.book.title}</h1>
-              <p className="mt-3 text-lg text-muted">de {feature.author.name}</p>
+              <p className="mt-3 text-lg text-muted">de <AuthorLink name={feature.author.name} slug={feature.author.slug} /></p>
               <p className="mt-7 border-s-4 border-accent ps-5 font-display text-2xl leading-9">{feature.book.verdict}</p>
               <p className="mt-7 text-sm text-muted">Selecție de {feature.editor.publicProfile ? <Link href={`/editor/${feature.editor.slug}`} className="font-bold text-foreground underline decoration-border underline-offset-4">{feature.editor.name}</Link> : <strong className="text-foreground">{feature.editor.name}</strong>}</p>
               <div className="mt-8 flex flex-wrap gap-3"><a href="#analiza" className="inline-flex min-h-11 items-center rounded-full bg-brand px-6 text-sm font-bold text-white hover:bg-brand-hover">Citește analiza</a><a href="#unde-o-gasesti" className="inline-flex min-h-11 items-center rounded-full border border-border px-6 text-sm font-bold hover:border-brand">Vezi unde o găsești</a></div>

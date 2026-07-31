@@ -28,7 +28,7 @@ export default async function AuthorsPage() {
                 <Link key={author.id} href={`/autor/${author.slug}`} className="group grid grid-cols-[7.5rem_minmax(0,1fr)] gap-5 rounded-2xl border border-border bg-surface p-4 transition hover:-translate-y-0.5 hover:border-rust hover:shadow-md">
                   <AuthorPortrait portrait={author.portrait} name={author.name} className="w-full rounded-xl shadow-md" />
                   <div className="min-w-0 py-2">
-                    <h2 className="font-display text-2xl font-semibold leading-tight">{author.name}</h2>
+                    <h2 className="font-display text-2xl font-semibold leading-tight text-rust">{author.name}</h2>
                     {author.bio ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">{author.bio}</p> : null}
                     <p className="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-rust-dark"><BookOpen aria-hidden="true" className="size-4" />{author.bookCount} {author.bookCount === 1 ? "carte" : "cărți"}</p>
                     <span className="mt-3 flex items-center text-xs font-bold text-brand">Vezi profilul <ArrowRight aria-hidden="true" className="ms-1 size-3.5 transition-transform group-hover:translate-x-0.5" /></span>

@@ -14,6 +14,7 @@ import Link from "next/link";
 import type { DailyArchiveItem, PublicDailyFeature } from "@/db/queries/public-daily-features";
 import { formatEditorialDate } from "@/domain/editorial/bucharest-date";
 
+import { AuthorLink } from "./author-link";
 import { BookCover } from "./book-cover";
 import { RetailerOffers } from "./retailer-offers";
 
@@ -56,7 +57,7 @@ export function DailyFeatureSection({ feature, date }: { feature: PublicDailyFea
             <BookCover cover={feature.cover} title={feature.book.title} priority className="w-full lg:mx-auto" />
             <div className="lg:hidden">
               <h2 className="font-display text-3xl font-semibold leading-[1.03] tracking-[-0.03em]">{feature.book.title}</h2>
-              <p className="mt-2 text-sm font-semibold text-rust">{feature.author.name}</p>
+              <p className="mt-2 text-sm">de <AuthorLink name={feature.author.name} slug={feature.author.slug} /></p>
               <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted">{feature.book.summary || feature.book.verdict}</p>
             </div>
           </div>
@@ -64,7 +65,7 @@ export function DailyFeatureSection({ feature, date }: { feature: PublicDailyFea
           <div className="min-w-0">
             <div className="hidden lg:block">
               <h2 className="font-display text-4xl font-semibold leading-[1.03] tracking-[-0.035em] xl:text-5xl">{feature.book.title}</h2>
-              <p className="mt-2 font-semibold text-rust">de {feature.author.name}</p>
+              <p className="mt-2">de <AuthorLink name={feature.author.name} slug={feature.author.slug} /></p>
               <p className="mt-5 line-clamp-2 max-w-2xl text-base leading-7 text-muted">{feature.book.summary || feature.book.verdict}</p>
             </div>
 
@@ -125,16 +126,18 @@ export function RecentDailyFeaturesSection({ features }: { features: DailyArchiv
 
       <div className="mt-6 grid grid-flow-col auto-cols-[minmax(17rem,82vw)] gap-4 overflow-x-auto pb-3 sm:auto-cols-[21rem] lg:grid-flow-row lg:grid-cols-4 lg:overflow-visible lg:pb-0">
         {features.map((feature) => (
-          <Link key={feature.id} href={`/cartea-zilei/${feature.featureDate}`} className="group grid grid-cols-[5.5rem_minmax(0,1fr)] gap-4 rounded-2xl border border-border bg-surface p-3 transition hover:-translate-y-0.5 hover:border-rust hover:shadow-md">
-            <BookCover cover={feature.cover} title={feature.book.title} className="w-full rounded-lg shadow-md" />
+          <article key={feature.id} className="group grid grid-cols-[5.5rem_minmax(0,1fr)] gap-4 rounded-2xl border border-border bg-surface p-3 transition hover:-translate-y-0.5 hover:border-rust hover:shadow-md">
+            <Link href={`/cartea-zilei/${feature.featureDate}`} aria-label={`Vezi recomandarea pentru ${feature.book.title}`}>
+              <BookCover cover={feature.cover} title={feature.book.title} className="w-full rounded-lg shadow-md" />
+            </Link>
             <div className="min-w-0 py-1">
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.1em] text-rust-dark">{formatEditorialDate(feature.featureDate)}</p>
-              <h3 className="mt-2 line-clamp-2 font-display text-xl font-semibold leading-tight">{feature.book.title}</h3>
-              <p className="mt-1 truncate text-xs font-medium text-muted">{feature.author.name}</p>
+              <h3 className="mt-2 line-clamp-2 font-display text-xl font-semibold leading-tight"><Link href={`/cartea-zilei/${feature.featureDate}`}>{feature.book.title}</Link></h3>
+              <p className="mt-1 truncate text-xs">de <AuthorLink name={feature.author.name} slug={feature.author.slug} /></p>
               <p className="mt-3 line-clamp-2 text-xs leading-5 text-muted">{feature.headline || feature.book.verdict}</p>
-              <span className="mt-3 inline-flex items-center text-xs font-bold text-brand">Vezi recomandarea <ArrowRight aria-hidden="true" className="ms-1 size-3.5 transition-transform group-hover:translate-x-0.5" /></span>
+              <Link href={`/cartea-zilei/${feature.featureDate}`} className="mt-3 inline-flex items-center text-xs font-bold text-brand">Vezi recomandarea <ArrowRight aria-hidden="true" className="ms-1 size-3.5 transition-transform group-hover:translate-x-0.5" /></Link>
             </div>
-          </Link>
+          </article>
         ))}
       </div>
     </section>

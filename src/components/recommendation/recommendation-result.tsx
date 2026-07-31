@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ProductEventTracker, sendProductEvent } from "@/components/analytics/product-event-tracker";
+import { AuthorLink } from "@/components/editorial/author-link";
 import { BookCover } from "@/components/editorial/book-cover";
 import { RetailerOffers } from "@/components/editorial/retailer-offers";
 import type { PublicRecommendationResult } from "@/domain/recommendation/result-service";
@@ -164,7 +165,7 @@ export function RecommendationResult({
               <BookCheck aria-hidden="true" className="me-2 size-4" />{result.explanation.confidenceLabel}
             </div>
             <h1 className="mt-5 font-display text-5xl font-semibold tracking-[-0.03em] text-balance sm:text-6xl">{result.book.title}</h1>
-            <p className="mt-4 text-lg">de <Link href={`/autor/${result.author.slug}`} className="font-bold underline decoration-border underline-offset-4 hover:decoration-brand">{result.author.name}</Link></p>
+            <p className="mt-4 text-lg">de <AuthorLink name={result.author.name} slug={result.author.slug} /></p>
             {result.pageCount ? <p className="mt-2 text-sm text-muted">{result.pageCount} pagini</p> : null}
             <p className="mt-8 border-s-4 border-accent ps-5 font-display text-2xl leading-9">{result.book.verdict}</p>
           </div>

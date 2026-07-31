@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { nextReadBasisValues, relationshipProvenanceValues, relationshipTypeValues } from "@/db/schema/common";
+import { slugify } from "@/lib/slug";
 
 import { EditorialServiceError } from "./action-state";
 import {
@@ -122,9 +123,10 @@ function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown): T {
 }
 
 export function parseEditorialListFormData(formData: FormData) {
+  const title = stringValue(formData, "title");
   return parseOrThrow(editorialListInputSchema, {
-    title: stringValue(formData, "title"),
-    slug: stringValue(formData, "slug"),
+    title,
+    slug: slugify(optionalStringValue(formData, "slug") ?? title),
     intro: optionalStringValue(formData, "intro"),
     methodology: optionalStringValue(formData, "methodology"),
     type: stringValue(formData, "type"),

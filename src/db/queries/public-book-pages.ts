@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, ne, notInArray, or, sql, type SQL } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db";
 import {
@@ -74,6 +74,7 @@ export function bookCardSelection() {
     verdict: books.shortVerdict,
     authorId: authors.id,
     author: authors.name,
+    authorSlug: authors.slug,
     cover: {
       id: sql<string | null>`(select m.id from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${outerBookId} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
       altText: sql<string | null>`(select m.alt_text from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${outerBookId} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
@@ -281,7 +282,7 @@ function publicBookCatalogConditions(filters: PublicBookCatalogFilters, db: Data
       db.select({ bookId: bookGenres.bookId })
         .from(bookGenres)
         .innerJoin(genres, eq(genres.id, bookGenres.genreId))
-        .where(and(inArray(genres.slug, filters.genres), eq(genres.status, "published"), isNull(genres.deletedAt))),
+        .where(and(inArray(genres.slug, filters.genres), ne(genres.status, "archived"), isNull(genres.deletedAt))),
     ));
   }
   if (filters.themes?.length) {
@@ -290,7 +291,7 @@ function publicBookCatalogConditions(filters: PublicBookCatalogFilters, db: Data
       db.select({ bookId: bookThemes.bookId })
         .from(bookThemes)
         .innerJoin(themes, eq(themes.id, bookThemes.themeId))
-        .where(and(inArray(themes.slug, filters.themes), eq(themes.status, "published"), isNull(themes.deletedAt))),
+        .where(and(inArray(themes.slug, filters.themes), ne(themes.status, "archived"), isNull(themes.deletedAt))),
     ));
   }
   if (filters.moods?.length) {
@@ -299,7 +300,7 @@ function publicBookCatalogConditions(filters: PublicBookCatalogFilters, db: Data
       db.select({ bookId: bookMoods.bookId })
         .from(bookMoods)
         .innerJoin(moods, eq(moods.id, bookMoods.moodId))
-        .where(and(inArray(moods.slug, filters.moods), eq(moods.status, "published"), isNull(moods.deletedAt))),
+        .where(and(inArray(moods.slug, filters.moods), ne(moods.status, "archived"), isNull(moods.deletedAt))),
     ));
   }
   if (filters.audiences?.length) {
@@ -308,7 +309,7 @@ function publicBookCatalogConditions(filters: PublicBookCatalogFilters, db: Data
       db.select({ bookId: bookAudiences.bookId })
         .from(bookAudiences)
         .innerJoin(audiences, eq(audiences.id, bookAudiences.audienceId))
-        .where(and(inArray(audiences.slug, filters.audiences), eq(audiences.status, "published"), isNull(audiences.deletedAt))),
+        .where(and(inArray(audiences.slug, filters.audiences), ne(audiences.status, "archived"), isNull(audiences.deletedAt))),
     ));
   }
   return conditions;
@@ -357,7 +358,7 @@ export async function getPublicBookCatalogFilterOptions(db: Database = getDb()) 
       .innerJoin(bookGenres, eq(bookGenres.genreId, genres.id))
       .innerJoin(books, eq(books.id, bookGenres.bookId))
       .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
-      .where(and(eq(genres.status, "published"), isNull(genres.deletedAt), publishedBookConditions, publicBookPageEligibility))
+      .where(and(ne(genres.status, "archived"), isNull(genres.deletedAt), publishedBookConditions, publicBookPageEligibility))
       .groupBy(genres.id, genres.name, genres.slug)
       .orderBy(asc(genres.name)),
     db.select({ name: themes.name, slug: themes.slug, count: taxonomyCount })
@@ -365,7 +366,7 @@ export async function getPublicBookCatalogFilterOptions(db: Database = getDb()) 
       .innerJoin(bookThemes, eq(bookThemes.themeId, themes.id))
       .innerJoin(books, eq(books.id, bookThemes.bookId))
       .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
-      .where(and(eq(themes.status, "published"), isNull(themes.deletedAt), publishedBookConditions, publicBookPageEligibility))
+      .where(and(ne(themes.status, "archived"), isNull(themes.deletedAt), publishedBookConditions, publicBookPageEligibility))
       .groupBy(themes.id, themes.name, themes.slug)
       .orderBy(asc(themes.name)),
     db.select({ name: moods.name, slug: moods.slug, count: taxonomyCount })
@@ -373,7 +374,7 @@ export async function getPublicBookCatalogFilterOptions(db: Database = getDb()) 
       .innerJoin(bookMoods, eq(bookMoods.moodId, moods.id))
       .innerJoin(books, eq(books.id, bookMoods.bookId))
       .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
-      .where(and(eq(moods.status, "published"), isNull(moods.deletedAt), publishedBookConditions, publicBookPageEligibility))
+      .where(and(ne(moods.status, "archived"), isNull(moods.deletedAt), publishedBookConditions, publicBookPageEligibility))
       .groupBy(moods.id, moods.name, moods.slug)
       .orderBy(asc(moods.name)),
     db.select({ name: audiences.name, slug: audiences.slug, count: taxonomyCount })
@@ -381,7 +382,7 @@ export async function getPublicBookCatalogFilterOptions(db: Database = getDb()) 
       .innerJoin(bookAudiences, eq(bookAudiences.audienceId, audiences.id))
       .innerJoin(books, eq(books.id, bookAudiences.bookId))
       .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
-      .where(and(eq(audiences.status, "published"), isNull(audiences.deletedAt), publishedBookConditions, publicBookPageEligibility))
+      .where(and(ne(audiences.status, "archived"), isNull(audiences.deletedAt), publishedBookConditions, publicBookPageEligibility))
       .groupBy(audiences.id, audiences.name, audiences.slug)
       .orderBy(asc(audiences.name)),
   ]);

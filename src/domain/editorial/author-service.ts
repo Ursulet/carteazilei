@@ -209,7 +209,7 @@ export async function bulkUpdateAuthorStatus(
           .update(authors)
           .set(targetStatus === "published" ? {
             status: "published",
-            publishedAt: sql`coalesce(${authors.publishedAt}, ${now})`,
+            publishedAt: now,
             updatedAt: now,
           } : {
             status: "draft",

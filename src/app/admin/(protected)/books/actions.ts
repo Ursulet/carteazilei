@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import type { EditorialActionState } from "@/domain/editorial/action-state";
 import { toActionState } from "@/domain/editorial/action-state";
 import { parseBookFormData } from "@/domain/editorial/book-input";
-import { assignBookCover, bulkUpdateBookStatus, deleteBook, saveBook } from "@/domain/editorial/book-service";
+import { assignBookCover, bulkAddBookGenre, bulkUpdateBookStatus, deleteBook, saveBook } from "@/domain/editorial/book-service";
 import { deleteMedia, uploadMedia } from "@/domain/editorial/media-service";
 import { withAdminNotice } from "@/lib/admin/notice";
 import { requirePermission } from "@/lib/auth/principal";
@@ -66,6 +66,25 @@ export async function bulkUpdateBookStatusAction(formData: FormData) {
   revalidatePath("/admin/books");
   revalidatePath("/");
   revalidatePath("/carti");
+  redirect(withAdminNotice("/admin/books", notice));
+}
+
+export async function bulkAddBookGenreAction(formData: FormData) {
+  const principal = await requirePermission("books.update");
+  let notice: string;
+  try {
+    const result = await bulkAddBookGenre(
+      formData.getAll("bookIds").filter((value): value is string => typeof value === "string"),
+      String(formData.get("genreId") ?? ""),
+      principal.id,
+    );
+    notice = `Genul „${result.genreName}” a fost adăugat la ${result.changed} cărți.${result.unchanged ? ` ${result.unchanged} îl aveau deja.` : ""}${result.missing ? ` ${result.missing} înregistrări nu mai existau.` : ""}`;
+  } catch (error) {
+    notice = error instanceof Error ? error.message : "Genul nu a putut fi adăugat în masă.";
+  }
+  revalidatePath("/admin/books");
+  revalidatePath("/carti");
+  revalidatePath("/");
   redirect(withAdminNotice("/admin/books", notice));
 }
 

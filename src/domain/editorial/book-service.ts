@@ -15,6 +15,7 @@ import {
   bookThemes,
   bookTraitScores,
   editorialReviews,
+  genres,
   mediaAssets,
   seoMetadata,
 } from "@/db/schema";
@@ -325,7 +326,7 @@ export async function bulkUpdateBookStatus(
       .update(books)
       .set(targetStatus === "published" ? {
         status: "published",
-        publishedAt: sql`coalesce(${books.publishedAt}, ${now})`,
+        publishedAt: now,
         archivedAt: null,
         updatedAt: now,
       } : {
@@ -375,6 +376,81 @@ export async function bulkUpdateBookStatus(
       changed: updatedBooks.length,
       unchanged: snapshots.length - candidates.length - rejected.length,
       rejected: rejected.length + missingRecords,
+    };
+  });
+}
+
+export async function bulkAddBookGenre(
+  requestedBookIds: string[],
+  genreId: string,
+  actorUserId: string,
+) {
+  const parsedIds = z.array(z.uuid()).min(1).max(10_000).safeParse([...new Set(requestedBookIds)]);
+  const parsedGenreId = z.uuid().safeParse(genreId);
+  if (!parsedIds.success) {
+    throw new EditorialServiceError(
+      requestedBookIds.length ? "Poți actualiza maximum 10.000 de cărți într-o singură operațiune." : "Selectează cel puțin o carte.",
+    );
+  }
+  if (!parsedGenreId.success) throw new EditorialServiceError("Alege un gen valid.");
+
+  const db = getDb();
+  return db.transaction(async (transaction) => {
+    const [genre] = await transaction
+      .select({ id: genres.id, name: genres.name })
+      .from(genres)
+      .where(and(eq(genres.id, parsedGenreId.data), isNull(genres.deletedAt), sql`${genres.status} <> 'archived'`))
+      .limit(1);
+    if (!genre) throw new EditorialServiceError("Genul selectat nu mai este disponibil.");
+
+    const existingBooks = await transaction
+      .select({ id: books.id })
+      .from(books)
+      .where(and(inArray(books.id, parsedIds.data), isNull(books.deletedAt)));
+    const existingBookIds = existingBooks.map((book) => book.id);
+    if (!existingBookIds.length) throw new EditorialServiceError("Cărțile selectate nu mai există.");
+
+    const existingGenres = await transaction
+      .select({ bookId: bookGenres.bookId, genreId: bookGenres.genreId })
+      .from(bookGenres)
+      .where(inArray(bookGenres.bookId, existingBookIds));
+    const alreadyAssigned = new Set(existingGenres.filter((item) => item.genreId === genre.id).map((item) => item.bookId));
+    const booksWithAnyGenre = new Set(existingGenres.map((item) => item.bookId));
+    const newBookIds = existingBookIds.filter((bookId) => !alreadyAssigned.has(bookId));
+    const inserted = newBookIds.length
+      ? await transaction
+          .insert(bookGenres)
+          .values(newBookIds.map((bookId) => ({
+            bookId,
+            genreId: genre.id,
+            isPrimary: !booksWithAnyGenre.has(bookId),
+          })))
+          .onConflictDoNothing()
+          .returning({ bookId: bookGenres.bookId })
+      : [];
+    const missing = parsedIds.data.length - existingBookIds.length;
+
+    await writeAuditLog({
+      actorUserId,
+      action: "book.bulk_genre_add",
+      entityType: "book_batch",
+      entityId: null,
+      diff: {
+        genreId: genre.id,
+        genreName: genre.name,
+        requested: parsedIds.data.length,
+        changed: inserted.length,
+        unchanged: alreadyAssigned.size,
+        missing,
+        changedBookIds: inserted.map((item) => item.bookId),
+      },
+    }, transaction);
+
+    return {
+      genreName: genre.name,
+      changed: inserted.length,
+      unchanged: alreadyAssigned.size,
+      missing,
     };
   });
 }

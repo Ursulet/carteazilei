@@ -84,6 +84,13 @@ export async function getBookFormOptions(db: Database = getDb()) {
   return { authors: authorRows, genres: genreRows, themes: themeRows, moods: moodRows, audiences: audienceRows, traits: traitRows, media: mediaRows };
 }
 
+export async function getAdminBookGenreOptions(db: Database = getDb()) {
+  return db.select({ id: genres.id, name: genres.name })
+    .from(genres)
+    .where(and(isNull(genres.deletedAt), sql`${genres.status} <> 'archived'`))
+    .orderBy(asc(genres.name));
+}
+
 function bookPublishingSnapshotSelection() {
   const outerBookId = sql.raw('"books"."id"');
   return {

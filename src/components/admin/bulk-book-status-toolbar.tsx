@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckSquare2, LoaderCircle } from "lucide-react";
+import { CheckSquare2, LoaderCircle, Tags } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -9,11 +9,15 @@ export function BulkBookStatusToolbar({
   total,
   canPublish,
   canDraft,
+  genreAction,
+  genres,
 }: {
   action: (formData: FormData) => void | Promise<void>;
   total: number;
   canPublish: boolean;
   canDraft: boolean;
+  genreAction?: (formData: FormData) => void | Promise<void>;
+  genres?: Array<{ id: string; name: string }>;
 }) {
   return (
     <BulkStatusToolbar
@@ -21,11 +25,14 @@ export function BulkBookStatusToolbar({
       total={total}
       formId="bulk-book-status-form"
       selectionKey="book"
+      selectionInputName="bookIds"
       selectAllLabel="Selectează toate cărțile din listă"
       options={[
         ...(canPublish ? [{ value: "published", label: "Publicată" }] : []),
         ...(canDraft ? [{ value: "draft", label: "Draft" }] : []),
       ]}
+      genreAction={genreAction}
+      genres={genres}
     />
   );
 }
@@ -43,6 +50,7 @@ export function BulkAuthorStatusToolbar({
       total={total}
       formId="bulk-author-status-form"
       selectionKey="author"
+      selectionInputName="authorIds"
       selectAllLabel="Selectează toți autorii din listă"
       options={[
         { value: "published", label: "Publicat" },
@@ -57,26 +65,33 @@ function BulkStatusToolbar({
   total,
   formId,
   selectionKey,
+  selectionInputName,
   selectAllLabel,
   options,
+  genreAction,
+  genres,
 }: {
   action: (formData: FormData) => void | Promise<void>;
   total: number;
   formId: string;
   selectionKey: string;
+  selectionInputName: string;
   selectAllLabel: string;
   options: Array<{ value: string; label: string }>;
+  genreAction?: (formData: FormData) => void | Promise<void>;
+  genres?: Array<{ id: string; name: string }>;
 }) {
-  const [selectedCount, setSelectedCount] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const selectAllRef = useRef<HTMLInputElement>(null);
   const selector = `[data-bulk-selection="${selectionKey}"]`;
+  const selectedCount = selectedIds.length;
 
   useEffect(() => {
     const checkboxes = () => [...document.querySelectorAll<HTMLInputElement>(selector)];
-    const updateCount = () => setSelectedCount(checkboxes().filter((checkbox) => checkbox.checked).length);
-    document.addEventListener("change", updateCount);
-    updateCount();
-    return () => document.removeEventListener("change", updateCount);
+    const updateSelection = () => setSelectedIds(checkboxes().filter((checkbox) => checkbox.checked).map((checkbox) => checkbox.value));
+    document.addEventListener("change", updateSelection);
+    updateSelection();
+    return () => document.removeEventListener("change", updateSelection);
   }, [selector]);
 
   useEffect(() => {
@@ -88,7 +103,7 @@ function BulkStatusToolbar({
   function toggleAll(checked: boolean) {
     const checkboxes = [...document.querySelectorAll<HTMLInputElement>(selector)];
     for (const checkbox of checkboxes) checkbox.checked = checked;
-    setSelectedCount(checked ? checkboxes.length : 0);
+    setSelectedIds(checked ? checkboxes.map((checkbox) => checkbox.value) : []);
   }
 
   return (
@@ -98,25 +113,42 @@ function BulkStatusToolbar({
         {selectAllLabel}
         <span className="rounded-full bg-paper px-2.5 py-1 text-xs text-muted">{selectedCount}/{total}</span>
       </label>
-      <form id={formId} action={action} className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <label className="text-sm font-bold">
-          Schimbă statusul în
-          <select name="status" defaultValue={options[0]?.value} className="ms-3 min-h-10 rounded-xl border border-border bg-paper px-3 font-normal">
-            {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-        <BulkSubmitButton disabled={!selectedCount} />
-      </form>
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+        <form id={formId} action={action} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          {selectedIds.map((id) => <input key={id} type="hidden" name={selectionInputName} value={id} />)}
+          <label className="text-sm font-bold">
+            Schimbă statusul în
+            <select name="status" defaultValue={options[0]?.value} className="ms-3 min-h-10 rounded-xl border border-border bg-paper px-3 font-normal">
+              {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+          <BulkSubmitButton disabled={!selectedCount} label="Aplică în masă" pendingLabel="Se actualizează…" />
+        </form>
+        {genreAction && genres?.length ? (
+          <form action={genreAction} className="flex flex-col gap-3 border-border sm:flex-row sm:items-center xl:border-s xl:ps-4">
+            {selectedIds.map((id) => <input key={id} type="hidden" name="bookIds" value={id} />)}
+            <label className="text-sm font-bold">
+              Adaugă genul
+              <select name="genreId" required defaultValue="" className="ms-3 min-h-10 max-w-56 rounded-xl border border-border bg-paper px-3 font-normal">
+                <option value="" disabled>Alege genul</option>
+                {genres.map((genre) => <option key={genre.id} value={genre.id}>{genre.name}</option>)}
+              </select>
+            </label>
+            <BulkSubmitButton disabled={!selectedCount} label="Adaugă genul" pendingLabel="Se adaugă…" genre />
+          </form>
+        ) : null}
+      </div>
     </div>
   );
 }
 
-function BulkSubmitButton({ disabled }: { disabled: boolean }) {
+function BulkSubmitButton({ disabled, label, pendingLabel, genre = false }: { disabled: boolean; label: string; pendingLabel: string; genre?: boolean }) {
   const { pending } = useFormStatus();
+  const Icon = genre ? Tags : CheckSquare2;
   return (
     <button type="submit" disabled={disabled || pending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-brand px-5 text-sm font-bold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50">
-      {pending ? <LoaderCircle aria-hidden="true" className="me-2 size-4 animate-spin" /> : <CheckSquare2 aria-hidden="true" className="me-2 size-4" />}
-      {pending ? "Se actualizează…" : "Aplică în masă"}
+      {pending ? <LoaderCircle aria-hidden="true" className="me-2 size-4 animate-spin" /> : <Icon aria-hidden="true" className="me-2 size-4" />}
+      {pending ? pendingLabel : label}
     </button>
   );
 }

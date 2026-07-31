@@ -129,6 +129,9 @@ export async function saveBook(input: BookInput, actorUserId: string, bookId?: s
         publicationYear: input.edition.publicationYear ?? null,
         language: input.edition.language,
         pageCount: input.edition.pageCount ?? null,
+        ...(input.edition.coverImportKey === undefined
+          ? {}
+          : { coverImportKey: input.edition.coverImportKey }),
         coverAssetId: input.edition.coverAssetId ?? null,
         editionLabel: input.edition.label ?? null,
         active: input.edition.active,
@@ -325,8 +328,13 @@ export async function assignBookCover(bookId: string, assetId: string, actorUser
 export async function assignBookCoverByImportKey(importKey: string, assetId: string, actorUserId: string) {
   const [book] = await getDb()
     .select({ id: books.id })
-    .from(books)
-    .where(and(eq(books.importKey, importKey), isNull(books.deletedAt)))
+    .from(bookEditions)
+    .innerJoin(books, eq(books.id, bookEditions.bookId))
+    .where(and(
+      eq(bookEditions.coverImportKey, importKey),
+      isNull(bookEditions.deletedAt),
+      isNull(books.deletedAt),
+    ))
     .limit(1);
   if (!book) return null;
   await assignBookCover(book.id, assetId, actorUserId);

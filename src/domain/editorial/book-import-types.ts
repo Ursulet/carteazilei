@@ -12,6 +12,7 @@ export type BookImportActionState = {
   imported: BookImportReportItem[];
   skipped: BookImportReportItem[];
   errors: BookImportReportItem[];
+  covers?: Array<{ identifier: string; altText: string }>;
 };
 
 export const initialBookImportActionState: BookImportActionState = {

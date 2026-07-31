@@ -125,6 +125,7 @@ export const bookEditions = pgTable(
     publicationDate: date("publication_date"),
     language: text("language").default("ro").notNull(),
     pageCount: integer("page_count"),
+    coverImportKey: text("cover_import_key"),
     coverAssetId: uuid("cover_asset_id").references(() => mediaAssets.id, {
       onDelete: "restrict",
     }),
@@ -151,6 +152,9 @@ export const bookEditions = pgTable(
       sql`${table.pageCount} is null or ${table.pageCount} > 0`,
     ),
     index("book_editions_book_id_idx").on(table.bookId),
+    uniqueIndex("book_editions_cover_import_key_unique")
+      .on(table.coverImportKey)
+      .where(sql`${table.coverImportKey} is not null and ${table.deletedAt} is null`),
     index("book_editions_active_idx").on(table.active),
   ],
 );

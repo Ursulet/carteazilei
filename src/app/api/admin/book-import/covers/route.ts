@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { NextResponse } from "next/server";
 
 import { EditorialServiceError } from "@/domain/editorial/action-state";
@@ -5,6 +7,7 @@ import { assignBookCoverByImportKey } from "@/domain/editorial/book-service";
 import { findMediaByImportKey, normalizeMediaImportKey, uploadMedia } from "@/domain/editorial/media-service";
 import { hasPermission } from "@/lib/auth/permissions";
 import { requirePermission } from "@/lib/auth/principal";
+import { readMediaObject } from "@/lib/storage/media-storage";
 
 export async function POST(request: Request) {
   const principal = await requirePermission("media.manage");
@@ -26,6 +29,15 @@ export async function POST(request: Request) {
 
     const existing = await findMediaByImportKey(identifier);
     if (existing) {
+      const [incomingBytes, existingBytes] = await Promise.all([
+        file.arrayBuffer().then((buffer) => new Uint8Array(buffer)),
+        readMediaObject(existing.storageKey),
+      ]);
+      const incomingHash = createHash("sha256").update(incomingBytes).digest("hex");
+      const existingHash = createHash("sha256").update(existingBytes).digest("hex");
+      if (incomingHash !== existingHash) {
+        return NextResponse.json({ message: `Identificatorul „${identifier}” aparține deja unei alte imagini.` }, { status: 409 });
+      }
       const bookId = canUpdateBooks
         ? await assignBookCoverByImportKey(identifier, existing.id, principal.id)
         : null;

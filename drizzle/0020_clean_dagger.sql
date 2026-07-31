@@ -1,0 +1,2 @@
+ALTER TABLE "book_editions" ADD COLUMN "cover_import_key" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "book_editions_cover_import_key_unique" ON "book_editions" USING btree ("cover_import_key") WHERE "book_editions"."cover_import_key" is not null and "book_editions"."deleted_at" is null;

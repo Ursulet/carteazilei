@@ -38,7 +38,7 @@ export function normalizeMediaImportKey(value: string) {
 export async function findMediaByImportKey(value: string) {
   const importKey = normalizeMediaImportKey(value);
   const [asset] = await getDb()
-    .select({ id: mediaAssets.id, importKey: mediaAssets.importKey })
+    .select({ id: mediaAssets.id, importKey: mediaAssets.importKey, storageKey: mediaAssets.storageKey })
     .from(mediaAssets)
     .where(and(
       eq(mediaAssets.importKey, importKey),

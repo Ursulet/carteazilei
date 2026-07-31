@@ -1,48 +1,47 @@
-import { Download, FileSpreadsheet, Images } from "lucide-react";
+import { Download, FileJson, FileSpreadsheet, Images } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BookImportForm } from "@/components/admin/book-import-form";
-import { BulkCoverUpload } from "@/components/admin/bulk-cover-upload";
 import { AdminPageHeader, FormSection } from "@/components/admin/editorial-ui";
 import { getBookFormOptions } from "@/db/queries/admin-editorial";
-import { hasPermission } from "@/lib/auth/permissions";
 import { requirePermission, requireSectionAccess } from "@/lib/auth/principal";
-
-import { importBooksAction } from "./actions";
 
 export const metadata: Metadata = { title: "Import cărți" };
 
 export default async function BookImportPage() {
-  const principal = await requireSectionAccess("books");
+  await requireSectionAccess("books");
   await requirePermission("books.create");
+  await requirePermission("books.update");
+  await requirePermission("authors.manage");
+  await requirePermission("media.manage");
   const options = await getBookFormOptions();
-  const canUploadMedia = hasPermission(principal.permissions, "media.manage", principal.isSuperAdmin);
 
   return (
     <>
-      <AdminPageHeader eyebrow="Catalog" title="Importă cărți" description="Poți încărca CSV-ul și coperțile în orice ordine. Identificatorul comun le asociază automat, iar cărțile sunt create ca ciorne pentru verificare." />
+      <AdminPageHeader eyebrow="Catalog" title="Importă cărți" description="Un singur flux creează sau reutilizează autorii, completează câmpurile formularului de carte și asociază coperțile. Toate cărțile sunt salvate ca ciorne." />
 
       <div className="mb-8 grid gap-4 md:grid-cols-3">
-        <Step number="1" icon={Download} title="Descarcă modelul" text="Păstrează numele coloanelor și separatorul punct și virgulă." />
-        <Step number="2" icon={Images} title="Pregătește coperțile" text="Numele fiecărei imagini trebuie să corespundă identificatorului din CSV." />
-        <Step number="3" icon={FileSpreadsheet} title="Încarcă în orice ordine" text="CSV înainte sau după imagini; primești raport clar pentru fiecare operațiune." />
+        <Step number="1" icon={Download} title="Descarcă modelul" text="JSON este recomandat; CSV rămâne disponibil pentru Excel și scraper." />
+        <Step number="2" icon={Images} title="Pregătește coperțile" text="Numele fără extensie trebuie să fie identic cu identificatorul coperții." />
+        <Step number="3" icon={FileSpreadsheet} title="Pornește un singur import" text="Fișierul creează cărțile și autorii, apoi imaginile sunt asociate automat." />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-[0.75fr_1.25fr]">
         <div className="grid content-start gap-6">
-          <FormSection title="Fișierul-model" description="Model UTF-8 compatibil cu Excel. Valorile multiple, precum genurile, se separă cu |.">
-            <Link href="/admin/books/import/template" className="inline-flex min-h-11 items-center rounded-full border border-brand px-5 text-sm font-bold text-brand hover:bg-accent-soft"><Download aria-hidden="true" className="me-2 size-4" />Descarcă modelul CSV</Link>
+          <FormSection title="Fișiere-model" description="JSON păstrează mai clar relațiile. În CSV, valorile multiple se separă cu |.">
+            <div className="flex flex-wrap gap-3">
+              <Link href="/admin/books/import/template?format=json" className="inline-flex min-h-11 items-center rounded-full bg-brand px-5 text-sm font-bold text-white hover:bg-brand-hover"><FileJson aria-hidden="true" className="me-2 size-4" />Model JSON</Link>
+              <Link href="/admin/books/import/template" className="inline-flex min-h-11 items-center rounded-full border border-brand px-5 text-sm font-bold text-brand hover:bg-accent-soft"><Download aria-hidden="true" className="me-2 size-4" />Model CSV</Link>
+            </div>
             <div className="mt-5 rounded-xl bg-paper p-4 text-xs leading-6 text-muted">
-              <strong className="text-foreground">Identificatori:</strong> folosește aceeași valoare în coloana <code>identificator_coperta</code> și în numele imaginii. Pentru legătura cu autorul, copiază în <code>identificator_autor</code> valoarea din <Link href="/admin/authors/import" className="font-bold text-brand underline underline-offset-2">importul autorilor</Link>.
+              <strong className="text-foreground">Relații sigure:</strong> <code>identificator_carte</code>, <code>identificator_autor</code> și <code>identificator_coperta</code> sunt separate. Același autor poate fi folosit de oricâte cărți.
             </div>
           </FormSection>
-
-          {canUploadMedia ? <FormSection title="Coperți în bulk" description="JPEG, PNG, WebP sau AVIF, maximum 5 MB per imagine și 50 de fișiere într-o selecție."><BulkCoverUpload /></FormSection> : <FormSection title="Coperți în bulk" description="Rolul curent nu are permisiunea Media necesară pentru încărcarea imaginilor."><p className="text-sm text-muted">Un administrator poate acorda permisiunea „Administrare Media” sau poate încărca imaginile în numele tău.</p></FormSection>}
         </div>
 
-        <FormSection title="Importă catalogul" description="Fișierul este validat înainte de prima creare. Un ISBN sau un slug deja existent este omis, nu suprascris.">
-          <BookImportForm action={importBooksAction} />
+        <FormSection title="Import complet" description="Selectează fișierul și toate imaginile, apoi pornește o singură operațiune. Identificatorii existenți nu sunt suprascriși.">
+          <BookImportForm />
         </FormSection>
       </div>
 

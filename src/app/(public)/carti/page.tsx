@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { BookOpen, Filter, RotateCcw, Search } from "lucide-react";
+import { ArrowDown, BookOpen, Filter, RotateCcw, Search } from "lucide-react";
 import Link from "next/link";
 
 import { PublicBookCard } from "@/components/editorial/public-book-card";
 import { PublicEmptyState } from "@/components/editorial/public-empty-state";
 import { PublicPageHeader } from "@/components/editorial/public-page-header";
 import {
+  countPublicBookCatalog,
   getPublicBookCatalogFilterOptions,
   listPublicBookCatalog,
   type PublicBookCatalogFilters,
@@ -44,10 +45,29 @@ function parseFilters(params: SearchParams): PublicBookCatalogFilters {
   };
 }
 
+function parseVisibleCount(params: SearchParams) {
+  const value = Number(firstValue(params.afiseaza));
+  if (!Number.isInteger(value) || value < 8) return 8;
+  return Math.min(Math.ceil(value / 8) * 8, 50_000);
+}
+
+function loadMoreHref(params: SearchParams, visibleCount: number) {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (key === "afiseaza" || value === undefined) continue;
+    for (const item of Array.isArray(value) ? value : [value]) query.append(key, item);
+  }
+  query.set("afiseaza", String(visibleCount + 8));
+  return `/carti?${query.toString()}`;
+}
+
 export default async function BooksPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const filters = parseFilters(await searchParams);
-  const [books, options] = await Promise.all([
-    listPublicBookCatalog(filters),
+  const params = await searchParams;
+  const filters = parseFilters(params);
+  const visibleCount = parseVisibleCount(params);
+  const [books, totalBooks, options] = await Promise.all([
+    listPublicBookCatalog(filters, visibleCount),
+    countPublicBookCatalog(filters),
     getPublicBookCatalogFilterOptions(),
   ]);
   const activeFilterCount = Number(Boolean(filters.q))
@@ -64,6 +84,23 @@ export default async function BooksPage({ searchParams }: { searchParams: Promis
         description="Explorează întregul catalog sau filtrează cărțile după gen, temă, atmosferă și cititorul căruia i se potrivesc."
         currentLabel="Cărți"
         currentPath="/carti"
+        aside={(
+          <div className="rounded-2xl border border-border bg-paper/70 p-5 shadow-sm">
+            <div className="flex items-center gap-4">
+              <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-rust-soft text-rust-dark"><BookOpen aria-hidden="true" className="size-6" /></span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-rust-dark">{activeFilterCount ? "Rezultate disponibile" : "În catalog"}</p>
+                <p className="mt-1 font-display text-3xl font-semibold">{totalBooks} {totalBooks === 1 ? "carte" : "cărți"}</p>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4 text-xs font-semibold text-muted">
+              <span className="rounded-full bg-surface px-3 py-1.5">Gen</span>
+              <span className="rounded-full bg-surface px-3 py-1.5">Temă</span>
+              <span className="rounded-full bg-surface px-3 py-1.5">Atmosferă</span>
+              <span className="rounded-full bg-surface px-3 py-1.5">Pentru cine</span>
+            </div>
+          </div>
+        )}
       />
       <section className="py-12 md:py-16">
         <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
@@ -111,13 +148,22 @@ export default async function BooksPage({ searchParams }: { searchParams: Promis
               <BookOpen aria-hidden="true" className="size-6 text-rust" />
               {activeFilterCount ? "Rezultatele filtrării" : "Catalogul complet"}
             </h2>
-            <p className="text-sm font-semibold text-muted">{books.length} {books.length === 1 ? "carte" : "cărți"}</p>
+            <p className="text-sm font-semibold text-muted">{totalBooks} {totalBooks === 1 ? "carte" : "cărți"}</p>
           </div>
 
           {books.length ? (
-            <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {books.map((book) => <PublicBookCard key={book.id} book={book} />)}
-            </div>
+            <>
+              <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {books.map((book) => <PublicBookCard key={book.id} book={book} />)}
+              </div>
+              {books.length < totalBooks ? (
+                <div className="mt-10 flex justify-center">
+                  <Link href={loadMoreHref(params, visibleCount)} scroll={false} className="inline-flex min-h-12 items-center justify-center rounded-full border border-brand px-7 text-sm font-bold text-brand transition hover:bg-brand hover:text-white">
+                    Vezi încă 8 cărți <ArrowDown aria-hidden="true" className="ms-2 size-4" />
+                  </Link>
+                </div>
+              ) : null}
+            </>
           ) : activeFilterCount ? (
             <div className="mt-7">
               <PublicEmptyState title="Nu am găsit cărți pentru aceste filtre" description="Încearcă să debifezi unul dintre criterii sau să cauți după alt titlu ori autor.">

@@ -264,10 +264,7 @@ export type PublicBookCatalogFilters = {
   sort?: PublicBookCatalogSort;
 };
 
-export async function listPublicBookCatalog(
-  filters: PublicBookCatalogFilters = {},
-  db: Database = getDb(),
-) {
+function publicBookCatalogConditions(filters: PublicBookCatalogFilters, db: Database) {
   const conditions: SQL[] = [];
   const query = filters.q?.trim();
 
@@ -314,6 +311,15 @@ export async function listPublicBookCatalog(
         .where(and(inArray(audiences.slug, filters.audiences), eq(audiences.status, "published"), isNull(audiences.deletedAt))),
     ));
   }
+  return conditions;
+}
+
+export async function listPublicBookCatalog(
+  filters: PublicBookCatalogFilters = {},
+  limit = 8,
+  db: Database = getDb(),
+) {
+  const conditions = publicBookCatalogConditions(filters, db);
 
   const orderBy = filters.sort === "author"
     ? [asc(authors.name), asc(books.title)]
@@ -326,7 +332,21 @@ export async function listPublicBookCatalog(
     .from(books)
     .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
     .where(and(publishedBookConditions, publicBookPageEligibility, ...conditions))
-    .orderBy(...orderBy);
+    .orderBy(...orderBy)
+    .limit(Math.min(Math.max(limit, 1), 50_000));
+}
+
+export async function countPublicBookCatalog(
+  filters: PublicBookCatalogFilters = {},
+  db: Database = getDb(),
+) {
+  const conditions = publicBookCatalogConditions(filters, db);
+  const [row] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(books)
+    .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
+    .where(and(publishedBookConditions, publicBookPageEligibility, ...conditions));
+  return row?.total ?? 0;
 }
 
 export async function getPublicBookCatalogFilterOptions(db: Database = getDb()) {
@@ -381,8 +401,8 @@ export async function listLatestPublicBookCards(db: Database = getDb(), limit = 
 
 export async function listRandomPublicBookCards(
   excludedBookIds: readonly string[] = [],
+  limit = 8,
   db: Database = getDb(),
-  limit = 4,
 ) {
   const exclusions = [...new Set(excludedBookIds)];
 

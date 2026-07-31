@@ -23,7 +23,7 @@ export function DailyFeatureForm({ action, values = {}, options, editing = false
     <form action={formAction} className="grid gap-6">
       {state.status === "error" ? <div role="alert" className="rounded-xl border border-danger/30 bg-red-50 px-4 py-3 text-sm font-medium text-danger">{state.message}</div> : null}
       <FormSection title="Programare" description="Data este interpretată în fusul Europe/Bucharest. O selecție programată devine vizibilă automat în ziua aleasă; nu este necesar un cron separat.">
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-[14rem_22rem_minmax(18rem,1fr)_minmax(14rem,0.75fr)]">
           <label className={labelClass}>Data *<input name="featureDate" type="date" required defaultValue={values.featureDate ?? ""} className={fieldClass} /><FieldError errors={errors.featureDate} /></label>
           <label className={labelClass}>Stare<select name="status" defaultValue={values.status ?? "scheduled"} className={fieldClass}><option value="draft">Ciornă</option><option value="scheduled">Programată — apare automat la data aleasă</option><option value="published">Publicată</option><option value="archived">Arhivată</option></select></label>
           <label className={labelClass}>Carte *<select name="bookId" required defaultValue={values.bookId ?? ""} className={fieldClass}><option value="">Alege cartea</option>{options.books.map((book) => <option key={book.id} value={book.id}>{book.title} ({book.status})</option>)}</select><FieldError errors={errors.bookId} /></label>

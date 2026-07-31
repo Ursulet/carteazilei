@@ -46,12 +46,12 @@ export default async function HomePage() {
     ...recentDailyFeatures.map((item) => item.book.id),
   ];
   const randomBooksWithoutEditorialSelections = await listRandomPublicBookCards(editorialBookIds);
-  const randomBooks = randomBooksWithoutEditorialSelections.length >= 4
+  const randomBooks = randomBooksWithoutEditorialSelections.length >= 8
     ? randomBooksWithoutEditorialSelections
     : mergeUniqueBooks(
         randomBooksWithoutEditorialSelections,
         await listRandomPublicBookCards(),
-      ).slice(0, 4);
+      ).slice(0, 8);
 
   const quickGenres = discovery.genres.slice(0, 4);
   const editorialCards = discovery.lists.slice(0, 4);
@@ -191,6 +191,11 @@ export default async function HomePage() {
             <SectionHeader eyebrow="Din biblioteca noastră" title="Descoperă și alte cărți" href="/carti" action="Vezi toate cărțile" icon={BookOpen} headingId="catalog-discovery-heading" />
             <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {randomBooks.map((book) => <PublicBookCard key={book.id} book={book} />)}
+            </div>
+            <div className="mt-9 flex justify-center">
+              <Link href="/carti" className="inline-flex min-h-12 items-center justify-center rounded-full border border-brand px-7 text-sm font-bold text-brand transition hover:bg-brand hover:text-white">
+                Vezi mai multe cărți <ArrowRight aria-hidden="true" className="ms-2 size-4" />
+              </Link>
             </div>
           </section>
         ) : null}

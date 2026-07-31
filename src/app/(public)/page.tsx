@@ -21,7 +21,7 @@ import { PublicBookCard } from "@/components/editorial/public-book-card";
 import { ButtonLink } from "@/components/ui/button-link";
 import { getCurrentPublicDailyFeature, listRecentPublicDailyFeatures } from "@/db/queries/public-daily-features";
 import { getPublicHomepageDiscovery } from "@/db/queries/public-home";
-import { listLatestPublicBookCards } from "@/db/queries/public-book-pages";
+import { listRandomPublicBookCards } from "@/db/queries/public-book-pages";
 import { buildPublicMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -35,12 +35,23 @@ export const metadata: Metadata = buildPublicMetadata({
 const categoryIcons = [BookOpen, Lightbulb, Brain, Feather, LibraryBig];
 
 export default async function HomePage() {
-  const [{ date, feature }, discovery, recentDailyFeatures, latestBooks] = await Promise.all([
+  const [{ date, feature }, discovery, recentDailyFeatures] = await Promise.all([
     getCurrentPublicDailyFeature(),
     getPublicHomepageDiscovery(),
     listRecentPublicDailyFeatures(),
-    listLatestPublicBookCards(),
   ]);
+
+  const editorialBookIds = [
+    ...(feature ? [feature.book.id] : []),
+    ...recentDailyFeatures.map((item) => item.book.id),
+  ];
+  const randomBooksWithoutEditorialSelections = await listRandomPublicBookCards(editorialBookIds);
+  const randomBooks = randomBooksWithoutEditorialSelections.length >= 4
+    ? randomBooksWithoutEditorialSelections
+    : mergeUniqueBooks(
+        randomBooksWithoutEditorialSelections,
+        await listRandomPublicBookCards(),
+      ).slice(0, 4);
 
   const quickGenres = discovery.genres.slice(0, 4);
   const editorialCards = discovery.lists.slice(0, 4);
@@ -175,17 +186,25 @@ export default async function HomePage() {
 
         <RecentDailyFeaturesSection features={recentDailyFeatures} />
 
-        {latestBooks.length ? (
-          <section className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-6 lg:px-8 lg:py-10" aria-labelledby="latest-books-heading">
-            <SectionHeader eyebrow="Cele mai recente cărți" title="Recomandările noastre" href="/carti" action="Vezi toate cărțile" icon={BookOpen} headingId="latest-books-heading" />
+        {randomBooks.length ? (
+          <section className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-6 lg:px-8 lg:py-10" aria-labelledby="catalog-discovery-heading">
+            <SectionHeader eyebrow="Din biblioteca noastră" title="Descoperă și alte cărți" href="/carti" action="Vezi toate cărțile" icon={BookOpen} headingId="catalog-discovery-heading" />
             <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {latestBooks.map((book) => <PublicBookCard key={book.id} book={book} />)}
+              {randomBooks.map((book) => <PublicBookCard key={book.id} book={book} />)}
             </div>
           </section>
         ) : null}
       </div>
     </>
   );
+}
+
+function mergeUniqueBooks<T extends { id: string }>(...groups: T[][]) {
+  const unique = new Map<string, T>();
+  for (const group of groups) {
+    for (const book of group) unique.set(book.id, book);
+  }
+  return [...unique.values()];
 }
 
 function SectionHeader({ eyebrow, title, href, action, icon: Icon, headingId }: { eyebrow: string; title: string; href: string; action: string; icon: LucideIcon; headingId?: string }) {

@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import type { EditorialActionState } from "@/domain/editorial/action-state";
 import { toActionState } from "@/domain/editorial/action-state";
 import { parseBookFormData } from "@/domain/editorial/book-input";
-import { assignBookCover, deleteBook, saveBook } from "@/domain/editorial/book-service";
+import { assignBookCover, bulkUpdateBookStatus, deleteBook, saveBook } from "@/domain/editorial/book-service";
 import { deleteMedia, uploadMedia } from "@/domain/editorial/media-service";
 import { withAdminNotice } from "@/lib/admin/notice";
 import { requirePermission } from "@/lib/auth/principal";
@@ -43,6 +43,30 @@ export async function deleteBookAction(bookId: string) {
   await deleteBook(bookId, principal.id);
   revalidatePath("/admin/books");
   redirect(withAdminNotice("/admin/books", "Cartea a fost arhivată."));
+}
+
+export async function bulkUpdateBookStatusAction(formData: FormData) {
+  const requestedStatus = formData.get("status");
+  if (requestedStatus !== "draft" && requestedStatus !== "published") {
+    redirect(withAdminNotice("/admin/books", "Alege statusul pentru actualizarea în masă."));
+  }
+  const principal = await requirePermission(requestedStatus === "published" ? "books.publish" : "books.update");
+  let notice: string;
+  try {
+    const result = await bulkUpdateBookStatus(
+      formData.getAll("bookIds").filter((value): value is string => typeof value === "string"),
+      requestedStatus,
+      principal.id,
+    );
+    const actionLabel = requestedStatus === "published" ? "publicate" : "mutate în Draft";
+    notice = `${result.changed} cărți ${actionLabel}. ${result.unchanged} erau deja în starea aleasă.${result.rejected ? ` ${result.rejected} nu au trecut checklistul și au rămas nemodificate.` : ""}`;
+  } catch (error) {
+    notice = error instanceof Error ? error.message : "Actualizarea în masă nu a putut fi finalizată.";
+  }
+  revalidatePath("/admin/books");
+  revalidatePath("/");
+  revalidatePath("/carti");
+  redirect(withAdminNotice("/admin/books", notice));
 }
 
 export async function uploadBookCoverAction(

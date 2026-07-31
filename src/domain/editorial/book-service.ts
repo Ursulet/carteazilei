@@ -1,9 +1,10 @@
 import "server-only";
 
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { z } from "zod";
 
 import { getDb } from "@/db";
-import { ensureEditorForUser } from "@/db/queries/admin-editorial";
+import { ensureEditorForUser, getBookPublishingSnapshots } from "@/db/queries/admin-editorial";
 import {
   authors,
   bookAudiences,
@@ -279,6 +280,102 @@ export async function deleteBook(bookId: string, actorUserId: string) {
     const now = new Date();
     await transaction.update(books).set({ status: "archived", archivedAt: now, deletedAt: now }).where(eq(books.id, bookId));
     await writeAuditLog({ actorUserId, action: "book.delete", entityType: "book", entityId: bookId, diff: { title: book.title, previousStatus: book.status } }, transaction);
+  });
+}
+
+export async function bulkUpdateBookStatus(
+  requestedBookIds: string[],
+  targetStatus: "draft" | "published",
+  actorUserId: string,
+) {
+  const parsedIds = z.array(z.uuid()).min(1).max(10_000).safeParse([...new Set(requestedBookIds)]);
+  if (!parsedIds.success) {
+    throw new EditorialServiceError(
+      requestedBookIds.length ? "Poți actualiza maximum 10.000 de cărți într-o singură operațiune." : "Selectează cel puțin o carte.",
+    );
+  }
+
+  const db = getDb();
+  const snapshots = await getBookPublishingSnapshots(db, parsedIds.data);
+  const rejected: Array<{ id: string; title: string; missing: string[] }> = [];
+  const candidates = snapshots.filter((snapshot) => {
+    if (snapshot.status === targetStatus) return false;
+    if (targetStatus === "draft") return true;
+    const missing = missingPublishingLabels(evaluateBookPublishingGate(snapshot));
+    if (!missing.length) return true;
+    rejected.push({ id: snapshot.id, title: snapshot.title, missing });
+    return false;
+  });
+  const missingRecords = parsedIds.data.length - snapshots.length;
+
+  if (!candidates.length) {
+    return {
+      requested: parsedIds.data.length,
+      changed: 0,
+      unchanged: snapshots.length - rejected.length,
+      rejected: rejected.length + missingRecords,
+    };
+  }
+
+  return db.transaction(async (transaction) => {
+    const now = new Date();
+    const changedBookIds = candidates.map((book) => book.id);
+    const changedReviewIds = candidates.flatMap((book) => book.reviewId ? [book.reviewId] : []);
+    const updatedBooks = await transaction
+      .update(books)
+      .set(targetStatus === "published" ? {
+        status: "published",
+        publishedAt: sql`coalesce(${books.publishedAt}, ${now})`,
+        archivedAt: null,
+        updatedAt: now,
+      } : {
+        status: "draft",
+        publishedAt: null,
+        archivedAt: null,
+        updatedAt: now,
+      })
+      .where(and(inArray(books.id, changedBookIds), isNull(books.deletedAt)))
+      .returning({ id: books.id });
+
+    if (changedReviewIds.length) {
+      await transaction
+        .update(editorialReviews)
+        .set(targetStatus === "published" ? {
+          status: "published",
+          reviewedAt: now,
+          publishedAt: now,
+          updatedAt: now,
+        } : {
+          status: "draft",
+          reviewedAt: null,
+          publishedAt: null,
+          updatedAt: now,
+        })
+        .where(inArray(editorialReviews.id, changedReviewIds));
+    }
+
+    await writeAuditLog({
+      actorUserId,
+      action: targetStatus === "published" ? "book.bulk_publish" : "book.bulk_unpublish",
+      entityType: "book_batch",
+      entityId: null,
+      diff: {
+        targetStatus,
+        requested: parsedIds.data.length,
+        changed: updatedBooks.length,
+        unchanged: snapshots.length - candidates.length - rejected.length,
+        rejected: rejected.length + missingRecords,
+        changedBookIds: updatedBooks.map((book) => book.id),
+        rejectedBooks: rejected,
+      },
+    }, transaction);
+
+    return {
+      requested: parsedIds.data.length,
+      changed: updatedBooks.length,
+      unchanged: snapshots.length - candidates.length - rejected.length,
+      rejected: rejected.length + missingRecords,
+    };
   });
 }
 

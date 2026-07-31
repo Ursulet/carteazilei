@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db";
 import {
@@ -84,10 +84,11 @@ export async function getBookFormOptions(db: Database = getDb()) {
   return { authors: authorRows, genres: genreRows, themes: themeRows, moods: moodRows, audiences: audienceRows, traits: traitRows, media: mediaRows };
 }
 
-export async function getBookPublishingSnapshot(db: Database, bookId: string) {
+function bookPublishingSnapshotSelection() {
   const outerBookId = sql.raw('"books"."id"');
-  const [row] = await db
-    .select({
+  return {
+      id: books.id,
+      status: books.status,
       title: books.title,
       slug: books.slug,
       authorId: books.primaryAuthorId,
@@ -97,35 +98,53 @@ export async function getBookPublishingSnapshot(db: Database, bookId: string) {
       coverAlt: sql<string | null>`(select m.alt_text from book_editions e join media_assets m on m.id = e.cover_asset_id and m.deleted_at is null where e.book_id = ${outerBookId} and e.active and e.deleted_at is null order by e.updated_at desc limit 1)`,
       verdict: sql<string | null>`(select r.verdict from editorial_reviews r where r.book_id = ${outerBookId} and r.deleted_at is null order by r.updated_at desc limit 1)`,
       caveats: sql<string[]>`coalesce((select r.caveats from editorial_reviews r where r.book_id = ${outerBookId} and r.deleted_at is null order by r.updated_at desc limit 1), '{}'::text[])`,
+      reviewId: sql<string | null>`(select r.id from editorial_reviews r where r.book_id = ${outerBookId} and r.deleted_at is null order by r.updated_at desc limit 1)`,
       editorId: sql<string | null>`(select r.editor_id from editorial_reviews r where r.book_id = ${outerBookId} and r.deleted_at is null order by r.updated_at desc limit 1)`,
       genreIds: sql<string[]>`coalesce((select array_agg(bg.genre_id::text) from book_genres bg where bg.book_id = ${outerBookId}), '{}'::text[])`,
-    })
+  };
+}
+
+export async function getBookPublishingSnapshots(
+  db: Database,
+  bookIds?: readonly string[],
+) {
+  if (bookIds && bookIds.length === 0) return [];
+  return db
+    .select(bookPublishingSnapshotSelection())
     .from(books)
-    .where(and(eq(books.id, bookId), isNull(books.deletedAt)))
-    .limit(1);
-  return row;
+    .where(and(
+      isNull(books.deletedAt),
+      bookIds?.length ? inArray(books.id, [...bookIds]) : undefined,
+    ));
+}
+
+export async function getBookPublishingSnapshot(db: Database, bookId: string) {
+  return (await getBookPublishingSnapshots(db, [bookId]))[0];
 }
 
 export async function getAdminBooks(db: Database = getDb()) {
-  const rows = await db
-    .select({
-      id: books.id,
-      title: books.title,
-      author: authors.name,
-      status: books.status,
-      confidence: books.editorialConfidence,
-      updatedAt: books.updatedAt,
-    })
-    .from(books)
-    .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
-    .where(isNull(books.deletedAt))
-    .orderBy(desc(books.updatedAt));
+  const [rows, snapshots] = await Promise.all([
+    db.select({
+        id: books.id,
+        title: books.title,
+        author: authors.name,
+        status: books.status,
+        confidence: books.editorialConfidence,
+        updatedAt: books.updatedAt,
+      })
+      .from(books)
+      .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
+      .where(isNull(books.deletedAt))
+      .orderBy(desc(books.updatedAt)),
+    getBookPublishingSnapshots(db),
+  ]);
+  const snapshotByBookId = new Map(snapshots.map((snapshot) => [snapshot.id, snapshot]));
 
-  return Promise.all(rows.map(async (row) => {
-    const snapshot = await getBookPublishingSnapshot(db, row.id);
+  return rows.map((row) => {
+    const snapshot = snapshotByBookId.get(row.id);
     const gate = snapshot ? evaluateBookPublishingGate(snapshot) : [];
     return { ...row, missingFields: gate.filter((item) => !item.passed).map((item) => item.label) };
-  }));
+  });
 }
 
 export async function getAdminBook(bookId: string, db: Database = getDb()) {

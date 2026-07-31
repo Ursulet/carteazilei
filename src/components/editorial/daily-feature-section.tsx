@@ -116,7 +116,7 @@ export function RecentDailyFeaturesSection({ features }: { features: DailyArchiv
           <span className="mt-0.5 inline-flex size-11 items-center justify-center rounded-full bg-rust-soft text-rust-dark"><History aria-hidden="true" className="size-5 stroke-[1.7]" /></span>
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-rust-dark">Din selecțiile trecute</p>
-            <h2 id="recent-daily-heading" className="mt-2 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Recomandările noastre</h2>
+            <h2 id="recent-daily-heading" className="mt-2 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Selecțiile noastre</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Cărți alese și explicate în zilele anterioare.</p>
           </div>
         </div>

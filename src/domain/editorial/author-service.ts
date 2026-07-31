@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb } from "@/db";
@@ -180,5 +180,66 @@ export async function deleteAuthor(authorId: string, actorUserId: string) {
     if (linkedBook) throw new EditorialServiceError("Autorul nu poate fi șters cât timp are cărți active. Arhivează-l în schimb.");
     await transaction.update(authors).set({ status: "archived", deletedAt: new Date() }).where(eq(authors.id, authorId));
     await writeAuditLog({ actorUserId, action: "author.delete", entityType: "author", entityId: authorId, diff: { name: author.name } }, transaction);
+  });
+}
+
+export async function bulkUpdateAuthorStatus(
+  requestedAuthorIds: string[],
+  targetStatus: "draft" | "published",
+  actorUserId: string,
+) {
+  const parsedIds = z.array(z.uuid()).min(1).max(10_000).safeParse([...new Set(requestedAuthorIds)]);
+  if (!parsedIds.success) {
+    throw new EditorialServiceError(
+      requestedAuthorIds.length ? "Poți actualiza maximum 10.000 de autori într-o singură operațiune." : "Selectează cel puțin un autor.",
+    );
+  }
+
+  const db = getDb();
+  return db.transaction(async (transaction) => {
+    const existing = await transaction
+      .select({ id: authors.id, status: authors.status })
+      .from(authors)
+      .where(and(inArray(authors.id, parsedIds.data), isNull(authors.deletedAt)));
+    const changedIds = existing.filter((author) => author.status !== targetStatus).map((author) => author.id);
+    const missing = parsedIds.data.length - existing.length;
+    const now = new Date();
+    const updated = changedIds.length
+      ? await transaction
+          .update(authors)
+          .set(targetStatus === "published" ? {
+            status: "published",
+            publishedAt: sql`coalesce(${authors.publishedAt}, ${now})`,
+            updatedAt: now,
+          } : {
+            status: "draft",
+            publishedAt: null,
+            updatedAt: now,
+          })
+          .where(and(inArray(authors.id, changedIds), isNull(authors.deletedAt)))
+          .returning({ id: authors.id })
+      : [];
+
+    await writeAuditLog({
+      actorUserId,
+      action: targetStatus === "published" ? "author.bulk_publish" : "author.bulk_unpublish",
+      entityType: "author_batch",
+      entityId: null,
+      diff: {
+        targetStatus,
+        requested: parsedIds.data.length,
+        changed: updated.length,
+        unchanged: existing.length - changedIds.length,
+        missing,
+        changedAuthorIds: updated.map((author) => author.id),
+      },
+    }, transaction);
+
+    return {
+      requested: parsedIds.data.length,
+      changed: updated.length,
+      unchanged: existing.length - changedIds.length,
+      missing,
+    };
   });
 }

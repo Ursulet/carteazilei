@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db";
 import {
@@ -253,6 +253,122 @@ export async function listPublicBookCards(db: Database = getDb(), limit = 96) {
     .limit(Math.min(Math.max(limit, 1), 100));
 }
 
+export type PublicBookCatalogSort = "title" | "author" | "recent";
+
+export type PublicBookCatalogFilters = {
+  q?: string;
+  genres?: string[];
+  themes?: string[];
+  moods?: string[];
+  audiences?: string[];
+  sort?: PublicBookCatalogSort;
+};
+
+export async function listPublicBookCatalog(
+  filters: PublicBookCatalogFilters = {},
+  db: Database = getDb(),
+) {
+  const conditions: SQL[] = [];
+  const query = filters.q?.trim();
+
+  if (query) {
+    conditions.push(or(
+      ilike(books.title, `%${query}%`),
+      ilike(books.subtitle, `%${query}%`),
+      ilike(authors.name, `%${query}%`),
+    )!);
+  }
+  if (filters.genres?.length) {
+    conditions.push(inArray(
+      books.id,
+      db.select({ bookId: bookGenres.bookId })
+        .from(bookGenres)
+        .innerJoin(genres, eq(genres.id, bookGenres.genreId))
+        .where(and(inArray(genres.slug, filters.genres), eq(genres.status, "published"), isNull(genres.deletedAt))),
+    ));
+  }
+  if (filters.themes?.length) {
+    conditions.push(inArray(
+      books.id,
+      db.select({ bookId: bookThemes.bookId })
+        .from(bookThemes)
+        .innerJoin(themes, eq(themes.id, bookThemes.themeId))
+        .where(and(inArray(themes.slug, filters.themes), eq(themes.status, "published"), isNull(themes.deletedAt))),
+    ));
+  }
+  if (filters.moods?.length) {
+    conditions.push(inArray(
+      books.id,
+      db.select({ bookId: bookMoods.bookId })
+        .from(bookMoods)
+        .innerJoin(moods, eq(moods.id, bookMoods.moodId))
+        .where(and(inArray(moods.slug, filters.moods), eq(moods.status, "published"), isNull(moods.deletedAt))),
+    ));
+  }
+  if (filters.audiences?.length) {
+    conditions.push(inArray(
+      books.id,
+      db.select({ bookId: bookAudiences.bookId })
+        .from(bookAudiences)
+        .innerJoin(audiences, eq(audiences.id, bookAudiences.audienceId))
+        .where(and(inArray(audiences.slug, filters.audiences), eq(audiences.status, "published"), isNull(audiences.deletedAt))),
+    ));
+  }
+
+  const orderBy = filters.sort === "author"
+    ? [asc(authors.name), asc(books.title)]
+    : filters.sort === "recent"
+      ? [desc(books.publishedAt), desc(books.updatedAt), asc(books.title)]
+      : [asc(books.title), asc(authors.name)];
+
+  return db
+    .select(bookCardSelection())
+    .from(books)
+    .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
+    .where(and(publishedBookConditions, publicBookPageEligibility, ...conditions))
+    .orderBy(...orderBy);
+}
+
+export async function getPublicBookCatalogFilterOptions(db: Database = getDb()) {
+  const taxonomyCount = sql<number>`count(distinct ${books.id})::int`;
+  const [genreRows, themeRows, moodRows, audienceRows] = await Promise.all([
+    db.select({ name: genres.name, slug: genres.slug, count: taxonomyCount })
+      .from(genres)
+      .innerJoin(bookGenres, eq(bookGenres.genreId, genres.id))
+      .innerJoin(books, eq(books.id, bookGenres.bookId))
+      .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
+      .where(and(eq(genres.status, "published"), isNull(genres.deletedAt), publishedBookConditions, publicBookPageEligibility))
+      .groupBy(genres.id, genres.name, genres.slug)
+      .orderBy(asc(genres.name)),
+    db.select({ name: themes.name, slug: themes.slug, count: taxonomyCount })
+      .from(themes)
+      .innerJoin(bookThemes, eq(bookThemes.themeId, themes.id))
+      .innerJoin(books, eq(books.id, bookThemes.bookId))
+      .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
+      .where(and(eq(themes.status, "published"), isNull(themes.deletedAt), publishedBookConditions, publicBookPageEligibility))
+      .groupBy(themes.id, themes.name, themes.slug)
+      .orderBy(asc(themes.name)),
+    db.select({ name: moods.name, slug: moods.slug, count: taxonomyCount })
+      .from(moods)
+      .innerJoin(bookMoods, eq(bookMoods.moodId, moods.id))
+      .innerJoin(books, eq(books.id, bookMoods.bookId))
+      .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
+      .where(and(eq(moods.status, "published"), isNull(moods.deletedAt), publishedBookConditions, publicBookPageEligibility))
+      .groupBy(moods.id, moods.name, moods.slug)
+      .orderBy(asc(moods.name)),
+    db.select({ name: audiences.name, slug: audiences.slug, count: taxonomyCount })
+      .from(audiences)
+      .innerJoin(bookAudiences, eq(bookAudiences.audienceId, audiences.id))
+      .innerJoin(books, eq(books.id, bookAudiences.bookId))
+      .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
+      .where(and(eq(audiences.status, "published"), isNull(audiences.deletedAt), publishedBookConditions, publicBookPageEligibility))
+      .groupBy(audiences.id, audiences.name, audiences.slug)
+      .orderBy(asc(audiences.name)),
+  ]);
+
+  return { genres: genreRows, themes: themeRows, moods: moodRows, audiences: audienceRows };
+}
+
 export async function listLatestPublicBookCards(db: Database = getDb(), limit = 4) {
   return db
     .select(bookCardSelection())
@@ -260,6 +376,26 @@ export async function listLatestPublicBookCards(db: Database = getDb(), limit = 
     .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
     .where(and(publishedBookConditions, publicBookPageEligibility))
     .orderBy(desc(books.publishedAt), desc(books.updatedAt), asc(books.title))
+    .limit(Math.min(Math.max(limit, 1), 12));
+}
+
+export async function listRandomPublicBookCards(
+  excludedBookIds: readonly string[] = [],
+  db: Database = getDb(),
+  limit = 4,
+) {
+  const exclusions = [...new Set(excludedBookIds)];
+
+  return db
+    .select(bookCardSelection())
+    .from(books)
+    .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
+    .where(and(
+      publishedBookConditions,
+      publicBookPageEligibility,
+      exclusions.length ? notInArray(books.id, exclusions) : undefined,
+    ))
+    .orderBy(sql`random()`)
     .limit(Math.min(Math.max(limit, 1), 12));
 }
 

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ArrowDown, BookOpen, Filter, RotateCcw, Search } from "lucide-react";
+import { ArrowDown, BookOpen, ChevronDown, Filter, RotateCcw, Search } from "lucide-react";
 import Link from "next/link";
 
 import { PublicBookCard } from "@/components/editorial/public-book-card";
@@ -75,6 +75,12 @@ export default async function BooksPage({ searchParams }: { searchParams: Promis
     + (filters.themes?.length ?? 0)
     + (filters.moods?.length ?? 0)
     + (filters.audiences?.length ?? 0);
+  const activeTaxonomyLabels = [
+    ...options.genres.filter((option) => filters.genres?.includes(option.slug)),
+    ...options.themes.filter((option) => filters.themes?.includes(option.slug)),
+    ...options.moods.filter((option) => filters.moods?.includes(option.slug)),
+    ...options.audiences.filter((option) => filters.audiences?.includes(option.slug)),
+  ].map((option) => option.name);
 
   return (
     <>
@@ -84,33 +90,35 @@ export default async function BooksPage({ searchParams }: { searchParams: Promis
         description="Explorează întregul catalog sau filtrează cărțile după gen, temă, atmosferă și cititorul căruia i se potrivesc."
         currentLabel="Cărți"
         currentPath="/carti"
+        compact
       />
-      <section className="py-12 md:py-16">
+      <section className="py-6 md:py-8">
         <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
-          <form action="/carti" method="get" className="rounded-[1.5rem] border border-border bg-surface p-4 shadow-sm sm:p-6">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_15rem_auto] lg:items-end">
+          <form action="/carti" method="get" className="relative rounded-2xl border border-border bg-surface p-3 shadow-sm sm:p-4">
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_13rem_auto] md:items-end">
               <label className="text-sm font-bold">
                 Caută în catalog
-                <span className="relative mt-2 block">
+                <span className="relative mt-1.5 block">
                   <Search aria-hidden="true" className="pointer-events-none absolute start-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
-                  <input name="q" type="search" defaultValue={filters.q} placeholder="Titlu sau autor" className="min-h-12 w-full rounded-xl border border-border bg-paper py-3 pe-4 ps-11 font-normal outline-none transition focus:border-brand" />
+                  <input name="q" type="search" defaultValue={filters.q} placeholder="Titlu sau autor" className="min-h-11 w-full rounded-xl border border-border bg-paper py-2.5 pe-4 ps-11 font-normal outline-none transition focus:border-brand" />
                 </span>
               </label>
               <label className="text-sm font-bold">
                 Ordonează
-                <select name="ordonare" defaultValue={filters.sort} className="mt-2 min-h-12 w-full rounded-xl border border-border bg-paper px-4 font-normal outline-none transition focus:border-brand">
+                <select name="ordonare" defaultValue={filters.sort} className="mt-1.5 min-h-11 w-full rounded-xl border border-border bg-paper px-3 font-normal outline-none transition focus:border-brand">
                   <option value="title">Titlu A–Z</option>
                   <option value="author">Autor A–Z</option>
                   <option value="recent">Adăugate recent</option>
                 </select>
               </label>
-              <button type="submit" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-6 text-sm font-bold text-white transition hover:bg-brand-hover">
-                <Filter aria-hidden="true" className="me-2 size-4" />Aplică filtrele
+              <button type="submit" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-5 text-sm font-bold text-white transition hover:bg-brand-hover">
+                <Filter aria-hidden="true" className="me-2 size-4" />Aplică
               </button>
             </div>
 
             {options.genres.length || options.themes.length || options.moods.length || options.audiences.length ? (
-              <div className="mt-6 grid gap-4 border-t border-border pt-6 md:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3 sm:flex sm:flex-wrap sm:items-center">
+                <span className="col-span-2 me-1 hidden text-xs font-bold uppercase tracking-wide text-muted sm:inline">Filtre:</span>
                 <FilterGroup title="Genuri" name="gen" options={options.genres} selected={filters.genres ?? []} />
                 <FilterGroup title="Teme" name="tema" options={options.themes} selected={filters.themes ?? []} />
                 <FilterGroup title="Atmosferă" name="stare" options={options.moods} selected={filters.moods ?? []} />
@@ -123,16 +131,17 @@ export default async function BooksPage({ searchParams }: { searchParams: Promis
             )}
 
             {activeFilterCount ? (
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
-                <p className="text-sm text-muted">{activeFilterCount} {activeFilterCount === 1 ? "filtru activ" : "filtre active"}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                {activeTaxonomyLabels.slice(0, 6).map((label, index) => <span key={`${label}-${index}`} className="rounded-full bg-rust-soft px-3 py-1 text-xs font-semibold text-rust-dark">{label}</span>)}
+                {activeTaxonomyLabels.length > 6 ? <span className="text-xs font-semibold text-muted">+{activeTaxonomyLabels.length - 6}</span> : null}
                 <Link href="/carti" className="inline-flex items-center text-sm font-bold text-rust-dark hover:text-rust">
-                  <RotateCcw aria-hidden="true" className="me-2 size-4" />Șterge filtrele
+                  <RotateCcw aria-hidden="true" className="me-1.5 size-3.5" />Șterge filtrele
                 </Link>
               </div>
             ) : null}
           </form>
 
-          <div className="mt-9 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
             <h2 className="flex items-center gap-3 font-display text-3xl font-semibold">
               <BookOpen aria-hidden="true" className="size-6 text-rust" />
               {activeFilterCount ? "Rezultatele filtrării" : "Catalogul complet"}
@@ -181,17 +190,23 @@ function FilterGroup({ title, name, options, selected }: {
   if (!options.length) return null;
   const selectedSet = new Set(selected);
   return (
-    <fieldset className="rounded-2xl border border-border bg-paper/55 p-4">
-      <legend className="px-1 font-display text-xl font-semibold">{title}</legend>
-      <div className="mt-2 grid max-h-52 gap-1 overflow-y-auto pe-1">
-        {options.map((option) => (
-          <label key={option.slug} className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm transition hover:bg-surface">
-            <input type="checkbox" name={name} value={option.slug} defaultChecked={selectedSet.has(option.slug)} className="size-4 shrink-0 accent-[var(--brand)]" />
-            <span className="min-w-0 flex-1">{option.name}</span>
-            <span className="text-xs tabular-nums text-muted">{option.count}</span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
+    <details className="group relative min-w-0 [&[open]]:col-span-2">
+      <summary className={`flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 rounded-full border px-4 text-sm font-semibold transition [&::-webkit-details-marker]:hidden ${selected.length ? "border-rust/40 bg-rust-soft text-rust-dark" : "border-border bg-paper hover:border-rust/50"}`}>
+        <span>{title}{selected.length ? ` (${selected.length})` : ""}</span>
+        <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" />
+      </summary>
+      <fieldset className="relative z-30 mt-2 w-full rounded-2xl border border-border bg-surface p-3 shadow-xl sm:absolute sm:start-0 sm:w-72">
+        <legend className="sr-only">{title}</legend>
+        <div className="grid max-h-64 gap-0.5 overflow-y-auto pe-1">
+          {options.map((option) => (
+            <label key={option.slug} className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm transition hover:bg-paper">
+              <input type="checkbox" name={name} value={option.slug} defaultChecked={selectedSet.has(option.slug)} className="size-4 shrink-0 accent-[var(--brand)]" />
+              <span className="min-w-0 flex-1">{option.name}</span>
+              <span className="text-xs tabular-nums text-muted">{option.count}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    </details>
   );
 }

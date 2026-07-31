@@ -8,6 +8,7 @@ import { z } from "zod";
 import { getDb } from "@/db";
 import { authors, bookEditions, editors, mediaAssets, retailers, siteSettings, staticPages } from "@/db/schema";
 import { writeAuditLog } from "@/lib/audit/service";
+import { slugify } from "@/lib/slug";
 import { deleteMediaObject, putMediaObject } from "@/lib/storage/media-storage";
 
 import { EditorialServiceError } from "./action-state";
@@ -27,19 +28,40 @@ const mediaFieldsSchema = z.object({
   attribution: z.string().trim().max(500).optional(),
   source: z.string().trim().max(300).optional(),
   sourceUrl: z.url("URL-ul sursei nu este valid.").optional(),
+  importKey: z.string().trim().min(2).max(160).optional(),
 });
+
+export function normalizeMediaImportKey(value: string) {
+  return slugify(value.replace(/\.[a-z0-9]{2,5}$/i, ""));
+}
+
+export async function findMediaByImportKey(value: string) {
+  const importKey = normalizeMediaImportKey(value);
+  const [asset] = await getDb()
+    .select({ id: mediaAssets.id, importKey: mediaAssets.importKey })
+    .from(mediaAssets)
+    .where(and(
+      eq(mediaAssets.importKey, importKey),
+      eq(mediaAssets.status, "active"),
+      isNull(mediaAssets.deletedAt),
+    ))
+    .limit(1);
+  return asset ?? null;
+}
 
 export async function uploadMedia(formData: FormData, actorUserId: string) {
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) throw new EditorialServiceError("Alege o imagine pentru încărcare.", { file: ["Fișierul este obligatoriu."] });
   if (file.size > MAX_IMAGE_BYTES) throw new EditorialServiceError("Imaginea depășește limita de 5 MB.", { file: ["Dimensiunea maximă este 5 MB."] });
 
+  const rawImportKey = optionalStringValue(formData, "importKey");
   const parsed = mediaFieldsSchema.safeParse({
     altText: stringValue(formData, "altText"),
     title: optionalStringValue(formData, "title"),
     attribution: optionalStringValue(formData, "attribution"),
     source: optionalStringValue(formData, "source"),
     sourceUrl: optionalStringValue(formData, "sourceUrl"),
+    importKey: rawImportKey ? normalizeMediaImportKey(rawImportKey) : undefined,
   });
   if (!parsed.success) throw new EditorialServiceError("Corectează metadatele imaginii.", zodFieldErrors(parsed.error));
 
@@ -74,6 +96,7 @@ export async function uploadMedia(formData: FormData, actorUserId: string) {
     return await db.transaction(async (transaction) => {
       const [asset] = await transaction.insert(mediaAssets).values({
         storageKey: key,
+        importKey: parsed.data.importKey ?? null,
         title: parsed.data.title ?? parsed.data.altText,
         mimeType: accepted.mime,
         byteSize: file.size,
@@ -85,7 +108,7 @@ export async function uploadMedia(formData: FormData, actorUserId: string) {
         sourceUrl: parsed.data.sourceUrl ?? null,
       }).returning({ id: mediaAssets.id });
       if (!asset) throw new Error("Metadatele media nu au putut fi salvate.");
-      await writeAuditLog({ actorUserId, action: "media.create", entityType: "media_asset", entityId: asset.id, metadata: { storageKey: key, mimeType: accepted.mime, byteSize: file.size, width: metadata.width, height: metadata.height, sha256: hash.toString("hex") } }, transaction);
+      await writeAuditLog({ actorUserId, action: "media.create", entityType: "media_asset", entityId: asset.id, metadata: { storageKey: key, importKey: parsed.data.importKey ?? null, mimeType: accepted.mime, byteSize: file.size, width: metadata.width, height: metadata.height, sha256: hash.toString("hex") } }, transaction);
       return asset.id;
     });
   } catch (error) {

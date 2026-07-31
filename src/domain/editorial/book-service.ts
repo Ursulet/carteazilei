@@ -101,6 +101,7 @@ export async function saveBook(input: BookInput, actorUserId: string, bookId?: s
 
       const bookValues = {
         title: input.title,
+        ...(input.importKey === undefined ? {} : { importKey: input.importKey }),
         slug: resolvedSlug,
         originalTitle: input.originalTitle ?? null,
         primaryAuthorId: input.authorId,
@@ -319,4 +320,15 @@ export async function assignBookCover(bookId: string, assetId: string, actorUser
       },
     }, transaction);
   });
+}
+
+export async function assignBookCoverByImportKey(importKey: string, assetId: string, actorUserId: string) {
+  const [book] = await getDb()
+    .select({ id: books.id })
+    .from(books)
+    .where(and(eq(books.importKey, importKey), isNull(books.deletedAt)))
+    .limit(1);
+  if (!book) return null;
+  await assignBookCover(book.id, assetId, actorUserId);
+  return book.id;
 }

@@ -12,6 +12,7 @@ import { optionalStringValue, slugSchema, stringValue, zodFieldErrors } from "./
 
 const authorInputSchema = z.object({
   name: z.string().trim().min(2, "Numele este obligatoriu.").max(200),
+  importKey: z.string().trim().min(2).max(160).optional(),
   slug: slugSchema,
   bio: z.string().trim().max(10_000).optional(),
   portraitAssetId: z.uuid().optional(),
@@ -25,6 +26,7 @@ export type AuthorInput = z.infer<typeof authorInputSchema>;
 export function parseAuthorFormData(formData: FormData) {
   const parsed = authorInputSchema.safeParse({
     name: stringValue(formData, "name"),
+    importKey: undefined,
     slug: stringValue(formData, "slug"),
     bio: optionalStringValue(formData, "bio"),
     portraitAssetId: optionalStringValue(formData, "portraitAssetId"),
@@ -40,6 +42,7 @@ export async function getAdminAuthors() {
   return getDb().select({
     id: authors.id,
     name: authors.name,
+    importKey: authors.importKey,
     slug: authors.slug,
     status: authors.status,
     updatedAt: authors.updatedAt,
@@ -88,6 +91,7 @@ export async function saveAuthor(input: AuthorInput, actorUserId: string, author
       const now = new Date();
       const values = {
         name: input.name,
+        ...(input.importKey === undefined ? {} : { importKey: input.importKey }),
         slug: input.slug,
         bio: input.bio ?? null,
         portraitAssetId: input.portraitAssetId ?? null,
@@ -126,6 +130,42 @@ export async function saveAuthor(input: AuthorInput, actorUserId: string, author
     if (error instanceof EditorialServiceError) throw error;
     if (typeof error === "object" && error !== null && "code" in error && error.code === "23505") {
       throw new EditorialServiceError("Slugul este deja folosit.");
+    }
+    throw error;
+  }
+}
+
+export async function assignAuthorImportKey(authorId: string, importKey: string, actorUserId: string) {
+  const db = getDb();
+  try {
+    await db.transaction(async (transaction) => {
+      const [author] = await transaction
+        .select({ id: authors.id, name: authors.name, importKey: authors.importKey })
+        .from(authors)
+        .where(and(eq(authors.id, authorId), isNull(authors.deletedAt)))
+        .limit(1);
+      if (!author) throw new EditorialServiceError("Autorul nu mai există.");
+      if (author.importKey && author.importKey !== importKey) {
+        throw new EditorialServiceError("Autorul are deja un alt identificator de import.");
+      }
+      if (author.importKey === importKey) return;
+
+      await transaction
+        .update(authors)
+        .set({ importKey, updatedAt: new Date() })
+        .where(eq(authors.id, authorId));
+      await writeAuditLog({
+        actorUserId,
+        action: "author.import_key.assign",
+        entityType: "author",
+        entityId: authorId,
+        diff: { name: author.name, importKey },
+      }, transaction);
+    });
+  } catch (error) {
+    if (error instanceof EditorialServiceError) throw error;
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "23505") {
+      throw new EditorialServiceError("Identificatorul de import este deja folosit de alt autor.");
     }
     throw error;
   }

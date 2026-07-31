@@ -11,6 +11,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -36,6 +37,7 @@ export const authors = pgTable(
   {
     id: uuidPrimaryKey(),
     name: text("name").notNull(),
+    importKey: text("import_key"),
     slug: text("slug").notNull().unique(),
     bio: text("bio"),
     portraitAssetId: uuid("portrait_asset_id").references(() => mediaAssets.id, {
@@ -53,6 +55,9 @@ export const authors = pgTable(
       "authors_status_valid",
       sql`${table.status} in ('draft', 'needs_review', 'published', 'archived')`,
     ),
+    uniqueIndex("authors_import_key_unique")
+      .on(table.importKey)
+      .where(sql`${table.importKey} is not null and ${table.deletedAt} is null`),
     index("authors_status_idx").on(table.status),
     index("authors_name_trgm_idx").using("gin", table.name.op("gin_trgm_ops")),
   ],
@@ -63,6 +68,7 @@ export const books = pgTable(
   {
     id: uuidPrimaryKey(),
     title: text("title").notNull(),
+    importKey: text("import_key"),
     subtitle: text("subtitle"),
     slug: text("slug").notNull().unique(),
     originalTitle: text("original_title"),
@@ -92,6 +98,9 @@ export const books = pgTable(
       sql`${table.editorialConfidence} between 0 and 100`,
     ),
     index("books_primary_author_id_idx").on(table.primaryAuthorId),
+    uniqueIndex("books_import_key_unique")
+      .on(table.importKey)
+      .where(sql`${table.importKey} is not null and ${table.deletedAt} is null`),
     index("books_status_idx").on(table.status),
     index("books_title_trgm_idx").using("gin", table.title.op("gin_trgm_ops")),
     index("books_search_text_trgm_idx").using(

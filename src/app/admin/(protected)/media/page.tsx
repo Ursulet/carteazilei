@@ -24,7 +24,7 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
         description="Încarcă și reutilizează coperți, portrete și logo-uri. Fișierele sunt păstrate în storage-ul configurat, iar descrierile lor rămân în catalog."
       />
       <MediaUploadForm action={uploadMediaAction} />
-      <form className="mb-6 flex flex-wrap gap-3 rounded-2xl border border-border bg-surface p-4"><input name="q" type="search" defaultValue={filters.q ?? ""} placeholder="Caută titlu sau text alternativ…" className="min-w-64 flex-1 rounded-xl border border-border bg-paper px-4 py-2.5 text-sm" /><select name="status" defaultValue={filters.status ?? ""} className="rounded-xl border border-border bg-paper px-3 py-2.5 text-sm"><option value="">Toate</option><option value="active">Active</option><option value="archived">Arhivate</option></select><button className="rounded-full bg-brand px-5 text-sm font-semibold text-white">Filtrează</button></form>
+      <form className="mb-6 flex flex-wrap gap-3 rounded-2xl border border-border bg-surface p-4"><input name="q" type="search" defaultValue={filters.q ?? ""} placeholder="Caută titlu, descriere sau identificator…" className="min-w-64 flex-1 rounded-xl border border-border bg-paper px-4 py-2.5 text-sm" /><select name="status" defaultValue={filters.status ?? ""} className="rounded-xl border border-border bg-paper px-3 py-2.5 text-sm"><option value="">Toate</option><option value="active">Active</option><option value="archived">Arhivate</option></select><button className="rounded-full bg-brand px-5 text-sm font-semibold text-white">Filtrează</button></form>
       {rows.length === 0 ? (
         <EmptyState>Nu ai încă imagini. Încarcă prima copertă folosind formularul de mai sus.</EmptyState>
       ) : (
@@ -44,6 +44,7 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
               <div className="p-5">
                 <h2 className="font-bold leading-6">{asset.title || asset.altText}</h2>
                 <p className="mt-1 line-clamp-2 text-xs text-muted">{asset.altText}</p>
+                {asset.importKey ? <p className="mt-2 text-xs text-muted">Identificator import: <code className="font-semibold text-foreground">{asset.importKey}</code></p> : null}
                 <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted">
                   <div><dt className="font-bold text-foreground">Format</dt><dd>{asset.mimeType}</dd></div>
                   <div><dt className="font-bold text-foreground">Dimensiuni</dt><dd>{asset.width}×{asset.height}px</dd></div>

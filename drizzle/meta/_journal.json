@@ -120,6 +120,27 @@
       "when": 1785399974236,
       "tag": "0016_soft_venom",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1785444442990,
+      "tag": "0017_fresh_ted_forrester",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785444990156,
+      "tag": "0018_tough_zarda",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785445610844,
+      "tag": "0019_dapper_iron_man",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, integer, pgTable, text } from "drizzle-orm/pg-core";
+import { check, index, integer, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { softDelete, timestamps, uuidPrimaryKey } from "./common";
 
@@ -8,6 +8,7 @@ export const mediaAssets = pgTable(
   {
     id: uuidPrimaryKey(),
     storageKey: text("storage_key").notNull().unique(),
+    importKey: text("import_key"),
     title: text("title"),
     status: text("status").default("active").notNull(),
     mimeType: text("mime_type").notNull(),
@@ -37,5 +38,8 @@ export const mediaAssets = pgTable(
       sql`(${table.width} is null and ${table.height} is null) or (${table.width} is not null and ${table.height} is not null)`,
     ),
     index("media_assets_mime_type_idx").on(table.mimeType),
+    uniqueIndex("media_assets_import_key_unique")
+      .on(table.importKey)
+      .where(sql`${table.importKey} is not null and ${table.deletedAt} is null`),
   ],
 );

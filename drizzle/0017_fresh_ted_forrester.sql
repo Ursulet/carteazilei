@@ -1,0 +1,2 @@
+ALTER TABLE "media_assets" ADD COLUMN "import_key" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "media_assets_import_key_unique" ON "media_assets" USING btree ("import_key") WHERE "media_assets"."import_key" is not null and "media_assets"."deleted_at" is null;

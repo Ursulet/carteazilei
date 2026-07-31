@@ -22,6 +22,7 @@ const bookStatusSchema = z.enum([
 
 const bookInputSchema = z.object({
   title: z.string().trim().min(1, "Titlul este obligatoriu.").max(300),
+  importKey: z.string().trim().min(2).max(160).optional(),
   originalTitle: z.string().trim().max(300).optional(),
   slug: slugSchema,
   authorId: z.uuid("Alege un autor."),
@@ -80,6 +81,7 @@ export function parseBookFormData(formData: FormData): BookInput {
 
   const parsed = bookInputSchema.safeParse({
     title,
+    importKey: undefined,
     originalTitle: optionalStringValue(formData, "originalTitle"),
     slug: optionalStringValue(formData, "slug") ?? slugify(title),
     authorId: stringValue(formData, "authorId"),

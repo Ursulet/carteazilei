@@ -1,0 +1,2 @@
+ALTER TABLE "authors" ADD COLUMN "import_key" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "authors_import_key_unique" ON "authors" USING btree ("import_key") WHERE "authors"."import_key" is not null and "authors"."deleted_at" is null;

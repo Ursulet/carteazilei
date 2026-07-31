@@ -8,7 +8,7 @@ import { mediaAssets } from "@/db/schema";
 export async function getAdminMedia(filters: { q?: string; status?: string } = {}) {
   const conditions = [isNull(mediaAssets.deletedAt)];
   if (filters.status) conditions.push(eq(mediaAssets.status, filters.status));
-  if (filters.q) conditions.push(or(ilike(mediaAssets.title, `%${filters.q}%`), ilike(mediaAssets.altText, `%${filters.q}%`))!);
+  if (filters.q) conditions.push(or(ilike(mediaAssets.title, `%${filters.q}%`), ilike(mediaAssets.altText, `%${filters.q}%`), ilike(mediaAssets.importKey, `%${filters.q}%`))!);
   return getDb()
     .select()
     .from(mediaAssets)

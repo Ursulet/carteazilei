@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ConfirmDeleteForm } from "@/components/admin/confirm-delete-form";
 import { AdminPageHeader, EmptyState, StatusBadge } from "@/components/admin/editorial-ui";
 import { getAdminBooks } from "@/db/queries/admin-editorial";
+import { hasPermission } from "@/lib/auth/permissions";
 import { requireSectionAccess } from "@/lib/auth/principal";
 
 import { deleteBookAction } from "./actions";
@@ -11,11 +12,13 @@ import { deleteBookAction } from "./actions";
 export const metadata: Metadata = { title: "Cărți" };
 
 export default async function BooksPage() {
-  await requireSectionAccess("books");
+  const principal = await requireSectionAccess("books");
+  const canCreate = hasPermission(principal.permissions, "books.create", principal.isSuperAdmin);
   const rows = await getAdminBooks();
   return (
     <>
-      <AdminPageHeader eyebrow="Catalog" title="Cărți" description="Opera editorială, edițiile și completitudinea necesară publicării." action={{ href: "/admin/books/new", label: "Carte nouă" }} />
+      <AdminPageHeader eyebrow="Catalog" title="Cărți" description="Opera editorială, edițiile și completitudinea necesară publicării." action={canCreate ? { href: "/admin/books/new", label: "Carte nouă" } : undefined} />
+      {canCreate ? <div className="mb-6 flex justify-end"><Link href="/admin/books/import" className="inline-flex min-h-11 items-center rounded-full border border-brand px-5 text-sm font-bold text-brand hover:bg-accent-soft">Importă din fișier</Link></div> : null}
       {rows.length === 0 ? <EmptyState>Nu există încă nicio carte. Creează autorul, apoi prima înregistrare editorială.</EmptyState> : (
         <div className="overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
           <table className="w-full min-w-[900px] text-left text-sm">

@@ -35,7 +35,7 @@ export default async function PublicLayout({ children }: Readonly<{ children: Re
         <main id="continut-principal" className="flex-1">
           {children}
         </main>
-        <SiteFooter siteName={settings.siteName} siteTagline={settings.siteTagline} logoAssetId={settings.darkLogoAssetId ?? settings.logoAssetId} navigation={footerLinks} social={social} copyrightText={settings.copyrightText} />
+        <SiteFooter siteName={settings.siteName} siteTagline={settings.siteTagline} logoAssetId={settings.darkLogoAssetId ?? settings.logoAssetId} navigation={footerLinks} social={social} copyrightText={settings.copyrightText} contactEmail={settings.contactEmail} contactPhone={settings.contactPhone} />
         {settings.featureWhatsApp && settings.whatsappNumber ? <WhatsAppButton config={{ number: settings.whatsappNumber, message: settings.whatsappMessage, label: settings.whatsappLabel, position: settings.whatsappPosition, showDesktop: settings.whatsappShowDesktop, showMobile: settings.whatsappShowMobile, includedPaths: settings.whatsappIncludedPaths ?? [], excludedPaths: settings.whatsappExcludedPaths ?? [], color: settings.whatsappColor, tracking: settings.whatsappTrackingEnabled, scheduleText: typeof settings.whatsappSchedule?.display === "string" ? settings.whatsappSchedule.display : null, onlineMessage: settings.whatsappOnlineMessage, offlineMessage: settings.whatsappOfflineMessage }} /> : null}
       </div>
     </CookieConsentProvider>

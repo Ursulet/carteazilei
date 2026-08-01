@@ -4,11 +4,13 @@ import Link from "next/link";
 
 export function Wordmark({
   onDark = false,
+  compact = false,
   onClick,
   siteName = "Cartea Zilei",
   logoAssetId,
 }: {
   onDark?: boolean;
+  compact?: boolean;
   onClick?: () => void;
   siteName?: string;
   logoAssetId?: string | null;
@@ -28,7 +30,7 @@ export function Wordmark({
   return (
     <Link
       href="/"
-      className={`inline-flex items-center gap-2 font-display text-2xl font-semibold tracking-[-0.025em] sm:text-[1.7rem] ${onDark ? "text-white" : "text-foreground"}`}
+      className={`inline-flex items-center font-display font-semibold tracking-[-0.025em] ${compact ? "gap-1.5 text-xl" : "gap-2 text-2xl sm:text-[1.7rem]"} ${onDark ? "text-white" : "text-foreground"}`}
       aria-label={`${siteName} — pagina principală`}
       onClick={onClick}
     >
@@ -38,12 +40,12 @@ export function Wordmark({
           alt={siteName}
           width={190}
           height={52}
-          className="h-10 w-auto max-w-[12rem] object-contain"
+          className={`${compact ? "h-8 max-w-[9rem]" : "h-10 max-w-[12rem]"} w-auto object-contain`}
           priority
         />
       ) : (
         <>
-          <BookOpen aria-hidden="true" className={`size-7 shrink-0 stroke-[1.7] ${onDark ? "text-[#e0a36f]" : "text-rust"}`} />
+          <BookOpen aria-hidden="true" className={`${compact ? "size-6" : "size-7"} shrink-0 stroke-[1.7] ${onDark ? "text-[#e0a36f]" : "text-rust"}`} />
           <span>{base}{accent ? <span className={onDark ? "text-[#e0a36f]" : "text-rust"}>{accent}</span> : null}</span>
         </>
       )}

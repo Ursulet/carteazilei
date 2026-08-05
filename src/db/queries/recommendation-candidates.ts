@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db";
 import {
@@ -120,7 +120,7 @@ export async function getRecommendationCandidates(
         .where(
           and(
             inArray(bookGenres.bookId, ids),
-            eq(genres.status, "published"),
+            ne(genres.status, "archived"),
             isNull(genres.deletedAt),
           ),
         ),
@@ -136,7 +136,7 @@ export async function getRecommendationCandidates(
         .where(
           and(
             inArray(bookMoods.bookId, ids),
-            eq(moods.status, "published"),
+            ne(moods.status, "archived"),
             isNull(moods.deletedAt),
           ),
         ),
@@ -147,7 +147,7 @@ export async function getRecommendationCandidates(
         .where(
           and(
             inArray(bookThemes.bookId, ids),
-            eq(themes.status, "published"),
+            ne(themes.status, "archived"),
             isNull(themes.deletedAt),
           ),
         ),
@@ -175,7 +175,7 @@ export async function getRecommendationCandidates(
         .where(
           and(
             inArray(bookAudiences.bookId, ids),
-            eq(audiences.status, "published"),
+            ne(audiences.status, "archived"),
             isNull(audiences.deletedAt),
           ),
         ),

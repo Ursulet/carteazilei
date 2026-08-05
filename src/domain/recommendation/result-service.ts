@@ -20,7 +20,7 @@ import { getServerEnv } from "@/lib/env/server";
 
 import { recommendationEngineInputForBranch } from "./branch-adapter";
 import type { RecommendationExplanationSnapshot } from "./engine-types";
-import { RECOMMENDATION_ALGORITHM_VERSION, runRecommendationEngineV1 } from "./engine-v1";
+import { RECOMMENDATION_ALGORITHM_VERSION, runRecommendationEngineV2 } from "./engine-v2";
 import { getRecommendationConfiguration } from "./configuration-service";
 import {
   parseCompleteRecommendationAnswers,
@@ -121,7 +121,7 @@ export async function generateRecommendationResults(
     getRecommendationCandidates(session.branch === "self" ? answers.likedBookId : null, db),
     getRecommendationConfiguration(db),
   ]);
-  const engineResults = runRecommendationEngineV1(
+  const engineResults = runRecommendationEngineV2(
     recommendationEngineInputForBranch(session.branch, answers, candidates),
     configuration,
   );

@@ -1,5 +1,8 @@
 # Motorul de recomandare `recommendation-v1`
 
+> Document istoric pentru snapshoturile V1. Implementarea curenta este descrisa
+> in `docs/RECOMMENDATION_ENGINE_V2.md`.
+
 ## Contractul produsului
 
 Motorul transformă profilul anonim „Pentru mine” într-un snapshot cu maximum trei cărți. Selecția este deterministă, explicabilă și folosește exclusiv catalogul editorial publicat. Nu apelează un LLM și nu folosește popularitate, clickuri, prețuri, afiliere, comisioane, sponsorizări sau disponibilitate comercială.

@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHmac, randomBytes } from "node:crypto";
 
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, ne } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db";
 import {
@@ -224,7 +224,7 @@ async function assertStepReferences(payload: RecommendationStepPayload, db: Data
         const [row] = await db
           .select({ id: genres.id })
           .from(genres)
-          .where(and(eq(genres.id, id), eq(genres.status, "published"), isNull(genres.deletedAt)))
+          .where(and(eq(genres.id, id), ne(genres.status, "archived"), isNull(genres.deletedAt)))
           .limit(1);
         return row;
       }),

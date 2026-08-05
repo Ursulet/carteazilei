@@ -16,8 +16,9 @@ import {
   defaultRecommendationConfiguration,
   type RecommendationConfiguration,
 } from "./configuration-model";
+import { recommendationNeedTaxonomySignals } from "./taxonomy-signals";
 
-export const RECOMMENDATION_ALGORITHM_VERSION = "recommendation-v1";
+export const RECOMMENDATION_ALGORITHM_VERSION = "recommendation-v2";
 
 /** Limitează o valoare numerică la intervalul inclusiv dat. */
 function clamp(value: number, minimum = 0, maximum = 1) {
@@ -51,8 +52,41 @@ function moodFit(candidate: RecommendationCandidate, slug: string) {
   return mood ? clamp(mood.strength / 100) : null;
 }
 
+/** Foloseste cel mai puternic mood compatibil cu nevoia curenta. */
+function moodSignalFit(candidate: RecommendationCandidate, slugs: readonly string[]) {
+  const strengths = candidate.moods
+    .filter((mood) => slugs.includes(mood.slug))
+    .map((mood) => clamp(mood.strength / 100));
+  return strengths.length ? Math.max(...strengths) : null;
+}
+
+/** Acorda un semnal suplimentar genurilor compatibile semantic cu nevoia. */
+function genreSignalFit(candidate: RecommendationCandidate, slugs: readonly string[]) {
+  const matches = candidate.genres.filter((genre) => slugs.includes(genre.slug));
+  if (!matches.length) return null;
+  const primary = matches.some((genre) => genre.isPrimary);
+  return clamp((primary ? 0.9 : 0.78) + Math.min(matches.length - 1, 2) * 0.04);
+}
+
+/** Leaga temele editoriale de intentia cititorului fara a inventa sensuri noi. */
+function themeSignalFit(candidate: RecommendationCandidate, slugs: readonly string[]) {
+  const matches = candidate.themes.filter((theme) => slugs.includes(theme.slug));
+  return matches.length ? clamp(0.72 + Math.min(matches.length - 1, 2) * 0.08) : null;
+}
+
+/**
+ * O tema noua, necunoscuta hartii semantice, poate indica totusi profunzime
+ * tematica. Influenta este deliberat mai mica decat a unei potriviri explicite.
+ */
+function thematicBreadthFit(candidate: RecommendationCandidate) {
+  return candidate.themes.length
+    ? clamp(0.35 + Math.min(candidate.themes.length, 4) * 0.1)
+    : null;
+}
+
 /** Combină semnalele de stare și trait pentru nevoia principală a cititorului. */
 function primaryNeedFit(candidate: RecommendationCandidate, need: ReadingNeed) {
+  const signals = recommendationNeedTaxonomySignals[need];
   const average = (values: Array<number | null>, fallback = 0) => {
     const available = values.filter((value): value is number => value !== null);
     return available.length
@@ -62,42 +96,50 @@ function primaryNeedFit(candidate: RecommendationCandidate, need: ReadingNeed) {
 
   switch (need) {
     case "captivating":
-      return average([moodFit(candidate, "captivant"), traitFit(candidate, "pace")]);
+      return average([
+        moodSignalFit(candidate, signals.moods),
+        traitFit(candidate, "pace"),
+        genreSignalFit(candidate, signals.genres),
+      ]);
     case "relaxing": {
-      const calm = moodFit(candidate, "relaxant");
       const violence = traitFit(candidate, "violence");
       const emotional = traitFit(candidate, "emotional_intensity");
       return average([
-        calm,
+        moodSignalFit(candidate, signals.moods),
         violence === null ? null : 1 - violence,
         emotional === null ? null : 1 - emotional * 0.65,
+        genreSignalFit(candidate, signals.genres),
       ]);
     }
     case "thought_provoking":
       return average([
-        moodFit(candidate, "provocator"),
+        moodSignalFit(candidate, signals.moods),
         traitFit(candidate, "philosophical_depth"),
         traitFit(candidate, "complexity"),
+        genreSignalFit(candidate, signals.genres),
+        themeSignalFit(candidate, signals.themes) ?? thematicBreadthFit(candidate),
       ]);
     case "learning":
       return average([
         traitFit(candidate, "practical_density"),
-        candidate.genres.some((genre) =>
-          ["istorie", "business", "psihologie", "dezvoltare-personala", "parenting", "memorii"].includes(genre.slug),
-        )
-          ? 0.85
-          : null,
+        genreSignalFit(candidate, signals.genres),
+        moodSignalFit(candidate, signals.moods),
+        themeSignalFit(candidate, signals.themes),
       ]);
     case "emotional":
       return average([
-        moodFit(candidate, "emotionant"),
+        moodSignalFit(candidate, signals.moods),
         traitFit(candidate, "emotional_intensity"),
+        genreSignalFit(candidate, signals.genres),
+        themeSignalFit(candidate, signals.themes),
       ]);
     case "out_of_routine":
       return average([
-        moodFit(candidate, "provocator"),
+        moodSignalFit(candidate, signals.moods),
         traitFit(candidate, "world_building"),
         traitFit(candidate, "complexity"),
+        genreSignalFit(candidate, signals.genres),
+        themeSignalFit(candidate, signals.themes) ?? thematicBreadthFit(candidate),
       ]);
   }
 }
@@ -416,7 +458,7 @@ function selectDiverseTopThree(candidates: ScoredRecommendationCandidate[], mini
 }
 
 /** Rulează motorul V1, normalizează semnalele absente și construiește snapshoturile. */
-export function runRecommendationEngineV1(
+export function runRecommendationEngineV2(
   input: RecommendationEngineInput,
   configuration: RecommendationConfiguration = defaultRecommendationConfiguration,
 ): RecommendationEngineResult[] {

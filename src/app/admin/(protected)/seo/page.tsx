@@ -3,13 +3,83 @@ import Link from "next/link";
 
 import { AdminPageHeader } from "@/components/admin/editorial-ui";
 import { getAdminEditorialLists, getAdminTaxonomies } from "@/db/queries/admin-seo-hubs";
+import { getSearchIndexingOverview } from "@/domain/editorial/search-indexing-service";
+import { canMutateSection } from "@/lib/auth/access";
 import { requireSectionAccess } from "@/lib/auth/principal";
 
-export const metadata: Metadata = { title: "SEO" };
+import { includePublishedContentInSearchAction } from "./actions";
+
+export const metadata: Metadata = { title: "SEO și indexare" };
+
+function ProgressCard({ label, indexed, eligible }: { label: string; indexed: number; eligible: number }) {
+  const complete = eligible === 0 || indexed === eligible;
+  return (
+    <article className="rounded-2xl border border-border bg-surface p-5">
+      <p className="text-xs font-bold uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-2 text-3xl font-bold">{indexed} / {eligible}</p>
+      <p className="mt-2 text-sm text-muted">
+        {eligible === 0 ? "Nu există încă pagini publice eligibile." : complete ? "Incluse în sitemap." : `${eligible - indexed} pagini nu sunt încă în sitemap.`}
+      </p>
+    </article>
+  );
+}
+
 export default async function Page() {
-  await requireSectionAccess("seo");
-  const [lists, taxonomies] = await Promise.all([getAdminEditorialLists(), getAdminTaxonomies()]);
-  const requested = [...lists, ...taxonomies].filter((item) => item.indexable).length;
-  const noindex = lists.length + taxonomies.length - requested;
-  return <><AdminPageHeader eyebrow="Vizibilitate organică" title="Quality gate SEO" description="Indexarea este o consecință a calității editoriale, nu un simplu status. Sitemap-ul recalculează eligibilitatea din conținutul public." /><section className="grid gap-4 md:grid-cols-3"><article className="rounded-2xl border border-border bg-surface p-5"><p className="text-xs font-bold uppercase tracking-wide text-muted">Hub-uri administrate</p><p className="mt-2 text-3xl font-bold">{lists.length + taxonomies.length}</p></article><article className="rounded-2xl border border-border bg-surface p-5"><p className="text-xs font-bold uppercase tracking-wide text-muted">Indexare solicitată</p><p className="mt-2 text-3xl font-bold">{requested}</p></article><article className="rounded-2xl border border-border bg-surface p-5"><p className="text-xs font-bold uppercase tracking-wide text-muted">Noindex editorial</p><p className="mt-2 text-3xl font-bold">{noindex}</p></article></section><section className="mt-8 rounded-2xl border border-border bg-surface p-6"><h2 className="font-display text-2xl font-semibold">Criterii obligatorii</h2><ul className="mt-5 grid gap-3 text-sm sm:grid-cols-2"><li className="rounded-xl bg-paper p-4">Minimum cinci cărți publice și eligibile</li><li className="rounded-xl bg-paper p-4">Motiv editorial pentru fiecare selecție</li><li className="rounded-xl bg-paper p-4">Introducere și metodologie</li><li className="rounded-xl bg-paper p-4">Editor atribuit</li><li className="rounded-xl bg-paper p-4">Titlu și descriere SEO unice</li><li className="rounded-xl bg-paper p-4">Status public și canonical propriu</li></ul><div className="mt-6 flex flex-wrap gap-3"><Link href="/admin/taxonomies" className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">Revizuiește taxonomiile</Link><Link href="/admin/lists" className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">Revizuiește listele</Link></div></section></>;
+  const principal = await requireSectionAccess("seo");
+  const canManageSeo = canMutateSection(principal.permissions, "seo", principal.isSuperAdmin);
+  const [lists, taxonomies, overview] = await Promise.all([
+    getAdminEditorialLists(),
+    getAdminTaxonomies(),
+    getSearchIndexingOverview(),
+  ]);
+  const indexedHubs = [...lists, ...taxonomies].filter((item) => item.indexable).length;
+  const totalHubs = lists.length + taxonomies.length;
+
+  return (
+    <>
+      <AdminPageHeader
+        eyebrow="Vizibilitate în căutări"
+        title="SEO și indexare"
+        description="Controlează ce pagini publice intră în sitemap și pot fi descoperite de Google, Bing și alte motoare de căutare."
+      />
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <ProgressCard label="Cărți publice" indexed={overview.books.indexed} eligible={overview.books.eligible} />
+        <ProgressCard label="Autori publici" indexed={overview.authors.indexed} eligible={overview.authors.eligible} />
+        <ProgressCard label="Liste și categorii" indexed={indexedHubs} eligible={totalHubs} />
+      </section>
+
+      <section className="mt-8 rounded-2xl border border-border bg-surface p-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div>
+            <h2 className="font-display text-2xl font-semibold">Actualizează sitemap-ul</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
+              Acțiunea include cărțile publicate care au fișa completă și autor public, apoi include profilurile autorilor care au cel puțin o astfel de carte. Ciornele și paginile incomplete rămân excluse.
+            </p>
+          </div>
+          {canManageSeo ? (
+            <form action={includePublishedContentInSearchAction}>
+              <button className="min-h-11 rounded-full bg-brand px-5 text-sm font-bold text-white hover:opacity-90">
+                Include conținutul public
+              </button>
+            </form>
+          ) : null}
+        </div>
+        <div className="mt-6 flex flex-wrap gap-3 border-t border-border pt-5">
+          <Link href="/sitemap.xml" target="_blank" className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">Deschide sitemap.xml</Link>
+          <Link href="/robots.txt" target="_blank" className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">Deschide robots.txt</Link>
+          <Link href="/admin/settings" className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">Setări verificare Google/Bing</Link>
+        </div>
+      </section>
+
+      <section className="mt-8 rounded-2xl border border-border bg-surface p-6">
+        <h2 className="font-display text-2xl font-semibold">Liste și pagini de categorie</h2>
+        <p className="mt-2 text-sm leading-6 text-muted">Aceste pagini intră în sitemap numai când au conținut suficient, descriere proprie și sunt marcate pentru indexare.</p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link href="/admin/taxonomies" className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">Administrează categoriile</Link>
+          <Link href="/admin/lists" className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-bold hover:border-brand">Administrează listele</Link>
+        </div>
+      </section>
+    </>
+  );
 }

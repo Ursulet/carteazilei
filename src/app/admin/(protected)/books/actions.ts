@@ -66,6 +66,7 @@ export async function bulkUpdateBookStatusAction(formData: FormData) {
   revalidatePath("/admin/books");
   revalidatePath("/");
   revalidatePath("/carti");
+  revalidatePath("/sitemap.xml");
   redirect(withAdminNotice("/admin/books", notice));
 }
 

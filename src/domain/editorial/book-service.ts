@@ -355,6 +355,26 @@ export async function bulkUpdateBookStatus(
         .where(inArray(editorialReviews.id, changedReviewIds));
     }
 
+    if (targetStatus === "published") {
+      await transaction
+        .insert(seoMetadata)
+        .values(changedBookIds.map((entityId) => ({
+          entityType: "book" as const,
+          entityId,
+          indexable: true,
+          lastReviewedAt: now,
+        })))
+        .onConflictDoUpdate({
+          target: [seoMetadata.entityType, seoMetadata.entityId],
+          set: { indexable: true, lastReviewedAt: now, updatedAt: now },
+        });
+    } else {
+      await transaction
+        .update(seoMetadata)
+        .set({ indexable: false, updatedAt: now })
+        .where(and(eq(seoMetadata.entityType, "book"), inArray(seoMetadata.entityId, changedBookIds)));
+    }
+
     await writeAuditLog({
       actorUserId,
       action: targetStatus === "published" ? "book.bulk_publish" : "book.bulk_unpublish",

@@ -54,5 +54,6 @@ export async function bulkUpdateAuthorStatusAction(formData: FormData) {
   revalidatePath("/autori");
   revalidatePath("/carti");
   revalidatePath("/");
+  revalidatePath("/sitemap.xml");
   redirect(withAdminNotice("/admin/authors", notice));
 }

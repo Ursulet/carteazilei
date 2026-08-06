@@ -4,7 +4,7 @@ import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb } from "@/db";
-import { authors, books, mediaAssets } from "@/db/schema";
+import { authors, books, mediaAssets, seoMetadata } from "@/db/schema";
 import { writeAuditLog } from "@/lib/audit/service";
 
 import { EditorialServiceError } from "./action-state";
@@ -104,6 +104,23 @@ export async function saveAuthor(input: AuthorInput, actorUserId: string, author
         ? await transaction.update(authors).set(values).where(eq(authors.id, authorId)).returning({ id: authors.id })
         : await transaction.insert(authors).values(values).returning({ id: authors.id });
       if (!saved) throw new EditorialServiceError("Autorul nu a putut fi salvat.");
+
+      await transaction
+        .insert(seoMetadata)
+        .values({
+          entityType: "author",
+          entityId: saved.id,
+          indexable: input.status === "published",
+          lastReviewedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: [seoMetadata.entityType, seoMetadata.entityId],
+          set: {
+            indexable: input.status === "published",
+            lastReviewedAt: now,
+            updatedAt: now,
+          },
+        });
 
       const action = !existing
         ? "author.create"
@@ -219,6 +236,28 @@ export async function bulkUpdateAuthorStatus(
           .where(and(inArray(authors.id, changedIds), isNull(authors.deletedAt)))
           .returning({ id: authors.id })
       : [];
+
+    if (changedIds.length) {
+      if (targetStatus === "published") {
+        await transaction
+          .insert(seoMetadata)
+          .values(changedIds.map((entityId) => ({
+            entityType: "author" as const,
+            entityId,
+            indexable: true,
+            lastReviewedAt: now,
+          })))
+          .onConflictDoUpdate({
+            target: [seoMetadata.entityType, seoMetadata.entityId],
+            set: { indexable: true, lastReviewedAt: now, updatedAt: now },
+          });
+      } else {
+        await transaction
+          .update(seoMetadata)
+          .set({ indexable: false, updatedAt: now })
+          .where(and(eq(seoMetadata.entityType, "author"), inArray(seoMetadata.entityId, changedIds)));
+      }
+    }
 
     await writeAuditLog({
       actorUserId,

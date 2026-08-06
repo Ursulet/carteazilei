@@ -3,10 +3,11 @@ import Link from "next/link";
 
 import type { PublicBookCard } from "@/db/queries/public-book-pages";
 import { JsonLd } from "@/lib/seo/json-ld";
-import { breadcrumbJsonLd, itemListJsonLd } from "@/lib/seo/schema";
+import { itemListJsonLd } from "@/lib/seo/schema";
 
-import { Breadcrumbs, type BreadcrumbItem } from "./breadcrumbs";
+import type { BreadcrumbItem } from "./breadcrumbs";
 import { PublicBookCard as BookCard } from "./public-book-card";
+import { PublicPageHeader } from "./public-page-header";
 import { RelatedHubNavigation, type RelatedHubLink } from "./related-hub-navigation";
 
 type HubBook = PublicBookCard & { reason: string };
@@ -25,8 +26,8 @@ export function SeoHubPage({
 }: {
   eyebrow: string;
   title: string;
-  intro: string;
-  methodology: string;
+  intro: string | null;
+  methodology: string | null;
   editor: { name: string; slug: string; publicProfile: boolean };
   updatedAt: Date;
   books: HubBook[];
@@ -35,10 +36,6 @@ export function SeoHubPage({
   canonicalPath: string;
 }) {
   const formattedDate = new Intl.DateTimeFormat("ro-RO", { dateStyle: "long" }).format(updatedAt);
-  const structuredBreadcrumbs = breadcrumbJsonLd(breadcrumbs.map((item, index) => ({
-    name: item.label,
-    path: item.href ?? (index === breadcrumbs.length - 1 ? canonicalPath : "/"),
-  })));
   const structuredList = itemListJsonLd({
     name: title,
     path: canonicalPath,
@@ -46,38 +43,34 @@ export function SeoHubPage({
   });
   return (
     <div>
-      <JsonLd data={structuredBreadcrumbs} />
       <JsonLd data={structuredList} />
-      <header className="border-b border-border bg-surface py-12 md:py-20">
-        <div className="mx-auto w-full max-w-5xl px-5 sm:px-6 lg:px-8">
-          <Breadcrumbs items={breadcrumbs} />
-          <p className="mt-10 text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">{eyebrow}</p>
-          <h1 className="mt-4 max-w-4xl font-display text-5xl font-semibold tracking-[-0.03em] text-balance sm:text-6xl">{title}</h1>
-          <p className="mt-7 max-w-3xl whitespace-pre-line text-lg leading-8 text-muted">{intro}</p>
-          <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
-            <span className="inline-flex items-center"><CalendarDays aria-hidden="true" className="me-2 size-4" />Actualizat {formattedDate}</span>
-            <span>Selecție de <strong className="text-foreground">{editor.name}</strong></span>
-          </div>
+      <PublicPageHeader
+        eyebrow={eyebrow}
+        title={title}
+        description={intro}
+        currentLabel={title}
+        currentPath={canonicalPath}
+        breadcrumbs={breadcrumbs}
+        meta={<>
+          <span className="inline-flex items-center"><CalendarDays aria-hidden="true" className="me-2 size-4" />Actualizat {formattedDate}</span>
+          <span>Selecție de {editor.publicProfile ? <Link href={`/editor/${editor.slug}`} className="font-semibold text-foreground underline decoration-border underline-offset-4 hover:decoration-brand">{editor.name}</Link> : <strong className="text-foreground">{editor.name}</strong>}</span>
+        </>}
+      />
+
+      <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-10 sm:px-6 md:py-14 lg:px-8">
+        <div className="grid gap-6">
+          {methodology ? <section className="grid gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6 lg:grid-cols-[15rem_minmax(0,1fr)_auto] lg:items-start" aria-labelledby="hub-methodology-title">
+            <h2 id="hub-methodology-title" className="flex items-center gap-3 font-display text-2xl font-semibold leading-tight"><span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-brand"><ShieldCheck aria-hidden="true" className="size-5" /></span>Cum am făcut selecția</h2>
+            <p className="whitespace-pre-line text-sm leading-6 text-muted sm:text-base sm:leading-7">{methodology}</p>
+            <Link href="/cum-recomandam" className="inline-flex min-h-10 shrink-0 items-center rounded-full border border-border px-4 text-sm font-bold text-brand transition hover:border-brand hover:bg-paper">Cum recomandăm</Link>
+          </section> : null}
+
+          <section aria-label={`Cărțile din selecția ${title}`}>
+            {books.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {books.map((book) => <BookCard key={book.id} book={book} reason={book.reason} />)}
+            </div> : <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted">Această selecție nu are încă titluri disponibile.</div>}
+          </section>
         </div>
-      </header>
-
-      <div className="mx-auto grid w-full max-w-7xl gap-16 px-5 py-16 sm:px-6 md:py-24 lg:px-8">
-        <section aria-labelledby="hub-selections-title">
-          <div className="max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-dark">Selecții argumentate</p>
-            <h2 id="hub-selections-title" className="mt-3 font-display text-4xl font-semibold tracking-[-0.03em]">De ce sunt aici aceste cărți</h2>
-            <p className="mt-4 leading-7 text-muted">Fiecare titlu este publicat numai după verificarea fișei editoriale, iar motivul explică legătura cu intenția acestei pagini.</p>
-          </div>
-          {books.length ? <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {books.map((book) => <BookCard key={book.id} book={book} reason={book.reason} />)}
-          </div> : <div className="mt-8 rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted">Selecția publică nu are încă suficiente cărți explicate.</div>}
-        </section>
-
-        <section className="rounded-2xl border border-border bg-surface p-6 sm:p-8" aria-labelledby="hub-methodology-title">
-          <h2 id="hub-methodology-title" className="flex items-center gap-3 font-display text-3xl font-semibold"><ShieldCheck aria-hidden="true" className="size-6 text-brand" />Cum am făcut selecția</h2>
-          <p className="mt-5 max-w-4xl whitespace-pre-line leading-7 text-muted">{methodology}</p>
-          <Link href="/cum-recomandam" className="mt-6 inline-flex text-sm font-bold text-brand underline decoration-border underline-offset-4 hover:decoration-brand">Citește metodologia editorială completă</Link>
-        </section>
 
         <RelatedHubNavigation hubs={relatedHubs} />
 

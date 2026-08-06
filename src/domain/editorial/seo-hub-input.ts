@@ -14,26 +14,26 @@ import {
 } from "./form-data";
 
 const selectionSchema = z.object({
-  bookId: z.uuid(),
-  position: z.number().int().positive(),
+  bookId: z.uuid("Cartea selectată nu este validă."),
+  position: z.number().int("Poziția trebuie să fie un număr întreg.").positive("Poziția trebuie să fie mai mare decât zero."),
   reason: z.string().trim().max(1_000).optional(),
   segment: z.string().trim().max(100).optional(),
   strength: z.number().int().min(0).max(100).optional(),
 });
 
 const seoFields = {
-  seoTitle: z.string().trim().min(1).max(70).optional(),
-  seoDescription: z.string().trim().min(1).max(170).optional(),
+  seoTitle: z.string().trim().min(1, "Completează titlul SEO.").max(70, "Titlul SEO poate avea maximum 70 de caractere.").optional(),
+  seoDescription: z.string().trim().min(1, "Completează descrierea SEO.").max(170, "Descrierea SEO poate avea maximum 170 de caractere.").optional(),
 };
 
 export const editorialListInputSchema = z.object({
-  title: z.string().trim().min(1).max(250),
+  title: z.string().trim().min(1, "Completează titlul selecției.").max(250, "Titlul poate avea maximum 250 de caractere."),
   slug: slugSchema,
   intro: z.string().trim().max(10_000).optional(),
   methodology: z.string().trim().max(10_000).optional(),
   type: z.enum(["list", "guide", "hub", "length_hub"]),
-  minimumPageCount: z.number().int().min(0).optional(),
-  maximumPageCount: z.number().int().positive().optional(),
+  minimumPageCount: z.number({ error: "Introdu un număr valid pentru limita minimă." }).int("Numărul minim de pagini trebuie să fie întreg.").min(0, "Numărul minim de pagini nu poate fi negativ.").optional(),
+  maximumPageCount: z.number({ error: "Introdu un număr valid pentru limita maximă." }).int("Numărul maxim de pagini trebuie să fie întreg.").positive("Numărul maxim de pagini trebuie să fie mai mare decât zero.").optional(),
   status: z.enum(["draft", "review", "published", "archived"]),
   indexable: z.boolean(),
   selections: z.array(selectionSchema.extend({
@@ -41,6 +41,17 @@ export const editorialListInputSchema = z.object({
   })).max(100),
   ...seoFields,
 }).superRefine((value, context) => {
+  const positionIndexes = new Map<number, number>();
+  value.selections.forEach((selection, index) => {
+    const previousIndex = positionIndexes.get(selection.position);
+    if (previousIndex !== undefined) {
+      const message = `Poziția ${selection.position} este folosită de mai multe cărți.`;
+      context.addIssue({ code: "custom", path: ["selections", previousIndex, "position"], message });
+      context.addIssue({ code: "custom", path: ["selections", index, "position"], message });
+    } else {
+      positionIndexes.set(selection.position, index);
+    }
+  });
   if (value.type === "length_hub") {
     if (value.minimumPageCount === undefined && value.maximumPageCount === undefined) {
       context.addIssue({ code: "custom", path: ["minimumPageCount"], message: "Definește cel puțin o limită de pagini." });
@@ -124,14 +135,15 @@ function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown): T {
 
 export function parseEditorialListFormData(formData: FormData) {
   const title = stringValue(formData, "title");
+  const type = stringValue(formData, "type");
   return parseOrThrow(editorialListInputSchema, {
     title,
     slug: slugify(optionalStringValue(formData, "slug") ?? title),
     intro: optionalStringValue(formData, "intro"),
     methodology: optionalStringValue(formData, "methodology"),
-    type: stringValue(formData, "type"),
-    minimumPageCount: nullableInteger(stringValue(formData, "minimumPageCount")),
-    maximumPageCount: nullableInteger(stringValue(formData, "maximumPageCount")),
+    type,
+    minimumPageCount: type === "length_hub" ? nullableInteger(stringValue(formData, "minimumPageCount")) : undefined,
+    maximumPageCount: type === "length_hub" ? nullableInteger(stringValue(formData, "maximumPageCount")) : undefined,
     status: stringValue(formData, "status"),
     indexable: formData.get("indexable") === "on",
     selections: parseSelections(formData),

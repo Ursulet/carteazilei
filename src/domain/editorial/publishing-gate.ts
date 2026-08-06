@@ -35,7 +35,7 @@ export function evaluateBookPublishingGate(
     { key: "genre", label: "Cel puțin un gen", passed: snapshot.genreIds.length > 0 },
     {
       key: "confidence",
-      label: `Încredere editorială de minimum ${BOOK_PUBLISHING_CONFIDENCE_THRESHOLD}%`,
+      label: `Nivel de verificare de minimum ${BOOK_PUBLISHING_CONFIDENCE_THRESHOLD}%`,
       passed: snapshot.editorialConfidence >= BOOK_PUBLISHING_CONFIDENCE_THRESHOLD,
     },
     { key: "editor", label: "Editor atribuit", passed: Boolean(snapshot.editorId) },

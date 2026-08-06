@@ -29,8 +29,8 @@ export function FormSection({ title, description, children }: { title: string; d
   );
 }
 
-export function FieldError({ errors }: { errors?: string[] }) {
-  return errors?.length ? <p className="mt-1.5 text-sm font-medium text-danger">{errors[0]}</p> : null;
+export function FieldError({ errors, id }: { errors?: string[]; id?: string }) {
+  return errors?.length ? <p id={id} className="mt-1.5 text-sm font-medium text-danger">{errors[0]}</p> : null;
 }
 
 export const statusLabels: Record<string, string> = {

@@ -31,6 +31,14 @@ function postgresCode(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error ? String(error.code) : undefined;
 }
 
+function postgresConstraint(error: unknown) {
+  return typeof error === "object" && error !== null && "constraint_name" in error
+    ? String(error.constraint_name)
+    : typeof error === "object" && error !== null && "constraint" in error
+      ? String(error.constraint)
+      : undefined;
+}
+
 async function uniqueSeoMetadata(
   entityType: "editorial_list" | "genre" | "theme" | "mood" | "audience",
   entityId: string | undefined,
@@ -168,7 +176,20 @@ export async function saveEditorialList(input: EditorialListInput, actorUserId: 
     });
   } catch (error) {
     if (error instanceof EditorialServiceError) throw error;
-    if (postgresCode(error) === "23505") throw new EditorialServiceError("Slugul sau pozițiile selecțiilor sunt deja folosite.");
+    if (postgresCode(error) === "23505") {
+      const constraint = postgresConstraint(error);
+      if (constraint?.includes("slug")) {
+        throw new EditorialServiceError("Adresa URL este deja folosită de altă listă.", {
+          slug: ["Alege o altă adresă URL."],
+        });
+      }
+      if (constraint?.includes("position")) {
+        throw new EditorialServiceError("Două cărți au aceeași poziție în listă.", {
+          selections: ["Fiecare carte trebuie să aibă o poziție diferită."],
+        });
+      }
+      throw new EditorialServiceError("Slugul sau pozițiile selecțiilor sunt deja folosite.");
+    }
     throw error;
   }
 }

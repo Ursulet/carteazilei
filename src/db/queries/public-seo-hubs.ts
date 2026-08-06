@@ -403,13 +403,13 @@ export async function getPublicRelationshipLanding(
   };
 }
 
-/** Returnează numai listele care trec quality gate-ul și au canonical pe `/liste`. */
+/** Returnează listele publicate; indexabilitatea controlează roboții și sitemap-ul, nu vizibilitatea. */
 export async function listPublicEditorialLists(db: Database = getDb()) {
   const rows = await db.select({ slug: editorialLists.slug }).from(editorialLists)
     .where(and(inArray(editorialLists.type, ["list", "guide", "hub"]), eq(editorialLists.status, "published"), isNull(editorialLists.deletedAt)))
     .orderBy(desc(editorialLists.publishedAt), asc(editorialLists.title));
   const hydrated = await Promise.all(rows.map((row) => getPublicEditorialListPage(row.slug, "list", db)));
-  return hydrated.filter((row): row is NonNullable<typeof row> => Boolean(row?.quality.indexable));
+  return hydrated.filter((row): row is NonNullable<typeof row> => Boolean(row));
 }
 
 /** Găsește hub-uri care împart cărți reale cu selecția curentă și păstrează numai destinații indexabile. */

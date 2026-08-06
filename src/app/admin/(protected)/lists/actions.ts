@@ -13,14 +13,14 @@ import { requireMutationAccess } from "@/lib/auth/principal";
 export async function createEditorialListAction(_state: EditorialActionState, formData: FormData): Promise<EditorialActionState> {
   const principal = await requireMutationAccess("lists");
   let id: string;
-  try { id = await saveEditorialList(parseEditorialListFormData(formData), principal.id); } catch (error) { return toActionState(error); }
+  try { id = await saveEditorialList(parseEditorialListFormData(formData), principal.id); } catch (error) { return toActionState(error, formData); }
   revalidatePath("/admin/lists");
   redirect(withAdminNotice(`/admin/lists/${id}`, "Lista editorială a fost creată."));
 }
 
 export async function updateEditorialListAction(id: string, _state: EditorialActionState, formData: FormData): Promise<EditorialActionState> {
   const principal = await requireMutationAccess("lists");
-  try { await saveEditorialList(parseEditorialListFormData(formData), principal.id, id); } catch (error) { return toActionState(error); }
+  try { await saveEditorialList(parseEditorialListFormData(formData), principal.id, id); } catch (error) { return toActionState(error, formData); }
   revalidatePath("/admin/lists"); revalidatePath(`/admin/lists/${id}`); revalidatePath("/liste");
   redirect(withAdminNotice(`/admin/lists/${id}`, "Lista editorială a fost salvată."));
 }

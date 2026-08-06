@@ -47,7 +47,13 @@ export function zodFieldErrors(error: z.ZodError) {
   const flattened = z.flattenError(error) as {
     fieldErrors: Record<string, string[] | undefined>;
   };
-  return Object.fromEntries(
+  const fieldErrors = Object.fromEntries(
     Object.entries(flattened.fieldErrors).filter(([, messages]) => messages?.length),
   ) as Record<string, string[]>;
+  for (const issue of error.issues) {
+    if (!issue.path.length) continue;
+    const key = issue.path.map(String).join(".");
+    fieldErrors[key] = [...new Set([...(fieldErrors[key] ?? []), issue.message])];
+  }
+  return fieldErrors;
 }

@@ -15,7 +15,7 @@ export default async function ListsPage() {
   return (
     <div>
       <PublicPageHeader eyebrow="Selecții tematice" title="Liste pentru fiecare chef de lectură" description="Descoperă cărți grupate după teme, stări și momente de lectură." currentLabel="Liste" currentPath="/liste" />
-      <section className="py-16 md:py-24">
+      <section className="py-12 md:py-16">
         <div className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8">
           {lists.length ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -26,7 +26,7 @@ export default async function ListsPage() {
                     <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted"><BookOpen aria-hidden="true" className="size-4" />{page.selections.length} cărți</p>
                   </div>
                   <h2 className="mt-5 font-display text-3xl font-semibold">{page.list.title}</h2>
-                  <p className="mt-4 line-clamp-4 leading-7 text-muted">{page.list.intro}</p>
+                  {page.list.intro ? <p className="mt-4 line-clamp-4 leading-7 text-muted">{page.list.intro}</p> : null}
                   <span className="mt-6 inline-flex items-center text-sm font-bold text-brand">Vezi selecția <ArrowRight aria-hidden="true" className="ms-2 size-4 transition-transform group-hover:translate-x-0.5" /></span>
                 </Link>
               ))}

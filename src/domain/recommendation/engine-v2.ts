@@ -415,7 +415,7 @@ function scoreCandidate(
   return { candidate, score, contributions, penalties, reasonCodes };
 }
 
-/** Sortează stabil candidații fără popularitate: scor, încredere editorială, titlu. */
+/** Sortează stabil candidații fără popularitate: scor, nivelul evaluării, titlu. */
 function stableScoreOrder(candidates: ScoredRecommendationCandidate[]) {
   return [...candidates].sort(
     (left, right) =>

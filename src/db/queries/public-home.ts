@@ -47,7 +47,6 @@ export async function getPublicHomepageDiscovery(db: Database = getDb()) {
       .from(editorialLists)
       .where(and(
         eq(editorialLists.status, "published"),
-        eq(editorialLists.indexable, true),
         isNull(editorialLists.deletedAt),
         sql`${editorialLists.type} in ('list', 'guide', 'hub')`,
       ))
@@ -66,6 +65,6 @@ export async function getPublicHomepageDiscovery(db: Database = getDb()) {
     genres: genrePages.flatMap((page) => page?.quality.indexable ? [{ name: page.entity.name, slug: page.entity.slug, description: page.entity.description }] : []),
     audiences: audiencePages.flatMap((page) => page?.quality.indexable ? [{ name: page.entity.name, slug: page.entity.slug, description: page.entity.description }] : []),
     nextReads: nextReadPages.flatMap((page) => page?.quality.indexable ? [{ title: page.source.book.title, slug: page.source.book.slug, author: page.source.author.name }] : []),
-    lists: listPages.flatMap((page) => page?.quality.indexable ? [{ title: page.list.title, slug: page.list.slug, intro: page.list.intro, type: page.list.type }] : []),
+    lists: listPages.flatMap((page) => page ? [{ title: page.list.title, slug: page.list.slug, intro: page.list.intro, type: page.list.type }] : []),
   };
 }

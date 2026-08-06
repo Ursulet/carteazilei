@@ -15,7 +15,7 @@ const fields: Array<{ key: keyof RecommendationConfiguration; label: string; not
   { key: "paceWeight", label: "Ritm", note: "Potrivirea cu ritmul dorit." },
   { key: "lengthWeight", label: "Lungime", note: "Intervalul de pagini preferat." },
   { key: "referenceWeight", label: "Carte de referință", note: "Relația cu titlul apreciat." },
-  { key: "editorialConfidenceWeight", label: "Încredere editorială", note: "Calitatea evaluării interne." },
+  { key: "editorialConfidenceWeight", label: "Nivelul evaluării", note: "Gradul de completitudine al evaluării interne." },
   { key: "freshnessWeight", label: "Actualitate", note: "Cât de recent a fost revizuită cartea." },
 ];
 

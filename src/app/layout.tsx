@@ -8,6 +8,8 @@ import { getPublicSiteSettings } from "@/domain/settings/public-settings-service
 
 import "./globals.css";
 
+const faviconUrl = "/site-icon?v=cartea-zilei-20260806";
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin", "latin-ext"],
@@ -26,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(settings.canonicalHost),
     title: { default: settings.defaultMetaTitle, template: settings.titleTemplate },
     description: settings.defaultMetaDescription,
-    icons: { icon: "/site-icon", shortcut: "/site-icon", apple: settings.appleTouchIconAssetId ? `/media/${settings.appleTouchIconAssetId}` : "/site-icon" },
+    icons: { icon: faviconUrl, shortcut: faviconUrl, apple: settings.appleTouchIconAssetId ? `/media/${settings.appleTouchIconAssetId}` : faviconUrl },
     robots: { index: settings.indexingEnabled, follow: settings.indexingEnabled },
     verification: { google: settings.googleSiteVerification ?? undefined, other: settings.bingSiteVerification ? { "msvalidate.01": settings.bingSiteVerification } : undefined },
     openGraph: { type: "website", locale: settings.defaultLanguage === "ro" ? "ro_RO" : settings.defaultLanguage, siteName: settings.siteName, title: settings.defaultMetaTitle, description: settings.defaultMetaDescription, url: "/", images: [{ url: settings.defaultOgAssetId ? `/media/${settings.defaultOgAssetId}` : "/og.png", width: 1200, height: 630, alt: settings.defaultMetaTitle }] },

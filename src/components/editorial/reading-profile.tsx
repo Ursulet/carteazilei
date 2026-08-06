@@ -42,7 +42,7 @@ export function ReadingProfile({ traits }: { traits: Trait[] }) {
             >
               <div className="h-full rounded-full bg-brand transition-[width]" style={{ width: `${score * 10}%` }} />
             </div>
-            <p className="mt-2 text-[0.68rem] text-muted">Încredere editorială: {confidence}%</p>
+            <p className="mt-2 text-[0.68rem] text-muted">Siguranța evaluării: {confidence}%</p>
           </div>
         );
       })}

@@ -175,7 +175,7 @@ export default async function HomePage() {
 
         <section className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-6 lg:px-8 lg:py-10">
           <div className="rounded-[1.75rem] border border-border bg-surface p-7 sm:p-10">
-            <SectionHeader eyebrow="Încredere editorială" title="O recomandare explicată, nu un simplu titlu" href="/cum-recomandam" action="Cum recomandăm" icon={ShieldCheck} />
+            <SectionHeader eyebrow="Cum alegem cărțile" title="O recomandare explicată, nu un simplu titlu" href="/cum-recomandam" action="Cum recomandăm" icon={ShieldCheck} />
             <div className="mt-7 grid gap-4 md:grid-cols-3">
               <TrustItem icon={Compass} title="Evaluare editorială" text="Fiecare alegere are argumente clare și o limită spusă sincer." />
               <TrustItem icon={ShieldCheck} title="Potrivire, nu popularitate" text="Preferințele cititorului contează mai mult decât un clasament." />

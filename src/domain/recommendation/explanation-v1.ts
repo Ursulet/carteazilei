@@ -126,7 +126,7 @@ export function buildRecommendationExplanation(
   const reasonCandidates = [
     ...orderedComponents.map((component) => contributionReason(scored, answers, context, component)),
     `Analiza editorială o descrie astfel: ${scored.candidate.shortVerdict}`,
-    "Cartea trece pragul intern de completitudine și încredere editorială pentru recomandări personalizate.",
+    "Cartea are o evaluare suficient de completă pentru a fi inclusă în recomandările personalizate.",
   ];
   const unique = [...new Set(reasonCandidates.filter((reason): reason is string => Boolean(reason?.trim())))];
   const reasons = unique.slice(0, 3);

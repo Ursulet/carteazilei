@@ -86,7 +86,6 @@ export async function getPublicAuthorPage(slug: string, db: Database = getDb()) 
         eq(books.status, "published"),
         isNull(books.deletedAt),
         eq(editorialLists.status, "published"),
-        eq(editorialLists.indexable, true),
         isNull(editorialLists.deletedAt),
       )).orderBy(asc(editorialLists.title)).limit(12),
     db.select({ bookId: books.id, reason: editorialListBooks.reason })

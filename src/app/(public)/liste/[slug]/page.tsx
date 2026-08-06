@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function EditorialListPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const page = await getList(slug);
-  if (!page || !page.list.intro || !page.list.methodology) notFound();
+  if (!page) notFound();
   const relatedHubs = await listRelatedIndexableHubs(page.selections.map((book) => book.id), page.href);
   return <SeoHubPage eyebrow="Listă editorială" title={page.list.title} intro={page.list.intro} methodology={page.list.methodology} editor={page.list.editor} updatedAt={page.list.seo.lastReviewedAt ?? page.list.updatedAt} books={page.selections} breadcrumbs={[{ label: "Acasă", href: "/" }, { label: "Liste", href: "/liste" }, { label: page.list.title }]} relatedHubs={relatedHubs} canonicalPath={page.href} />;
 }

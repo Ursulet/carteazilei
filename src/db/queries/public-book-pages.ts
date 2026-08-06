@@ -208,7 +208,7 @@ export async function getPublicBookPage(slug: string, db: Database = getDb()) {
       .orderBy(asc(readingTraits.name)),
     db.select({ title: editorialLists.title, slug: editorialLists.slug, reason: editorialListBooks.reason }).from(editorialListBooks)
       .innerJoin(editorialLists, eq(editorialLists.id, editorialListBooks.listId))
-      .where(and(eq(editorialListBooks.bookId, base.book.id), eq(editorialLists.status, "published"), eq(editorialLists.indexable, true), isNull(editorialLists.deletedAt)))
+      .where(and(eq(editorialListBooks.bookId, base.book.id), eq(editorialLists.status, "published"), isNull(editorialLists.deletedAt)))
       .orderBy(asc(editorialLists.title)).limit(8),
     getBookRelations(db, base.book.id),
   ]);

@@ -131,7 +131,7 @@ export async function getPublicEditorProfile(slug: string, db: Database = getDb(
       list.type === "length_hub" ? "length" : "list",
       db,
     )),
-  )).flatMap((list) => list?.quality.indexable ? [list] : []);
+  )).flatMap((list) => list ? [list] : []);
 
   return { editor: normalizedEditor, reviewedBooks, dailySelections, lists };
 }

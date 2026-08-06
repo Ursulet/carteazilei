@@ -80,23 +80,23 @@ export async function getSearchIndexingOverview(db: Database = getDb()) {
 
 export async function includePublishedContentInSearch(actorUserId: string) {
   const db = getDb();
-  const [bookRows, authorRows] = await Promise.all([
-    db
-      .select({ id: books.id })
-      .from(books)
-      .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
-      .where(eligibleBookWhere),
-    db
-      .select({ id: authors.id })
-      .from(authors)
-      .where(eligibleAuthorWhere(db)),
-  ]);
+  const bookRows = await db
+    .select({ id: books.id, authorId: books.primaryAuthorId })
+    .from(books)
+    .innerJoin(authors, eq(authors.id, books.primaryAuthorId))
+    .where(eligibleBookWhere);
+  // Autorii sunt derivați direct din cărțile eligibile. Astfel, aceeași regulă
+  // care include o carte în sitemap include garantat și profilul autorului ei.
+  const authorRows = [...new Set(bookRows.map((book) => book.authorId))].map((id) => ({ id }));
 
   const now = new Date();
   await db.transaction(async (transaction) => {
+    let updatedBooks = 0;
+    let updatedAuthors = 0;
+
     for (const batch of chunks(bookRows)) {
       if (!batch.length) continue;
-      await transaction
+      const updated = await transaction
         .insert(seoMetadata)
         .values(batch.map(({ id }) => ({
           entityType: "book" as const,
@@ -107,12 +107,14 @@ export async function includePublishedContentInSearch(actorUserId: string) {
         .onConflictDoUpdate({
           target: [seoMetadata.entityType, seoMetadata.entityId],
           set: { indexable: true, lastReviewedAt: now, updatedAt: now },
-        });
+        })
+        .returning({ id: seoMetadata.id });
+      updatedBooks += updated.length;
     }
 
     for (const batch of chunks(authorRows)) {
       if (!batch.length) continue;
-      await transaction
+      const updated = await transaction
         .insert(seoMetadata)
         .values(batch.map(({ id }) => ({
           entityType: "author" as const,
@@ -123,7 +125,15 @@ export async function includePublishedContentInSearch(actorUserId: string) {
         .onConflictDoUpdate({
           target: [seoMetadata.entityType, seoMetadata.entityId],
           set: { indexable: true, lastReviewedAt: now, updatedAt: now },
-        });
+        })
+        .returning({ id: seoMetadata.id });
+      updatedAuthors += updated.length;
+    }
+
+    if (updatedBooks !== bookRows.length || updatedAuthors !== authorRows.length) {
+      throw new Error(
+        `Sincronizare SEO incompletă: ${updatedBooks}/${bookRows.length} cărți, ${updatedAuthors}/${authorRows.length} autori.`,
+      );
     }
 
     await writeAuditLog({
@@ -132,8 +142,8 @@ export async function includePublishedContentInSearch(actorUserId: string) {
       entityType: "seo_batch",
       entityId: null,
       diff: {
-        indexedBooks: bookRows.length,
-        indexedAuthors: authorRows.length,
+        indexedBooks: updatedBooks,
+        indexedAuthors: updatedAuthors,
       },
     }, transaction);
   });

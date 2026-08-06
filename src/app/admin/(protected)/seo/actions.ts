@@ -13,7 +13,7 @@ export async function includePublishedContentInSearchAction() {
 
   try {
     const result = await includePublishedContentInSearch(principal.id);
-    notice = `${result.books} cărți și ${result.authors} autori publici sunt acum incluși în sitemap.`;
+    notice = `Sitemap actualizat: ${result.books} cărți și ${result.authors} autori publici incluși.`;
   } catch (error) {
     console.error("SEO indexing sync failed", error);
     notice = "Actualizarea sitemap-ului nu a putut fi finalizată.";

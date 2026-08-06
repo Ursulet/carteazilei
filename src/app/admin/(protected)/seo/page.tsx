@@ -24,6 +24,18 @@ function ProgressCard({ label, indexed, eligible }: { label: string; indexed: nu
   );
 }
 
+function HubCard({ indexed, configured }: { indexed: number; configured: number }) {
+  return (
+    <article className="rounded-2xl border border-border bg-surface p-5">
+      <p className="text-xs font-bold uppercase tracking-wide text-muted">Pagini tematice</p>
+      <p className="mt-2 text-3xl font-bold">{indexed} active</p>
+      <p className="mt-2 text-sm text-muted">
+        {configured} categorii și liste sunt configurate; numai paginile publicate și completate intră în sitemap.
+      </p>
+    </article>
+  );
+}
+
 export default async function Page() {
   const principal = await requireSectionAccess("seo");
   const canManageSeo = canMutateSection(principal.permissions, "seo", principal.isSuperAdmin);
@@ -46,13 +58,13 @@ export default async function Page() {
       <section className="grid gap-4 md:grid-cols-3">
         <ProgressCard label="Cărți publice" indexed={overview.books.indexed} eligible={overview.books.eligible} />
         <ProgressCard label="Autori publici" indexed={overview.authors.indexed} eligible={overview.authors.eligible} />
-        <ProgressCard label="Liste și categorii" indexed={indexedHubs} eligible={totalHubs} />
+        <HubCard indexed={indexedHubs} configured={totalHubs} />
       </section>
 
       <section className="mt-8 rounded-2xl border border-border bg-surface p-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
-            <h2 className="font-display text-2xl font-semibold">Actualizează sitemap-ul</h2>
+            <h2 className="font-display text-2xl font-semibold">Sincronizează cărțile și autorii</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
               Acțiunea include cărțile publicate care au fișa completă și autor public, apoi include profilurile autorilor care au cel puțin o astfel de carte. Ciornele și paginile incomplete rămân excluse.
             </p>
@@ -60,7 +72,7 @@ export default async function Page() {
           {canManageSeo ? (
             <form action={includePublishedContentInSearchAction}>
               <button className="min-h-11 rounded-full bg-brand px-5 text-sm font-bold text-white hover:opacity-90">
-                Include conținutul public
+                Include cărțile și autorii publici
               </button>
             </form>
           ) : null}
